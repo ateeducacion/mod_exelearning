@@ -96,7 +96,7 @@ function exelearning_preview_base_headers(): array {
  * player_iframe::sandbox_tokens() (it already equals "allow-scripts allow-popups
  * allow-forms"); the rest is inlined here to preserve byte-identity.
  *
- * TODO(follow-up): promote this into a unit-tested
+ * Follow-up: promote this into a unit-tested
  * \mod_exelearning\local\ui\player_iframe::preview_content_security_policy(),
  * sibling to content_security_policy(), and add a drift check vs previewCspHeader().
  *
@@ -138,7 +138,7 @@ function exelearning_preview_not_found(): void {
     die;
 }
 
-// --- Request handling -------------------------------------------------------
+// Request handling.
 
 // Slash arguments: PATH_INFO is "/{previewId}/{relpath}". get_file_argument()
 // reads it robustly whether or not $CFG->slasharguments is enabled (same helper
@@ -153,19 +153,19 @@ if (!preg_match(EXELEARNING_PREVIEW_UUID_RE, $previewid)) {
     exelearning_preview_not_found();
 }
 
-// TODO(follow-up): real content-addressed store. get_for_serving() must:
-//   - return null for an unknown or idle-expired session (=> 404),
-//   - touch the idle-TTL clock on a hit,
-//   - be gated ONLY on the previewId (no auth cookie).
+// Follow-up: real content-addressed store. get_for_serving() must:
+// - return null for an unknown or idle-expired session (=> 404),
+// - touch the idle-TTL clock on a hit,
+// - be gated ONLY on the previewId (no auth cookie).
 // Reference home: \mod_exelearning\local\preview\session_store::get_for_serving().
-$session = \mod_exelearning\local\preview\session_store::get_for_serving($previewid); // TODO: implement store.
+$session = \mod_exelearning\local\preview\session_store::get_for_serving($previewid); // Follow-up: implement store.
 if ($session === null) {
     exelearning_preview_not_found();
 }
 
 // Resolve from the ACTIVE manifest only. Exact-key lookup; a traversal or unknown
 // path returns null (never touches the real filesystem) -> 404.
-$file = $session->get_file($relpath); // TODO: returns {contents, filename, mimetype} or null.
+$file = $session->get_file($relpath); // Follow-up: returns {contents, filename, mimetype} or null.
 if ($file === null) {
     exelearning_preview_not_found();
 }
@@ -181,6 +181,6 @@ if (exelearning_preview_is_scriptable($mime)) {
     header('Content-Security-Policy: ' . exelearning_preview_csp());
 }
 
-// TODO(follow-up): stream large blobs from the store rather than buffering.
+// Follow-up: stream large blobs from the store rather than buffering.
 echo $file->contents;
 die;
