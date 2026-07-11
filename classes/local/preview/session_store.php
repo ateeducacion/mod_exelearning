@@ -365,7 +365,16 @@ final class session_store {
                     $rejected[] = ['key' => $key, 'reason' => 'global-budget-exceeded'];
                     continue;
                 }
-                file_put_contents($dir . '/assets/' . self::asset_basename($key), $entry['bytes'], LOCK_EX);
+                // The key is indexed (and its bytes counted) ONLY once the write
+                // durably succeeds: a failed or short write must never leave a
+                // dangling index entry that a later revision would treat as a
+                // present asset (and then 404 at serve time). The @ mirrors the
+                // store's other file ops and keeps a warning off the JSON response.
+                $written = @file_put_contents($dir . '/assets/' . self::asset_basename($key), $entry['bytes'], LOCK_EX);
+                if ($written === false || $written !== $len) {
+                    $rejected[] = ['key' => $key, 'reason' => 'write-failed'];
+                    continue;
+                }
                 $index[$key] = $len;
                 $assetbytes += $len;
                 $stored[] = $key;
@@ -492,8 +501,11 @@ final class session_store {
             }
 
             // 6. Stage the full document set for the new revision, then publish
-            // it with an atomic pointer swap.
-            self::publish_revision($dir, $active, $next, $newdocs, $writes, $assetrefs, $fixedrefs);
+            // it with an atomic pointer swap. A write failure while staging aborts
+            // BEFORE the swap, so the active revision is left completely intact.
+            if (!self::publish_revision($dir, $active, $next, $newdocs, $writes, $assetrefs, $fixedrefs)) {
+                return ['status' => 500, 'message' => 'Failed to persist the preview revision'];
+            }
             $metadata['documentbytes'] = $documentbytes;
             self::write_json($dir . '/meta.json', $metadata);
 
@@ -516,6 +528,9 @@ final class session_store {
      * @param array $writes Changed documents, path => bytes.
      * @param array $assetrefs Full asset-ref map, served path => assetKey.
      * @param array $fixedrefs Full fixed-ref map, served path => fixedResourceId.
+     * @return bool True on success; false when a staging write/copy failed (the
+     *              staged revision is discarded and the `current` pointer is left
+     *              untouched, so the active revision stays intact).
      */
     private static function publish_revision(
         string $dir,
@@ -525,7 +540,7 @@ final class session_store {
         array $writes,
         array $assetrefs,
         array $fixedrefs
-    ): void {
+    ): bool {
         $revdir = $dir . '/revisions/' . $next;
         // Remove any stale artifact from a previously failed attempt at $next.
         if (is_dir($revdir)) {
@@ -533,12 +548,25 @@ final class session_store {
         }
         self::make_dir($revdir);
 
+        // Materialize the full document set. A failed or short write (disk full,
+        // read-only volume, a collision) must abort the publish BEFORE the pointer
+        // swap — otherwise the revision would go live with a truncated or missing
+        // document that serves as a blank 404, silently corrupting the preview.
         foreach ($newdocs as $path => $size) {
             $target = $revdir . '/' . self::doc_basename($path);
             if (array_key_exists($path, $writes)) {
-                file_put_contents($target, $writes[$path], LOCK_EX);
+                $bytes = $writes[$path];
+                $written = @file_put_contents($target, $bytes, LOCK_EX);
+                if ($written === false || $written !== strlen($bytes)) {
+                    self::discard_staged_revision($revdir);
+                    return false;
+                }
             } else {
-                copy($dir . '/revisions/' . $active . '/' . self::doc_basename($path), $target);
+                $source = $dir . '/revisions/' . $active . '/' . self::doc_basename($path);
+                if (!@copy($source, $target)) {
+                    self::discard_staged_revision($revdir);
+                    return false;
+                }
             }
         }
         self::write_json($revdir . '/revision.json', [
@@ -558,6 +586,20 @@ final class session_store {
             if ($number < $next - 1) {
                 remove_dir($dir . '/revisions/' . $number);
             }
+        }
+        return true;
+    }
+
+    /**
+     * Discard a staged (not-yet-published) revision directory after a write
+     * failure. The `current` pointer is never touched here, so the active
+     * revision is unaffected and no partial revision can be observed.
+     *
+     * @param string $revdir The staged revision directory.
+     */
+    private static function discard_staged_revision(string $revdir): void {
+        if (is_dir($revdir)) {
+            remove_dir($revdir);
         }
     }
 

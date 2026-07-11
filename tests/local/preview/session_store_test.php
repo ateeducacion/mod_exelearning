@@ -379,4 +379,106 @@ final class session_store_test extends advanced_testcase {
         $this->assertNull(session_store::get_for_serving($this->previewid));
         $this->assertFalse(session_store::delete_session($this->previewid));
     }
+
+    /**
+     * A failed asset write is REJECTED (reason write-failed) and never indexed:
+     * the key is not added to the index or the byte counter, is not reported in
+     * stored, and a later revision referencing it 422s on missing-assets. Failure
+     * is forced root-safely by pre-creating the asset's on-disk target as a
+     * directory, so the byte write cannot succeed for any uid.
+     */
+    public function test_asset_write_failure_is_rejected_and_not_indexed(): void {
+        $target = $this->root . '/' . $this->previewid . '/assets/'
+            . session_store::asset_basename(self::PHOTO_KEY);
+        mkdir($target, 0777, true);
+
+        $result = $this->store([self::PHOTO_KEY => 'abc']);
+        $this->assertSame([], $result['stored']);
+        $this->assertSame([['key' => self::PHOTO_KEY, 'reason' => 'write-failed']], $result['rejected']);
+
+        // Not indexed: a revision that references the key fails missing-assets.
+        $missing = $this->publish(0, 1, ['index.html' => 'x'], ['res/photo.png' => self::PHOTO_KEY]);
+        $this->assertSame(422, $missing['status']);
+        $this->assertSame('missing-assets', $missing['reason']);
+    }
+
+    /**
+     * When staging a revision cannot copy an unchanged document forward, the whole
+     * publish aborts BEFORE the pointer swap: the store returns 500, the active
+     * revision and its bytes are untouched, and the staged revision is discarded.
+     * The copy is forced to fail root-safely by removing its source document.
+     */
+    public function test_revision_publish_aborts_on_doc_copy_failure(): void {
+        $this->publish(0, 1, ['index.html' => 'I1', 'keep.html' => 'KEEP']);
+
+        // Remove the carried-forward source so copy() fails while staging r2.
+        $source = $this->root . '/' . $this->previewid . '/revisions/1/'
+            . session_store::doc_basename('keep.html');
+        unlink($source);
+
+        $result = $this->publish(1, 2, ['index.html' => 'I2']);
+        $this->assertSame(500, $result['status']);
+
+        // No swap: still revision 1, still the original index bytes.
+        $session = $this->reload();
+        $this->assertSame(1, $session->revision);
+        $this->assertSame('I1', $session->get_file('index.html')->bytes);
+        // The staged revision directory was discarded.
+        $this->assertDirectoryDoesNotExist($this->root . '/' . $this->previewid . '/revisions/2');
+    }
+
+    /**
+     * When staging a revision cannot write a changed document, the publish aborts
+     * BEFORE the pointer swap (500) and the active revision stays at 0. Failure is
+     * forced root-safely by occupying the staged revision path with a plain file,
+     * so both make_dir and the byte write fail; the make_dir warning is swallowed.
+     */
+    public function test_revision_publish_aborts_on_doc_write_failure(): void {
+        $revdir = $this->root . '/' . $this->previewid . '/revisions/1';
+        file_put_contents($revdir, 'blocker');
+
+        $result = $this->suppress_warnings(function () {
+            return $this->publish(0, 1, ['index.html' => 'x']);
+        });
+        $this->assertSame(500, $result['status']);
+        $this->assertSame(0, $this->reload()->revision);
+    }
+
+    /**
+     * serve() ignores a malformed / multi-range Range (a full 200, never 206 or
+     * 416) but still 416s a syntactically valid unsatisfiable single range.
+     */
+    public function test_serve_ignores_malformed_range(): void {
+        $this->store([self::PHOTO_KEY => '0123456789']);
+        $this->publish(0, 1, ['index.html' => 'x'], ['media/clip.bin' => self::PHOTO_KEY]);
+        $session = $this->reload();
+
+        $ignored = serving::serve($session, 'media/clip.bin', ['range' => 'bytes=0-1,4-5']);
+        $this->assertSame(200, $ignored['status']);
+        $this->assertSame('0123456789', $ignored['body']);
+        $this->assertArrayNotHasKey('Content-Range', $ignored['headers']);
+
+        $unsatisfiable = serving::serve($session, 'media/clip.bin', ['range' => 'bytes=99-']);
+        $this->assertSame(416, $unsatisfiable['status']);
+    }
+
+    /**
+     * Run $fn with PHP warnings/notices swallowed. A forced filesystem failure
+     * raises an unrelated make_dir warning that phpunit --fail-on-warning would
+     * otherwise turn into a failure; the code under test handles the real error
+     * through its checked return, not the warning.
+     *
+     * @param callable $fn
+     * @return mixed
+     */
+    private function suppress_warnings(callable $fn) {
+        set_error_handler(static function () {
+            return true;
+        }, E_WARNING | E_NOTICE);
+        try {
+            return $fn();
+        } finally {
+            restore_error_handler();
+        }
+    }
 }
