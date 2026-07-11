@@ -259,12 +259,14 @@ class serving {
     /**
      * Parse a single-range Range header against a body of $totalsize bytes.
      *
-     * Returns null when no usable range applies — either no header at all, OR a
-     * malformed / multi-range / non-"bytes"-unit header. All of those are ignored
-     * and served as a normal 200 full response (a malformed Range is NOT a 416).
-     * Returns ['start'=>int,'end'=>int] for a satisfiable inclusive window (206),
-     * or the string 'unsatisfiable' for a syntactically valid single range that
-     * cannot be satisfied against this body (out of bounds / empty suffix) — 416.
+     * Returns null when no usable range applies — no header at all, OR a header
+     * that is ignored per RFC 9110: a non-"bytes" unit, a multi-range set,
+     * unparseable garbage, or an invalid spec whose last-byte-pos is below its
+     * first-byte-pos (e.g. bytes=5-2). All of those are served as a normal 200
+     * full response (an ignored Range is NOT a 416). Returns ['start'=>int,
+     * 'end'=>int] for a satisfiable inclusive window (206), or the string
+     * 'unsatisfiable' (416) for a syntactically VALID single range that cannot be
+     * satisfied against this body: first-byte-pos >= length, or a zero/empty suffix.
      *
      * @param string|null $value
      * @param int $totalsize
@@ -301,8 +303,10 @@ class serving {
             return ['start' => $start, 'end' => $totalsize - 1];
         }
         $end = (int) $rawend;
+        // An inverted spec (last-byte-pos < first-byte-pos) is invalid per RFC
+        // 9110: ignore the whole header and serve the full 200, never a 416.
         if ($end < $start) {
-            return 'unsatisfiable';
+            return null;
         }
         return ['start' => $start, 'end' => min($end, $totalsize - 1)];
     }

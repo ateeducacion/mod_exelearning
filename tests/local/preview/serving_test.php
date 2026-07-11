@@ -176,12 +176,14 @@ final class serving_test extends advanced_testcase {
         $this->assertSame(['start' => 7, 'end' => 9], serving::parse_range('bytes=-3', 10));
         $this->assertSame(['start' => 2, 'end' => 9], serving::parse_range('bytes=2-100', 10));
 
-        // Syntactically valid single ranges that cannot be satisfied → 416.
+        // Syntactically valid single ranges that cannot be satisfied → 416:
+        // first-byte-pos >= length, and a zero suffix.
         $this->assertSame('unsatisfiable', serving::parse_range('bytes=99-', 10));
-        $this->assertSame('unsatisfiable', serving::parse_range('bytes=5-2', 10));
         $this->assertSame('unsatisfiable', serving::parse_range('bytes=-0', 10));
 
-        // Malformed / multi-range / unsupported-unit → ignored (served as full 200).
+        // Ignored (served as full 200): non-"bytes" unit, multi-range, garbage,
+        // "bytes=-" (no bounds), and an inverted spec (last < first, RFC-invalid).
+        $this->assertNull(serving::parse_range('bytes=5-2', 10));
         $this->assertNull(serving::parse_range('bytes=-', 10));
         $this->assertNull(serving::parse_range('kilobytes=1-2', 10));
         $this->assertNull(serving::parse_range('bytes=0-1,3-4', 10));

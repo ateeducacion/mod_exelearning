@@ -107,9 +107,12 @@ Reference endpoint: [`preview.php`](../preview.php).
   A client path never becomes a filesystem path; only manifest-controlled paths
   reach the disk (under the distribution root, with containment checks).
 - **Range** on session assets — a single satisfiable range → `206`; a
-  syntactically valid but unsatisfiable single range → `416`; a malformed /
-  multi-range / non-`bytes` header is **ignored** and served as a normal `200`
-  full body (never `416`). **Conditional** (`ETag`/`304`) requests are honored.
+  syntactically **valid** but unsatisfiable single range (first-byte-pos ≥ length
+  e.g. `bytes=99-`, or a zero suffix `bytes=-0`) → `416`; everything else is
+  **ignored** and served as a normal `200` full body (never `416`): a non-`bytes`
+  unit, a multi-range set, unparseable garbage, and an inverted spec whose
+  last-byte-pos is below its first-byte-pos (`bytes=5-2`, RFC 9110 invalid).
+  **Conditional** (`ETag`/`304`) requests are honored.
 
 ## Required response headers (on every response, including 404s)
 
