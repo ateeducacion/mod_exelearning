@@ -100,7 +100,16 @@ final class conformance_test extends advanced_testcase {
         }
 
         $this->assertSame($step['expect']['status'], $response['status'], "status for {$context}");
-        $this->assert_headers($step['expect']['headers'] ?? [], $response['headers'] ?? [], $context);
+
+        // Substitute {previewId} in expected header string values (e.g. the
+        // bare-root redirect's relative Location) before matching.
+        $expectheaders = $step['expect']['headers'] ?? [];
+        foreach ($expectheaders as $name => $matcher) {
+            if (is_string($matcher)) {
+                $expectheaders[$name] = str_replace('{previewId}', $previewid, $matcher);
+            }
+        }
+        $this->assert_headers($expectheaders, $response['headers'] ?? [], $context);
 
         if (isset($step['expect']['bodyText'])) {
             $this->assertSame($step['expect']['bodyText'], $response['body'], "bodyText for {$context}");
@@ -168,15 +177,25 @@ final class conformance_test extends advanced_testcase {
      * @return array{status:int,headers:array,body:string}
      */
     private function run_serving(array $step, string $previewid, string $path): array {
-        $prefix = '/preview/' . $previewid . '/';
-        $relpath = (strpos($path, $prefix) === 0) ? substr($path, strlen($prefix)) : '';
+        // Split the capability tail below the serving base "/preview/", mirroring
+        // the thin serving endpoint (preview.php).
+        $tail = (strpos($path, '/preview/') === 0) ? substr($path, strlen('/preview/')) : '';
+        $parsed = serving::parse_capability_path($tail);
+
+        // Bare capability root -> 302 redirect to the entry document (relative
+        // Location), before any session lookup — as the endpoint does.
+        if ($parsed['bareroot']) {
+            return serving::redirect_to_index(
+                serving::bare_root_location($parsed['previewid'], $parsed['trailingslash'])
+            );
+        }
 
         $session = session_store::get_for_serving($previewid);
         if ($session === null) {
             return serving::not_found();
         }
         $headers = $step['request']['headers'] ?? [];
-        return serving::serve($session, $relpath, [
+        return serving::serve($session, $parsed['relpath'], [
             'ifnonematch' => $headers['If-None-Match'] ?? null,
             'range' => $headers['Range'] ?? null,
         ]);

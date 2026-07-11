@@ -232,22 +232,36 @@ final class serving_test extends advanced_testcase {
         $this->assertSame($id, $bare['previewid']);
         $this->assertSame('', $bare['relpath']);
         $this->assertTrue($bare['bareroot']);
+        $this->assertFalse($bare['trailingslash']);
 
         $bareslash = serving::parse_capability_path('/' . $id . '/');
         $this->assertSame($id, $bareslash['previewid']);
         $this->assertSame('', $bareslash['relpath']);
         $this->assertTrue($bareslash['bareroot']);
+        $this->assertTrue($bareslash['trailingslash']);
 
         $withpath = serving::parse_capability_path('/' . $id . '/html/page-2.html');
         $this->assertSame($id, $withpath['previewid']);
         $this->assertSame('html/page-2.html', $withpath['relpath']);
         $this->assertFalse($withpath['bareroot']);
+        $this->assertFalse($withpath['trailingslash']);
 
         // The leading slash is optional (get_file_argument may omit it).
         $noslash = serving::parse_capability_path($id . '/index.html');
         $this->assertSame($id, $noslash['previewid']);
         $this->assertSame('index.html', $noslash['relpath']);
         $this->assertFalse($noslash['bareroot']);
+    }
+
+    /**
+     * The bare-root Location is RELATIVE and resolves to the session's index.html
+     * against the request URL: "{previewId}/index.html" without a trailing slash,
+     * just "index.html" with one.
+     */
+    public function test_bare_root_location(): void {
+        $id = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeffff0000';
+        $this->assertSame($id . '/index.html', serving::bare_root_location($id, false));
+        $this->assertSame('index.html', serving::bare_root_location($id, true));
     }
 
     /**
@@ -298,5 +312,20 @@ final class serving_test extends advanced_testcase {
         $this->assertStringContainsString("'managementQuery'", $source);
         // Fails closed under the Playground: the block is omitted there.
         $this->assertStringContainsString('MOODLE_PLAYGROUND', $source);
+    }
+
+    /**
+     * The service-worker neutralization stub returns a faithful registration
+     * shape (non-empty scope + a no-op addEventListener), not a bare
+     * { scope: "" } that the editor's preview provider aborts on when it calls
+     * registration.addEventListener("updatefound", …).
+     */
+    public function test_editor_bootstrap_sw_stub_is_faithful(): void {
+        $source = file_get_contents(__DIR__ . '/../../../editor/index.php');
+        $this->assertNotFalse($source);
+        $this->assertStringContainsString('fakeSwRegistration', $source);
+        $this->assertStringContainsString('addEventListener: function() {}', $source);
+        // The bare stub that aborted the preview provider must be gone.
+        $this->assertStringNotContainsString('{ scope: "" }', $source);
     }
 }

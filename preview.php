@@ -85,10 +85,12 @@ if (!preg_match(serving::UUID_RE, $previewid)) {
 
 // Bare capability root ("/{previewId}" or "/{previewId}/") -> 302 to index.html,
 // so the opaque iframe's base URL is the session directory and document bytes are
-// never served from the bare URL. This is pure URL canonicalization, done before
-// the session lookup; the redirected request resolves the session and resource.
+// never served from the bare URL. The Location is RELATIVE (resolved against the
+// request URL) so it is correct under any $CFG->wwwroot subdirectory. Pure URL
+// canonicalization, done before the session lookup; the redirected request
+// resolves the session and resource.
 if ($parsed['bareroot']) {
-    $location = $CFG->wwwroot . '/mod/exelearning/preview.php/' . $previewid . '/index.html';
+    $location = serving::bare_root_location($previewid, $parsed['trailingslash']);
     exelearning_preview_send(serving::redirect_to_index($location));
 }
 

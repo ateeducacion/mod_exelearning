@@ -356,14 +356,36 @@ class serving {
      * document resolve against the session directory, not the bare capability).
      *
      * @param string $arg The raw slash-argument tail (a leading slash is optional).
-     * @return array{previewid:string,relpath:string,bareroot:bool}
+     * @return array{previewid:string,relpath:string,bareroot:bool,trailingslash:bool}
      */
     public static function parse_capability_path(string $arg): array {
         $arg = ltrim($arg, '/');
+        $trailingslash = ($arg !== '' && substr($arg, -1) === '/');
         $slash = strpos($arg, '/');
         $previewid = ($slash === false) ? $arg : substr($arg, 0, $slash);
         $relpath = ($slash === false) ? '' : substr($arg, $slash + 1);
-        return ['previewid' => $previewid, 'relpath' => $relpath, 'bareroot' => ($relpath === '')];
+        return [
+            'previewid' => $previewid,
+            'relpath' => $relpath,
+            'bareroot' => ($relpath === ''),
+            'trailingslash' => $trailingslash,
+        ];
+    }
+
+    /**
+     * The RELATIVE Location for the bare-root 302, resolved by the browser
+     * against the current request URL (so it stays correct under any BASE_PATH or
+     * the app:// origin — never hardcode the host). Without a trailing slash the
+     * previewId is the last path segment, so the target is `{previewId}/index.html`;
+     * with a trailing slash the request is already the session directory, so the
+     * target is just `index.html`.
+     *
+     * @param string $previewid
+     * @param bool $trailingslash Whether the requested bare URL ended with a slash.
+     * @return string
+     */
+    public static function bare_root_location(string $previewid, bool $trailingslash): string {
+        return $trailingslash ? 'index.html' : $previewid . '/index.html';
     }
 
     /**

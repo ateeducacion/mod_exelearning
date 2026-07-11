@@ -2,8 +2,12 @@
 
 `mod_exelearning` implements the eXeLearning **Preview Serving Contract v2** so
 the embedded editor can render the **preview of untrusted author HTML/JS** in a
-browser-enforced **opaque origin** over a real HTTP capability URL — instead of
-the lower-fidelity `srcdoc` fallback.
+browser-enforced **opaque origin** over a real HTTP capability URL served by this
+plugin. There is no `srcdoc` or Service-Worker fallback in the embed: when the
+HTTP preview is unavailable the editor **fails closed** with a clear error rather
+than silently downgrading the isolation boundary (the same-origin
+`static-service-worker` trusted-content mode is a standalone-only compatibility
+path, never used inside an embedded host).
 
 This is a per-host **adapter**. The single source of truth is eXe core:
 
@@ -101,7 +105,10 @@ Reference endpoint: [`preview.php`](../preview.php).
 - **Bare capability root** — `GET /preview.php/{previewId}` and
   `GET /preview.php/{previewId}/` (empty relative path) → **`302` redirect** to
   `{previewId}/index.html`. Document bytes are never served from the bare URL, so
-  the opaque iframe's base URL is always the session directory.
+  the opaque iframe's base URL is always the session directory. The `Location` is
+  **relative** (`{previewId}/index.html` without a trailing slash, `index.html`
+  with one) so it resolves against the request URL under any `$CFG->wwwroot`
+  subdirectory — matching the canonical conformance vector.
 - **Three-layer resolution** against the active revision only:
   `documents[path]` → `assets[assetRefs[path]]` → `manifest[fixedRefs[path]]` → `404`.
   A client path never becomes a filesystem path; only manifest-controlled paths
