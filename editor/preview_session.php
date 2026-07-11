@@ -87,13 +87,13 @@ try {
     $session = $owned['session'];
 
     if ($action === 'assets') {
-        $files = exelearning_preview_uploaded_files();
-        exelearning_preview_emit(serving::handle_assets_upload($session, $_POST['assets'] ?? null, $files));
+        $parts = exelearning_preview_uploaded_parts();
+        exelearning_preview_emit(serving::handle_assets_request($session, $_POST['assets'] ?? null, $parts));
     }
 
     if ($action === 'revision') {
-        $files = exelearning_preview_uploaded_files();
-        exelearning_preview_emit(serving::handle_revision_upload($session, $_POST['revision'] ?? null, $files));
+        $parts = exelearning_preview_uploaded_parts();
+        exelearning_preview_emit(serving::handle_revision_request($session, $_POST['revision'] ?? null, $parts));
     }
 
     if ($action === 'delete') {
@@ -108,29 +108,37 @@ try {
 }
 
 /**
- * Read the multipart files[] upload into an index-aligned array of byte strings.
+ * Read the multipart files[] upload into an index-aligned array of parts, each
+ * carrying its PHP upload error code, name and (when readable) bytes. A per-file
+ * upload error is NOT collapsed to empty content here — serving::collect_upload()
+ * rejects the whole batch instead, so a document that exceeded the server upload
+ * limit can never be published as a 0-byte file.
  *
- * @return string[]
+ * @return array<int,array{error:int,name:string,bytes:?string}>
  */
-function exelearning_preview_uploaded_files(): array {
+function exelearning_preview_uploaded_parts(): array {
     if (empty($_FILES['files']) || !isset($_FILES['files']['tmp_name'])) {
         return [];
     }
     $tmpnames = $_FILES['files']['tmp_name'];
     $errors = $_FILES['files']['error'];
+    $names = $_FILES['files']['name'] ?? [];
     // Normalize the single-file shape to arrays.
     if (!is_array($tmpnames)) {
         $tmpnames = [$tmpnames];
         $errors = [$errors];
+        $names = [$names];
     }
-    $files = [];
+    $parts = [];
     foreach ($tmpnames as $i => $tmpname) {
-        if ((int) $errors[$i] !== UPLOAD_ERR_OK || !is_uploaded_file($tmpname)) {
-            $files[] = '';
-            continue;
+        $error = isset($errors[$i]) ? (int) $errors[$i] : UPLOAD_ERR_NO_FILE;
+        $name = isset($names[$i]) ? (string) $names[$i] : '';
+        $bytes = null;
+        if ($error === UPLOAD_ERR_OK && is_uploaded_file($tmpname)) {
+            $read = file_get_contents($tmpname);
+            $bytes = ($read === false) ? null : $read;
         }
-        $bytes = file_get_contents($tmpname);
-        $files[] = ($bytes === false) ? '' : $bytes;
+        $parts[] = ['error' => $error, 'name' => $name, 'bytes' => $bytes];
     }
-    return $files;
+    return $parts;
 }

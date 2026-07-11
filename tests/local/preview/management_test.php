@@ -206,4 +206,99 @@ final class management_test extends advanced_testcase {
         $this->assertSame('unknown-fixed-resources', $result['body']['reason']);
         $this->assertSame(['libs/x.js'], $result['body']['resources']);
     }
+
+    /**
+     * A size upload error (php.ini upload_max_filesize) surfaces as 413 with the
+     * offending index/filename, and never as empty content.
+     */
+    public function test_collect_upload_size_error_is_413(): void {
+        $result = serving::collect_upload([
+            ['error' => UPLOAD_ERR_OK, 'name' => 'index.html', 'bytes' => 'A'],
+            ['error' => UPLOAD_ERR_INI_SIZE, 'name' => 'search-index.js', 'bytes' => null],
+        ]);
+        $this->assertFalse($result['ok']);
+        $this->assertSame(413, $result['status']);
+        $this->assertStringContainsString('search-index.js', $result['error']);
+    }
+
+    /**
+     * Any other upload failure (or an unreadable temp file) surfaces as 400.
+     */
+    public function test_collect_upload_other_errors_are_400(): void {
+        foreach ([UPLOAD_ERR_PARTIAL, UPLOAD_ERR_NO_TMP_DIR, UPLOAD_ERR_CANT_WRITE] as $code) {
+            $result = serving::collect_upload([['error' => $code, 'name' => 'x', 'bytes' => null]]);
+            $this->assertFalse($result['ok']);
+            $this->assertSame(400, $result['status']);
+        }
+        // Error OK but the bytes could not be read (missing/unreadable temp).
+        $unreadable = serving::collect_upload([['error' => UPLOAD_ERR_OK, 'name' => 'x', 'bytes' => null]]);
+        $this->assertFalse($unreadable['ok']);
+        $this->assertSame(400, $unreadable['status']);
+    }
+
+    /**
+     * With every part OK the bytes are returned index-aligned.
+     */
+    public function test_collect_upload_happy(): void {
+        $result = serving::collect_upload([
+            ['error' => UPLOAD_ERR_OK, 'name' => 'a', 'bytes' => 'AAA'],
+            ['error' => UPLOAD_ERR_OK, 'name' => 'b', 'bytes' => 'BB'],
+        ]);
+        $this->assertTrue($result['ok']);
+        $this->assertSame(['AAA', 'BB'], $result['files']);
+    }
+
+    /**
+     * A revision whose document upload tripped the php.ini size limit is REJECTED
+     * (413) and NO revision is published — the document must never be silently
+     * stored as a 0-byte file (the confirmed data-integrity bug).
+     */
+    public function test_revision_request_rejects_oversized_upload_without_publishing(): void {
+        $meta = json_encode([
+            'baseRevision' => 0, 'nextRevision' => 1,
+            'writes' => ['index.html'], 'deletes' => [], 'assetRefs' => [], 'fixedRefs' => [],
+        ]);
+        $parts = [['error' => UPLOAD_ERR_INI_SIZE, 'name' => 'index.html', 'bytes' => null]];
+        $result = serving::handle_revision_request($this->session(), $meta, $parts);
+
+        $this->assertSame(413, $result['status']);
+        // The store is untouched: still revision 0, and the document was not written.
+        $session = $this->session();
+        $this->assertSame(0, $session->revision);
+        $this->assertNull($session->get_file('index.html'));
+    }
+
+    /**
+     * A failed asset upload is rejected and nothing is stored (a later revision
+     * that references the key 422s on missing-assets).
+     */
+    public function test_assets_request_rejects_failed_upload(): void {
+        $assets = json_encode([['key' => self::PHOTO_KEY, 'size' => 3]]);
+        $parts = [['error' => UPLOAD_ERR_INI_SIZE, 'name' => 'photo.png', 'bytes' => null]];
+        $result = serving::handle_assets_request($this->session(), $assets, $parts);
+        $this->assertSame(413, $result['status']);
+
+        $meta = json_encode([
+            'baseRevision' => 0, 'nextRevision' => 1, 'writes' => [],
+            'assetRefs' => ['res/photo.png' => self::PHOTO_KEY], 'fixedRefs' => [],
+        ]);
+        $missing = serving::handle_revision_upload($this->session(), $meta, []);
+        $this->assertSame(422, $missing['status']);
+        $this->assertSame('missing-assets', $missing['body']['reason']);
+    }
+
+    /**
+     * A well-formed upload flows through the request wrapper and publishes.
+     */
+    public function test_revision_request_happy(): void {
+        $meta = json_encode([
+            'baseRevision' => 0, 'nextRevision' => 1,
+            'writes' => ['index.html'], 'deletes' => [], 'assetRefs' => [], 'fixedRefs' => [],
+        ]);
+        $parts = [['error' => UPLOAD_ERR_OK, 'name' => 'index.html', 'bytes' => '<h1>ok</h1>']];
+        $result = serving::handle_revision_request($this->session(), $meta, $parts);
+        $this->assertSame(200, $result['status']);
+        $this->assertSame(1, $result['body']['revision']);
+        $this->assertSame('<h1>ok</h1>', $this->session()->get_file('index.html')->bytes);
+    }
 }

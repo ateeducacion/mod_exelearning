@@ -541,6 +541,84 @@ class serving {
     }
 
     /**
+     * Validate a multipart files[] batch and extract its bytes in order, or fail
+     * the WHOLE batch. A per-file PHP upload error must NEVER be silently mapped
+     * to empty content: a document that trips php.ini upload_max_filesize (a large
+     * search index, a media-heavy page) would otherwise publish as a 0-byte file
+     * and the preview would show a blank page with no error reported. A size error
+     * (UPLOAD_ERR_INI_SIZE / _FORM_SIZE) is a 413; any other upload error, or a
+     * temp file that cannot be read, is a 400. The offending index/name is named.
+     *
+     * @param array<int,array{error:int,name:string,bytes:?string}> $parts
+     * @return array{ok:true,files:string[]}|array{ok:false,status:int,error:string}
+     */
+    public static function collect_upload(array $parts): array {
+        $files = [];
+        foreach ($parts as $index => $part) {
+            $error = isset($part['error']) ? (int) $part['error'] : UPLOAD_ERR_NO_FILE;
+            $name = (string) ($part['name'] ?? '');
+            $label = '#' . $index . ($name !== '' ? ' (' . $name . ')' : '');
+            if ($error === UPLOAD_ERR_INI_SIZE || $error === UPLOAD_ERR_FORM_SIZE) {
+                return self::upload_failure(413, 'Uploaded file ' . $label . ' exceeds the server upload size limit');
+            }
+            if ($error !== UPLOAD_ERR_OK) {
+                return self::upload_failure(400, 'Upload of file ' . $label . ' failed (error ' . $error . ')');
+            }
+            if (!is_string($part['bytes'] ?? null)) {
+                return self::upload_failure(400, 'Uploaded file ' . $label . ' could not be read');
+            }
+            $files[] = $part['bytes'];
+        }
+        return ['ok' => true, 'files' => $files];
+    }
+
+    /**
+     * Endpoint entry for an asset upload: validate the multipart batch (rejecting
+     * any failed or oversized part BEFORE storing anything), then delegate.
+     *
+     * @param preview_session $session
+     * @param mixed $rawassets
+     * @param array<int,array{error:int,name:string,bytes:?string}> $parts
+     * @return array{status:int,body:array}
+     */
+    public static function handle_assets_request(preview_session $session, $rawassets, array $parts): array {
+        $collected = self::collect_upload($parts);
+        if (!$collected['ok']) {
+            return self::error($collected['status'], $collected['error']);
+        }
+        return self::handle_assets_upload($session, $rawassets, $collected['files']);
+    }
+
+    /**
+     * Endpoint entry for a revision publish: validate the multipart batch
+     * (rejecting any failed or oversized part BEFORE apply_revision, so a partial
+     * upload never publishes a document as empty), then delegate.
+     *
+     * @param preview_session $session
+     * @param mixed $rawrevision
+     * @param array<int,array{error:int,name:string,bytes:?string}> $parts
+     * @return array{status:int,body:array}
+     */
+    public static function handle_revision_request(preview_session $session, $rawrevision, array $parts): array {
+        $collected = self::collect_upload($parts);
+        if (!$collected['ok']) {
+            return self::error($collected['status'], $collected['error']);
+        }
+        return self::handle_revision_upload($session, $rawrevision, $collected['files']);
+    }
+
+    /**
+     * Build a collect_upload() failure result.
+     *
+     * @param int $status
+     * @param string $message
+     * @return array{ok:false,status:int,error:string}
+     */
+    private static function upload_failure(int $status, string $message): array {
+        return ['ok' => false, 'status' => $status, 'error' => $message];
+    }
+
+    /**
      * Decode a management field that carries JSON. Multipart parsers deliver it
      * as a string; accept a pre-decoded value too.
      *
