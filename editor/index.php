@@ -241,12 +241,30 @@ $configscript = <<<EOT
     // the Yjs theme bind and leaves the editor unresponsive. WP and Omeka-S
     // ship the same workaround: swallow 404s on .css / idevices URLs and
     // return an empty stylesheet so the editor keeps booting.
-    // Disable any new service-worker registration (the static editor's
-    // preview-sw.js is served from the same static.php router; environments
-    // that proxy or cache that router — e.g. moodle-playground — return a
-    // 404 there and the registration error spams the console without
-    // blocking anything).
+    // Neutralize the static editor's preview-sw.js registration (its SW is
+    // served from the same static.php router; environments that proxy or cache
+    // that router — e.g. moodle-playground — 404 the SW script and the
+    // registration error spams the console). The stub MUST return a faithful
+    // ServiceWorkerRegistration shape, not a bare { scope: "" }: the editor's
+    // preview provider calls registration.addEventListener("updatefound", …) and
+    // reads installing/waiting/active, so a bare object throws "addEventListener
+    // is not a function" and aborts the preview/export iframe. A dummy with a
+    // non-empty scope, null workers (so the provider's activation wait resolves
+    // at once and it claims no clients) and no-op event/lifecycle methods lets
+    // the provider complete and fall back cleanly.
     (function() {
+        function fakeSwRegistration(options) {
+            return {
+                scope: (options && options.scope) || "/",
+                installing: null,
+                waiting: null,
+                active: null,
+                addEventListener: function() {},
+                removeEventListener: function() {},
+                update: function() { return Promise.resolve(); },
+                unregister: function() { return Promise.resolve(true); }
+            };
+        }
         if ("serviceWorker" in navigator) {
             try {
                 var registerOriginal = navigator.serviceWorker.register
@@ -254,11 +272,11 @@ $configscript = <<<EOT
                     : null;
                 navigator.serviceWorker.register = function(scriptURL, options) {
                     if (typeof scriptURL === "string" && scriptURL.indexOf("preview-sw.js") !== -1) {
-                        return Promise.resolve({ scope: "" });
+                        return Promise.resolve(fakeSwRegistration(options));
                     }
                     return registerOriginal
                         ? registerOriginal(scriptURL, options)
-                        : Promise.resolve({ scope: "" });
+                        : Promise.resolve(fakeSwRegistration(options));
                 };
             } catch (e) {
                 // Some embeds make navigator.serviceWorker non-writable; ignore.
