@@ -184,6 +184,9 @@ final class serving_test extends advanced_testcase {
         // Ignored (served as full 200): non-"bytes" unit, multi-range, garbage,
         // "bytes=-" (no bounds), and an inverted spec (last < first, RFC-invalid).
         $this->assertNull(serving::parse_range('bytes=5-2', 10));
+        // Structural invalidity wins over satisfiability: an inverted spec whose
+        // first-byte-pos is ALSO beyond the body is ignored (200), never a 416.
+        $this->assertNull(serving::parse_range('bytes=15-2', 10));
         $this->assertNull(serving::parse_range('bytes=-', 10));
         $this->assertNull(serving::parse_range('kilobytes=1-2', 10));
         $this->assertNull(serving::parse_range('bytes=0-1,3-4', 10));

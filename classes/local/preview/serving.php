@@ -296,17 +296,20 @@ class serving {
             return ['start' => max(0, $totalsize - $suffix), 'end' => $totalsize - 1];
         }
         $start = (int) $rawstart;
-        if ($start >= $totalsize) {
-            return 'unsatisfiable';
-        }
         if ($rawend === '') {
-            return ['start' => $start, 'end' => $totalsize - 1];
+            // Open-ended range: satisfiable iff the first-byte-pos is within the body.
+            return ($start >= $totalsize) ? 'unsatisfiable' : ['start' => $start, 'end' => $totalsize - 1];
         }
         $end = (int) $rawend;
-        // An inverted spec (last-byte-pos < first-byte-pos) is invalid per RFC
-        // 9110: ignore the whole header and serve the full 200, never a 416.
+        // Structural validity is checked BEFORE satisfiability: an inverted spec
+        // (last-byte-pos < first-byte-pos, e.g. bytes=15-2) is an invalid
+        // byte-range-spec per RFC 9110, so the header is ignored (200 full) — even
+        // when the first-byte-pos is also beyond the body, which alone would 416.
         if ($end < $start) {
             return null;
+        }
+        if ($start >= $totalsize) {
+            return 'unsatisfiable';
         }
         return ['start' => $start, 'end' => min($end, $totalsize - 1)];
     }
