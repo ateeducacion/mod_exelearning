@@ -325,7 +325,8 @@ final class serving_test extends advanced_testcase {
         $this->assertNotFalse($source);
         $this->assertStringContainsString('fakeSwRegistration', $source);
         $this->assertStringContainsString('addEventListener: function() {}', $source);
-        // The bare stub that aborted the preview provider must be gone.
-        $this->assertStringNotContainsString('{ scope: "" }', $source);
+        // No register path resolves the bare stub that aborted the preview
+        // provider (the explanatory comment names the shape, so match the return).
+        $this->assertStringNotContainsString('Promise.resolve({ scope: "" })', $source);
     }
 }
