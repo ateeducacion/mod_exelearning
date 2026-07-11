@@ -276,4 +276,22 @@ final class serving_test extends advanced_testcase {
         $this->assertStringContainsString("\$parsed['bareroot']", $source);
         $this->assertStringContainsString('redirect_to_index', $source);
     }
+
+    /**
+     * The editor bootstrap injects the normalized previewHttp activation block
+     * pointing at this plugin's two endpoints, and gates it on the Playground so a
+     * preview-capable editor build fails closed there (editor/index.php is an
+     * entry-point script outside coverage scope, so this asserts the wiring at the
+     * source level, like the preview.php checks above).
+     */
+    public function test_editor_bootstrap_injects_preview_http_config(): void {
+        $source = file_get_contents(__DIR__ . '/../../../editor/index.php');
+        $this->assertNotFalse($source);
+        $this->assertStringContainsString("'previewHttp'", $source);
+        $this->assertStringContainsString('/mod/exelearning/editor/preview_session.php', $source);
+        $this->assertStringContainsString('/mod/exelearning/preview.php', $source);
+        $this->assertStringContainsString("'managementQuery'", $source);
+        // Fails closed under the Playground: the block is omitted there.
+        $this->assertStringContainsString('MOODLE_PLAYGROUND', $source);
+    }
 }
