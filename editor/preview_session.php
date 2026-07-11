@@ -63,7 +63,7 @@ header('Content-Type: application/json; charset=utf-8');
 /**
  * Emit a management result ({status, body}) and stop.
  *
- * @param array{status:int,body:array} $result
+ * @param array $result Management result with 'status' and 'body' keys.
  * @return never
  */
 function exelearning_preview_emit(array $result): void {

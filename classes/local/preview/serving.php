@@ -340,7 +340,7 @@ class serving {
      *
      * @param preview_session $session The active session (already looked up).
      * @param string $relpath The requested path (below the capability prefix).
-     * @param array{ifnonematch?:string|null,range?:string|null} $reqheaders
+     * @param array $reqheaders Optional 'ifnonematch' and 'range' request-header values.
      * @return array{status:int,headers:array<string,string>,body:string}
      */
     public static function serve(preview_session $session, string $relpath, array $reqheaders): array {
@@ -556,7 +556,7 @@ class serving {
      * (UPLOAD_ERR_INI_SIZE / _FORM_SIZE) is a 413; any other upload error, or a
      * temp file that cannot be read, is a 400. The offending index/name is named.
      *
-     * @param array<int,array{error:int,name:string,bytes:?string}> $parts
+     * @param array $parts Upload parts, each ['error'=>int,'name'=>string,'bytes'=>?string].
      * @return array{ok:true,files:string[]}|array{ok:false,status:int,error:string}
      */
     public static function collect_upload(array $parts): array {
@@ -585,7 +585,7 @@ class serving {
      *
      * @param preview_session $session
      * @param mixed $rawassets
-     * @param array<int,array{error:int,name:string,bytes:?string}> $parts
+     * @param array $parts Upload parts, each ['error'=>int,'name'=>string,'bytes'=>?string].
      * @return array{status:int,body:array}
      */
     public static function handle_assets_request(preview_session $session, $rawassets, array $parts): array {
@@ -603,7 +603,7 @@ class serving {
      *
      * @param preview_session $session
      * @param mixed $rawrevision
-     * @param array<int,array{error:int,name:string,bytes:?string}> $parts
+     * @param array $parts Upload parts, each ['error'=>int,'name'=>string,'bytes'=>?string].
      * @return array{status:int,body:array}
      */
     public static function handle_revision_request(preview_session $session, $rawrevision, array $parts): array {

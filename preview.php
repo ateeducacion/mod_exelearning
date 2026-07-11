@@ -59,7 +59,7 @@ use mod_exelearning\local\preview\session_store;
  * Emit a serving response ({status, headers, body}) and stop. The hardening
  * headers ride on every response, 404s included.
  *
- * @param array{status:int,headers:array<string,string>,body:string} $response
+ * @param array $response Serving response with 'status', 'headers' and 'body' keys.
  * @return never
  */
 function exelearning_preview_send(array $response): void {

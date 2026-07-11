@@ -79,7 +79,7 @@ final class session_store_test extends advanced_testcase {
     /**
      * Store assets by (key => bytes), computing declared sizes honestly.
      *
-     * @param array<string,string> $assets
+     * @param array $assets Map of assetKey => raw bytes.
      * @return array
      */
     private function store(array $assets): array {
@@ -95,9 +95,9 @@ final class session_store_test extends advanced_testcase {
      *
      * @param int $base
      * @param int $next
-     * @param array<string,string> $writes
-     * @param array<string,string> $assetrefs
-     * @param array<string,string> $fixedrefs
+     * @param array $writes Map of served path => document bytes.
+     * @param array $assetrefs Map of served path => assetKey.
+     * @param array $fixedrefs Map of served path => fixedResourceId.
      * @param string[] $deletes
      * @return array
      */

@@ -103,7 +103,7 @@ final class session_store {
      * Override one or more limits (tests only) so the 413 / too-large / eviction
      * / TTL branches are exercisable without allocating the production budgets.
      *
-     * @param array<string,int> $overrides Keyed by the limits() keys.
+     * @param array $overrides Per-limit overrides, keyed by the limits() keys.
      */
     public static function set_limits_for_testing(array $overrides): void {
         self::$limitoverrides = $overrides;
@@ -322,7 +322,7 @@ final class session_store {
      * meta stay consistent under concurrent uploads.
      *
      * @param preview_session $session
-     * @param array<int,array{key:string,declaredsize:int,bytes:string}> $entries
+     * @param array $entries Upload entries, each ['key'=>string,'declaredsize'=>int,'bytes'=>string].
      * @return array{stored:string[],alreadyStored:string[],rejected:array<int,array{key:string,reason:string}>}
      */
     public static function store_assets(preview_session $session, array $entries): array {
@@ -393,7 +393,7 @@ final class session_store {
      *
      * @param preview_session $session
      * @param array $meta Keys: baserevision(int), nextrevision(int), deletes(string[]), assetrefs(map), fixedrefs(map).
-     * @param array<int,array{path:string,bytes:string}> $bufferedwrites
+     * @param array $bufferedwrites Buffered writes, each ['path'=>string,'bytes'=>string].
      * @return array Result: {revision,active} | {status,currentrevision|reason|missing|resources|message}
      */
     public static function apply_revision(preview_session $session, array $meta, array $bufferedwrites): array {
@@ -512,10 +512,10 @@ final class session_store {
      * @param string $dir Session directory.
      * @param int $active Currently active revision.
      * @param int $next New revision number.
-     * @param array<string,int> $newdocs Full document set path → size.
-     * @param array<string,string> $writes Changed documents path → bytes.
-     * @param array<string,string> $assetrefs
-     * @param array<string,string> $fixedrefs
+     * @param array $newdocs Full document set, path => size.
+     * @param array $writes Changed documents, path => bytes.
+     * @param array $assetrefs Full asset-ref map, served path => assetKey.
+     * @param array $fixedrefs Full fixed-ref map, served path => fixedResourceId.
      */
     private static function publish_revision(
         string $dir,
@@ -635,7 +635,7 @@ final class session_store {
     /**
      * The session with the oldest access time among $candidates.
      *
-     * @param array<int,\stdClass> $candidates
+     * @param array $candidates Session stdClass records to choose the LRU from.
      * @return \stdClass
      */
     private static function lru_of(array $candidates): \stdClass {
