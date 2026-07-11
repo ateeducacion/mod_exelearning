@@ -48,7 +48,7 @@ Older Moodle releases (3.x, 4.0–4.4) are **not** supported because the plugin
 relies on the multi-grade-item API (`get_grade_item_names` and the
 `itemnumber_mapping` interface) that was finalised in Moodle 4.5 LTS. The plugin is expected to keep
 working with newer Moodle releases as they appear; if you find an incompatibility
-please open an issue at <https://github.com/exelearning/mod_exelearning/issues>.
+please open an issue at <https://github.com/exelearning/exelearning/issues> (label `moodle`).
 
 ### Requirements
 
@@ -257,8 +257,11 @@ source fixtures and analysis notes, lives under
 
 ## Support
 
-Please report bugs and feature requests on the GitHub issue tracker:
-<https://github.com/exelearning/mod_exelearning/issues>
+Issue tracking for this plugin is centralized in the main
+[`exelearning/exelearning`](https://github.com/exelearning/exelearning) repository.
+Please [open new issues there](https://github.com/exelearning/exelearning/issues/new),
+and browse [existing `moodle`-labeled issues](https://github.com/exelearning/exelearning/issues?q=is%3Aissue+label%3Amoodle)
+before reporting a bug or requesting a feature.
 
 ## About
 
