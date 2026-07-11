@@ -43,6 +43,12 @@
 // is the only credential; an auth cookie must not influence the response.
 define('NO_MOODLE_COOKIES', true);
 
+// Raw byte-exact body: suppress any debug notice/warning that would otherwise be
+// prepended to the served preview/asset bytes (and could defeat the headers/CSP
+// contract) on a site with $CFG->debugdisplay enabled. The standard pattern for
+// file-serving endpoints (tokenpluginfile / pluginfile-style scripts).
+define('NO_DEBUG_DISPLAY', true);
+
 // @codingStandardsIgnoreLine — path is fixed relative to /mod/exelearning/.
 require(__DIR__ . '/../../config.php');
 

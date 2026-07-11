@@ -130,6 +130,39 @@ final class serving_test extends advanced_testcase {
     }
 
     /**
+     * Byte-for-byte parity with core: JS decodeURIComponent throws (=> null =>
+     * 404) on percent-sequences that decode to invalid UTF-8, so the PHP mirror
+     * must reject them too — an overlong '/', a lone continuation byte, and a
+     * lone surrogate — rather than passing the raw bytes through. Valid encoding
+     * (ASCII and multibyte) still resolves.
+     */
+    public function test_normalize_content_path_rejects_invalid_utf8(): void {
+        $this->assertNull(serving::normalize_content_path('%C0%AF'));
+        $this->assertNull(serving::normalize_content_path('a%C0%AFb'));
+        $this->assertNull(serving::normalize_content_path('%80'));
+        $this->assertNull(serving::normalize_content_path('%ED%A0%80'));
+
+        $this->assertSame('html/page-2.html', serving::normalize_content_path('html/page-2.html'));
+        $this->assertSame("resum\u{00e9}.html", serving::normalize_content_path('resum%C3%A9.html'));
+    }
+
+    /**
+     * The authless serving endpoint must suppress debug output: any notice or
+     * warning printed on a $CFG->debugdisplay-on site would prepend garbage to
+     * the byte-exact preview/asset body (and could defeat the headers/CSP
+     * contract). preview.php defines NO_DEBUG_DISPLAY before requiring config.
+     */
+    public function test_serving_endpoint_suppresses_debug_output(): void {
+        $source = file_get_contents(__DIR__ . '/../../../preview.php');
+        $this->assertNotFalse($source);
+        $definepos = strpos($source, "define('NO_DEBUG_DISPLAY', true);");
+        $requirepos = strpos($source, "require(__DIR__ . '/../../config.php');");
+        $this->assertNotFalse($definepos, 'preview.php must define NO_DEBUG_DISPLAY');
+        $this->assertNotFalse($requirepos);
+        $this->assertLessThan($requirepos, $definepos, 'NO_DEBUG_DISPLAY must be defined before config.php');
+    }
+
+    /**
      * A single-range Range header parses to an inclusive window, a suffix window,
      * or the 'unsatisfiable' sentinel (416); no header is null.
      */

@@ -200,6 +200,13 @@ class serving {
             return null;
         }
         $path = rawurldecode($path);
+        // JS decodeURIComponent also throws on percent-sequences that decode to
+        // invalid UTF-8 (overlong forms like %C0%AF, lone continuation bytes,
+        // lone surrogates); reject those too so an overlong-encoded separator
+        // cannot slip through as raw bytes.
+        if (mb_check_encoding($path, 'UTF-8') === false) {
+            return null;
+        }
         // Backslashes are literal (not separators) in the content map; a NUL is invalid.
         if (strpos($path, "\0") !== false) {
             return null;
