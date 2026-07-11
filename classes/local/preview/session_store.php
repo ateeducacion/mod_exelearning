@@ -83,6 +83,9 @@ final class session_store {
     /** @var array<string,int> Per-limit overrides for tests. */
     private static $limitoverrides = [];
 
+    /** @var int enumerate() call count; a test seam for the once-per-batch scan guarantee. */
+    private static $enumeratecount = 0;
+
     /**
      * Point the store at an explicit storage root (tests only).
      *
@@ -114,6 +117,23 @@ final class session_store {
      */
     public static function reset_limits_for_testing(): void {
         self::$limitoverrides = [];
+    }
+
+    /**
+     * enumerate() invocations since the last reset (tests only): proves the
+     * global-ceiling scan runs once per asset batch, not once per entry.
+     *
+     * @return int
+     */
+    public static function enumerate_count_for_testing(): int {
+        return self::$enumeratecount;
+    }
+
+    /**
+     * Reset the enumerate() call counter (tests only).
+     */
+    public static function reset_enumerate_count_for_testing(): void {
+        self::$enumeratecount = 0;
     }
 
     /**
@@ -338,6 +358,14 @@ final class session_store {
             $assetbytes = (int) ($meta['assetbytes'] ?? 0);
             $documentbytes = (int) ($meta['documentbytes'] ?? 0);
 
+            // Global-ceiling snapshot, scanned at most ONCE per batch. enumerate()
+            // is O(sessions on disk); calling it per entry made an M-asset upload
+            // O(M × sessions). Take the snapshot lazily on the first entry that
+            // reaches the global check, then evict from (and mutate) it in place
+            // for the rest of the batch — never re-enumerating.
+            $others = null;
+            $otherstotal = 0;
+
             foreach ($entries as $entry) {
                 $key = $entry['key'] ?? '';
                 if (!preg_match(self::ASSET_KEY_RE, $key)) {
@@ -361,7 +389,10 @@ final class session_store {
                     $rejected[] = ['key' => $key, 'reason' => 'session-budget-exceeded'];
                     continue;
                 }
-                if (!self::evict_others_for_budget($session->previewid, $assetbytes + $documentbytes, $len)) {
+                if ($others === null) {
+                    [$others, $otherstotal] = self::snapshot_other_sessions($session->previewid);
+                }
+                if (!self::fit_under_global_ceiling($assetbytes + $documentbytes, $len, $others, $otherstotal)) {
                     $rejected[] = ['key' => $key, 'reason' => 'global-budget-exceeded'];
                     continue;
                 }
@@ -663,19 +694,54 @@ final class session_store {
      * @return bool
      */
     private static function evict_others_for_budget(string $currentid, int $currentbytes, int $incoming): bool {
+        [$others, $otherstotal] = self::snapshot_other_sessions($currentid);
+        return self::fit_under_global_ceiling($currentbytes, $incoming, $others, $otherstotal);
+    }
+
+    /**
+     * Snapshot every session except $currentid with ONE full-store enumerate,
+     * returning the list (LRU-orderable) and the sum of their bytes. Callers reuse
+     * one snapshot across a whole asset batch so the global-ceiling check stays
+     * O(sessions) per batch instead of O(entries × sessions).
+     *
+     * @param string $currentid The session to exclude (never evicted).
+     * @return array{0:array<int,\stdClass>,1:int} [others, sum-of-their-bytes]
+     */
+    private static function snapshot_other_sessions(string $currentid): array {
         $others = array_values(array_filter(self::enumerate(), function ($s) use ($currentid) {
             return $s->previewid !== $currentid;
         }));
-        $othersbytes = array_sum(array_map(function ($s) {
+        $total = array_sum(array_map(function ($s) {
             return $s->bytes;
         }, $others));
-        while ($currentbytes + $othersbytes + $incoming > self::limitof('globalmaxbytes')) {
+        return [$others, $total];
+    }
+
+    /**
+     * Fit $incoming bytes under the global ceiling by LRU-evicting other sessions
+     * from a pre-built snapshot, mutating both $others and $otherstotal in place
+     * (never re-enumerating). Returns false when it cannot fit even after evicting
+     * every other session.
+     *
+     * @param int $currentbytes Bytes the current session already holds.
+     * @param int $incoming Additional bytes to accommodate.
+     * @param array $others Snapshot of the other sessions; evicted entries are removed.
+     * @param int $otherstotal Sum of $others bytes; decremented as sessions are evicted.
+     * @return bool
+     */
+    private static function fit_under_global_ceiling(
+        int $currentbytes,
+        int $incoming,
+        array &$others,
+        int &$otherstotal
+    ): bool {
+        while ($currentbytes + $otherstotal + $incoming > self::limitof('globalmaxbytes')) {
             if (empty($others)) {
                 return false;
             }
             $lru = self::lru_of($others);
             self::delete_session($lru->previewid);
-            $othersbytes -= $lru->bytes;
+            $otherstotal -= $lru->bytes;
             $others = array_values(array_filter($others, function ($s) use ($lru) {
                 return $s->previewid !== $lru->previewid;
             }));
@@ -705,6 +771,7 @@ final class session_store {
      * @return array<int,\stdClass> Objects with {previewid, dir, owneruserid, lastaccess, bytes}.
      */
     private static function enumerate(): array {
+        self::$enumeratecount++;
         $base = self::base_dir_path();
         if (!is_dir($base)) {
             return [];

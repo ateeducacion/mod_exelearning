@@ -61,6 +61,7 @@ final class session_store_test extends advanced_testcase {
     protected function tearDown(): void {
         session_store::reset_root_for_testing();
         session_store::reset_limits_for_testing();
+        session_store::reset_enumerate_count_for_testing();
         fixed_resources::reset();
         parent::tearDown();
     }
@@ -478,6 +479,50 @@ final class session_store_test extends advanced_testcase {
 
         $unsatisfiable = serving::serve($session, 'media/clip.bin', ['range' => 'bytes=99-']);
         $this->assertSame(416, $unsatisfiable['status']);
+    }
+
+    /**
+     * A multi-asset upload scans the store (enumerate/scandir) exactly ONCE for
+     * the whole batch, not once per entry — the per-entry scan was O(entries ×
+     * sessions) and would enumerate() five times for this five-asset batch.
+     */
+    public function test_store_assets_scans_the_store_once_per_batch(): void {
+        $assets = [];
+        for ($i = 1; $i <= 5; $i++) {
+            $key = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeffff' . sprintf('%04d', $i) . '@' . sprintf('%08d', $i);
+            $assets[$key] = 'bytes-' . $i;
+        }
+
+        session_store::reset_enumerate_count_for_testing();
+        $result = $this->store($assets);
+
+        $this->assertCount(5, $result['stored']);
+        $this->assertSame(1, session_store::enumerate_count_for_testing());
+    }
+
+    /**
+     * Storing under a tight global ceiling still LRU-evicts other sessions from
+     * the once-per-batch snapshot (behaviour preserved by the O(1)-per-entry
+     * refactor): a second session's asset fits only after the older session is
+     * evicted.
+     */
+    public function test_store_assets_evicts_lru_under_global_ceiling(): void {
+        session_store::set_limits_for_testing(['globalmaxbytes' => 12]);
+
+        // Session A holds 8 bytes and is made the least-recently-accessed.
+        $this->store([self::PHOTO_KEY => '01234567']);
+        touch($this->root . '/' . $this->previewid . '/access', time() - 100);
+
+        // Session B stores 8 bytes: 8 (B) + 8 (A) = 16 > 12, so A must be evicted.
+        $b = session_store::create_session($this->userid);
+        $result = session_store::store_assets(
+            session_store::get_owned($b, $this->userid)['session'],
+            [['key' => self::CLIP_KEY, 'declaredsize' => 8, 'bytes' => '89abcdef']]
+        );
+
+        $this->assertSame([self::CLIP_KEY], $result['stored']);
+        $this->assertSame(404, session_store::get_owned($this->previewid, $this->userid)['status']);
+        $this->assertSame(200, session_store::get_owned($b, $this->userid)['status']);
     }
 
     /**
