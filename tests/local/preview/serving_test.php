@@ -163,8 +163,10 @@ final class serving_test extends advanced_testcase {
     }
 
     /**
-     * A single-range Range header parses to an inclusive window, a suffix window,
-     * or the 'unsatisfiable' sentinel (416); no header is null.
+     * A single-range Range header parses to an inclusive window or a suffix
+     * window; a syntactically valid but unsatisfiable single range is the
+     * 'unsatisfiable' sentinel (416); no header, a malformed header, a multi-range
+     * set, or a non-"bytes" unit are all ignored (null ⇒ a normal 200 full body).
      */
     public function test_parse_range(): void {
         $this->assertNull(serving::parse_range(null, 10));
@@ -173,11 +175,18 @@ final class serving_test extends advanced_testcase {
         $this->assertSame(['start' => 2, 'end' => 9], serving::parse_range('bytes=2-', 10));
         $this->assertSame(['start' => 7, 'end' => 9], serving::parse_range('bytes=-3', 10));
         $this->assertSame(['start' => 2, 'end' => 9], serving::parse_range('bytes=2-100', 10));
+
+        // Syntactically valid single ranges that cannot be satisfied → 416.
         $this->assertSame('unsatisfiable', serving::parse_range('bytes=99-', 10));
         $this->assertSame('unsatisfiable', serving::parse_range('bytes=5-2', 10));
-        $this->assertSame('unsatisfiable', serving::parse_range('bytes=-', 10));
         $this->assertSame('unsatisfiable', serving::parse_range('bytes=-0', 10));
-        $this->assertSame('unsatisfiable', serving::parse_range('kilobytes=1-2', 10));
+
+        // Malformed / multi-range / unsupported-unit → ignored (served as full 200).
+        $this->assertNull(serving::parse_range('bytes=-', 10));
+        $this->assertNull(serving::parse_range('kilobytes=1-2', 10));
+        $this->assertNull(serving::parse_range('bytes=0-1,3-4', 10));
+        $this->assertNull(serving::parse_range('bytes=abc', 10));
+        $this->assertNull(serving::parse_range('bytes=1-2-3', 10));
     }
 
     /**
@@ -204,5 +213,67 @@ final class serving_test extends advanced_testcase {
         $this->assertSame('*', $response['headers']['Access-Control-Allow-Origin']);
         $this->assertArrayNotHasKey('Content-Security-Policy', $response['headers']);
         $this->assertSame('Not found', $response['body']);
+    }
+
+    /**
+     * The capability-path split flags the bare-root form ("/{previewId}" and
+     * "/{previewId}/") so the endpoint can redirect it, and otherwise returns the
+     * previewId + the relative path (a leading slash is optional).
+     */
+    public function test_parse_capability_path(): void {
+        $id = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeffff0000';
+
+        $bare = serving::parse_capability_path('/' . $id);
+        $this->assertSame($id, $bare['previewid']);
+        $this->assertSame('', $bare['relpath']);
+        $this->assertTrue($bare['bareroot']);
+
+        $bareslash = serving::parse_capability_path('/' . $id . '/');
+        $this->assertSame($id, $bareslash['previewid']);
+        $this->assertSame('', $bareslash['relpath']);
+        $this->assertTrue($bareslash['bareroot']);
+
+        $withpath = serving::parse_capability_path('/' . $id . '/html/page-2.html');
+        $this->assertSame($id, $withpath['previewid']);
+        $this->assertSame('html/page-2.html', $withpath['relpath']);
+        $this->assertFalse($withpath['bareroot']);
+
+        // The leading slash is optional (get_file_argument may omit it).
+        $noslash = serving::parse_capability_path($id . '/index.html');
+        $this->assertSame($id, $noslash['previewid']);
+        $this->assertSame('index.html', $noslash['relpath']);
+        $this->assertFalse($noslash['bareroot']);
+    }
+
+    /**
+     * The bare-root redirect is a 302 to index.html carrying the base hardening
+     * headers + no-store, and never a CSP.
+     */
+    public function test_redirect_to_index(): void {
+        $location = 'https://moodle.example/mod/exelearning/preview.php/'
+            . 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeffff0000/index.html';
+        $response = serving::redirect_to_index($location);
+        $this->assertSame(302, $response['status']);
+        $this->assertSame($location, $response['headers']['Location']);
+        $this->assertSame('no-store', $response['headers']['Cache-Control']);
+        $this->assertSame('nosniff', $response['headers']['X-Content-Type-Options']);
+        $this->assertSame('*', $response['headers']['Access-Control-Allow-Origin']);
+        $this->assertArrayNotHasKey('Content-Security-Policy', $response['headers']);
+        $this->assertSame('', $response['body']);
+    }
+
+    /**
+     * The serving endpoint wires the bare-root redirect: preview.php splits the
+     * capability path and, on the bare-root form, emits redirect_to_index rather
+     * than serving document bytes (the entry-point script is out of coverage
+     * scope, so this asserts the wiring at the source level, like the
+     * NO_DEBUG_DISPLAY check above).
+     */
+    public function test_serving_endpoint_redirects_bare_root(): void {
+        $source = file_get_contents(__DIR__ . '/../../../preview.php');
+        $this->assertNotFalse($source);
+        $this->assertStringContainsString('parse_capability_path', $source);
+        $this->assertStringContainsString("\$parsed['bareroot']", $source);
+        $this->assertStringContainsString('redirect_to_index', $source);
     }
 }

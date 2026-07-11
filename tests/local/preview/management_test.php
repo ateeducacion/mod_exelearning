@@ -301,4 +301,60 @@ final class management_test extends advanced_testcase {
         $this->assertSame(1, $result['body']['revision']);
         $this->assertSame('<h1>ok</h1>', $this->session()->get_file('index.html')->bytes);
     }
+
+    /**
+     * The normalized dispatcher maps HTTP method + PATH_INFO onto the four
+     * contract operations (create / assets / revision / delete), replacing the
+     * legacy action= parameter. cmid and sesskey stay in the query, never the path.
+     */
+    public function test_route_management_maps_operations(): void {
+        $id = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeffff0000';
+
+        $create = serving::route_management('POST', '');
+        $this->assertSame('create', $create['op']);
+        $this->assertNull($create['previewid']);
+        // A bare "/" PATH_INFO is create too.
+        $this->assertSame('create', serving::route_management('POST', '/')['op']);
+
+        $assets = serving::route_management('POST', '/' . $id . '/assets');
+        $this->assertSame('assets', $assets['op']);
+        $this->assertSame($id, $assets['previewid']);
+
+        $revision = serving::route_management('POST', '/' . $id . '/revisions');
+        $this->assertSame('revision', $revision['op']);
+        $this->assertSame($id, $revision['previewid']);
+
+        $delete = serving::route_management('DELETE', '/' . $id);
+        $this->assertSame('delete', $delete['op']);
+        $this->assertSame($id, $delete['previewid']);
+    }
+
+    /**
+     * A known route with the wrong method is 405 (and names the allowed method);
+     * an unknown or too-deep path is 404. No action= back-compat remains.
+     */
+    public function test_route_management_rejects_bad_method_and_path(): void {
+        $id = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeffff0000';
+
+        $wrongcreate = serving::route_management('GET', '');
+        $this->assertSame('error', $wrongcreate['op']);
+        $this->assertSame(405, $wrongcreate['status']);
+        $this->assertSame('POST', $wrongcreate['allow']);
+
+        $wrongdelete = serving::route_management('POST', '/' . $id);
+        $this->assertSame(405, $wrongdelete['status']);
+        $this->assertSame('DELETE', $wrongdelete['allow']);
+
+        $wrongassets = serving::route_management('GET', '/' . $id . '/assets');
+        $this->assertSame(405, $wrongassets['status']);
+        $this->assertSame('POST', $wrongassets['allow']);
+
+        $unknown = serving::route_management('POST', '/' . $id . '/frobnicate');
+        $this->assertSame('error', $unknown['op']);
+        $this->assertSame(404, $unknown['status']);
+        $this->assertNull($unknown['allow']);
+
+        $toodeep = serving::route_management('POST', '/' . $id . '/assets/extra');
+        $this->assertSame(404, $toodeep['status']);
+    }
 }

@@ -74,14 +74,22 @@ function exelearning_preview_send(array $response): void {
 // Slash arguments: PATH_INFO is "/{previewId}/{relpath}". get_file_argument()
 // reads it robustly whether or not $CFG->slasharguments is enabled (the same
 // helper pluginfile.php / tokenpluginfile.php use).
-$arg = ltrim((string) get_file_argument(), '/');
-$slash = strpos($arg, '/');
-$previewid = ($slash === false) ? $arg : substr($arg, 0, $slash);
-$relpath = ($slash === false) ? '' : substr($arg, $slash + 1);
+$parsed = serving::parse_capability_path((string) get_file_argument());
+$previewid = $parsed['previewid'];
+$relpath = $parsed['relpath'];
 
 // Invalid capability shape -> 404 (with base headers, no CSP).
 if (!preg_match(serving::UUID_RE, $previewid)) {
     exelearning_preview_send(serving::not_found());
+}
+
+// Bare capability root ("/{previewId}" or "/{previewId}/") -> 302 to index.html,
+// so the opaque iframe's base URL is the session directory and document bytes are
+// never served from the bare URL. This is pure URL canonicalization, done before
+// the session lookup; the redirected request resolves the session and resource.
+if ($parsed['bareroot']) {
+    $location = $CFG->wwwroot . '/mod/exelearning/preview.php/' . $previewid . '/index.html';
+    exelearning_preview_send(serving::redirect_to_index($location));
 }
 
 // Cookieless capability lookup: unknown or idle-expired session -> 404.
