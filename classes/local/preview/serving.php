@@ -258,9 +258,13 @@ class serving {
 
     /**
      * Parse a single-range Range header against a body of $totalsize bytes.
-     * Returns null when no range was requested, ['start'=>int,'end'=>int] for a
-     * satisfiable inclusive window, or the string 'unsatisfiable' for anything
-     * else (multi-range, malformed, out of bounds) — those answer 416.
+     *
+     * Returns null when no usable range applies — either no header at all, OR a
+     * malformed / multi-range / non-"bytes"-unit header. All of those are ignored
+     * and served as a normal 200 full response (a malformed Range is NOT a 416).
+     * Returns ['start'=>int,'end'=>int] for a satisfiable inclusive window (206),
+     * or the string 'unsatisfiable' for a syntactically valid single range that
+     * cannot be satisfied against this body (out of bounds / empty suffix) — 416.
      *
      * @param string|null $value
      * @param int $totalsize
@@ -270,13 +274,17 @@ class serving {
         if ($value === null || $value === '') {
             return null;
         }
+        // Malformed grammar, a multi-range set (comma), or a non-"bytes" unit is
+        // ignored: RFC 7233 says an unparsable Range must be treated as absent
+        // (serve the full 200), never as unsatisfiable.
         if (!preg_match('/^bytes=(\d*)-(\d*)$/', trim($value), $match)) {
-            return 'unsatisfiable';
+            return null;
         }
         $rawstart = $match[1];
         $rawend = $match[2];
+        // A "bytes=-" header carries neither a position nor a suffix: malformed, ignore.
         if ($rawstart === '' && $rawend === '') {
-            return 'unsatisfiable';
+            return null;
         }
         if ($rawstart === '') {
             $suffix = (int) $rawend;
@@ -331,6 +339,41 @@ class serving {
         $headers['Cache-Control'] = 'no-store';
         $headers['Content-Type'] = 'text/plain; charset=utf-8';
         return ['status' => 404, 'headers' => $headers, 'body' => 'Not found'];
+    }
+
+    /**
+     * Split the capability URL tail "/{previewId}/{relpath}" into its parts. The
+     * bare form ("/{previewId}" or "/{previewId}/", i.e. an empty relpath) is
+     * flagged so the serving endpoint can 302-redirect it to index.html rather
+     * than serve document bytes from the bare URL (relative resources in the
+     * document resolve against the session directory, not the bare capability).
+     *
+     * @param string $arg The raw slash-argument tail (a leading slash is optional).
+     * @return array{previewid:string,relpath:string,bareroot:bool}
+     */
+    public static function parse_capability_path(string $arg): array {
+        $arg = ltrim($arg, '/');
+        $slash = strpos($arg, '/');
+        $previewid = ($slash === false) ? $arg : substr($arg, 0, $slash);
+        $relpath = ($slash === false) ? '' : substr($arg, $slash + 1);
+        return ['previewid' => $previewid, 'relpath' => $relpath, 'bareroot' => ($relpath === '')];
+    }
+
+    /**
+     * The 302 response for the bare capability root: redirect to the session's
+     * index.html so the opaque iframe's base URL is the session directory and no
+     * document bytes are ever served from the bare URL. Carries the base
+     * hardening headers + no-store, like every other serving response, and never
+     * a CSP (a redirect has no scriptable body).
+     *
+     * @param string $location Absolute URL of the session's index.html.
+     * @return array{status:int,headers:array<string,string>,body:string}
+     */
+    public static function redirect_to_index(string $location): array {
+        $headers = self::base_headers();
+        $headers['Cache-Control'] = 'no-store';
+        $headers['Location'] = $location;
+        return ['status' => 302, 'headers' => $headers, 'body' => ''];
     }
 
     /**
@@ -390,6 +433,67 @@ class serving {
     }
 
     // Management-endpoint helpers (authenticated, owner-scoped).
+
+    /**
+     * Route a management request from its HTTP method and PATH_INFO tail onto one
+     * of the four contract operations, replacing the legacy action= dispatch:
+     *
+     *   POST   {script}                      → create
+     *   POST   {script}/{previewId}/assets    → assets
+     *   POST   {script}/{previewId}/revisions → revision
+     *   DELETE {script}/{previewId}           → delete
+     *
+     * On a match returns ['op'=>string,'previewid'=>?string]; a known path with
+     * the wrong method returns an 'error' op with status 405 and the Allow value;
+     * an unknown path returns an 'error' op with status 404.
+     *
+     * @param string $method The request's HTTP method.
+     * @param string $pathinfo The PATH_INFO tail (leading/trailing slashes optional).
+     * @return array{op:string,previewid?:?string,status?:int,allow?:?string,message?:string}
+     */
+    public static function route_management(string $method, string $pathinfo): array {
+        $method = strtoupper($method);
+        $segments = array_values(array_filter(
+            explode('/', trim($pathinfo, '/')),
+            static function ($segment) {
+                return $segment !== '';
+            }
+        ));
+
+        if (count($segments) === 0) {
+            return ($method === 'POST')
+                ? ['op' => 'create', 'previewid' => null]
+                : self::route_error(405, 'POST', 'Method not allowed');
+        }
+        if (count($segments) === 1) {
+            return ($method === 'DELETE')
+                ? ['op' => 'delete', 'previewid' => $segments[0]]
+                : self::route_error(405, 'DELETE', 'Method not allowed');
+        }
+        if (count($segments) === 2 && $segments[1] === 'assets') {
+            return ($method === 'POST')
+                ? ['op' => 'assets', 'previewid' => $segments[0]]
+                : self::route_error(405, 'POST', 'Method not allowed');
+        }
+        if (count($segments) === 2 && $segments[1] === 'revisions') {
+            return ($method === 'POST')
+                ? ['op' => 'revision', 'previewid' => $segments[0]]
+                : self::route_error(405, 'POST', 'Method not allowed');
+        }
+        return self::route_error(404, null, 'Unknown preview management route');
+    }
+
+    /**
+     * Build a route_management() error result.
+     *
+     * @param int $status
+     * @param string|null $allow The Allow header value for a 405, or null.
+     * @param string $message
+     * @return array{op:string,status:int,allow:?string,message:string}
+     */
+    private static function route_error(int $status, ?string $allow, string $message): array {
+        return ['op' => 'error', 'status' => $status, 'allow' => $allow, 'message' => $message];
+    }
 
     /**
      * 201 body for create-session.
