@@ -43,17 +43,24 @@ serving, a file-backed session store, sesskey-gated management, a scheduled task
 
 ## A. Management API (authenticated — the author's session)
 
-A single AJAX dispatcher, `editor/preview_session.php`, gated by
+A single dispatcher, `editor/preview_session.php`, gated by
 `require_login` + `require_sesskey` + `require_capability('moodle/course:manageactivities')`
-on the activity's module context and owner-scoped to `$USER` (the idiom of
-`editor/save.php`). It maps the contract's four operations onto an `action` param:
+on the activity's module context and owner-scoped to `$USER`. It routes the
+contract's four operations by **HTTP method + PATH_INFO** (the same slash-argument
+shape `preview.php` serves), never a query `action`. `cmid` and `sesskey` stay in
+the query string on every request; the client sends them as `managementQuery`:
 
-| Contract operation | Dispatcher call | Success |
+| Contract operation | Request | Success |
 |---|---|---|
-| `POST /api/preview-session` | `action=create` | `201 {previewId, protocolVersion: 2, revision: 0, limits}` |
-| `POST /api/preview-session/:id/assets` | `action=assets` (multipart: `assets` JSON `[{key,size}]`, `files[]`) | `200 {stored, alreadyStored, rejected}` |
-| `POST /api/preview-session/:id/revisions` | `action=revision` (multipart: `revision` JSON, `files[]`) | `200 {revision, active: true}` |
-| `DELETE /api/preview-session/:id` | `action=delete` | `200 {success: true}` |
+| create | `POST {script}` | `201 {previewId, protocolVersion: 2, revision: 0, limits}` |
+| assets | `POST {script}/{previewId}/assets` (multipart: `assets` JSON `[{key,size}]`, `files[]`) | `200 {stored, alreadyStored, rejected}` |
+| revision | `POST {script}/{previewId}/revisions` (multipart: `revision` JSON, `files[]`) | `200 {revision, active: true}` |
+| delete | `DELETE {script}/{previewId}` | `200 {success: true}` |
+
+`{script}` is `{wwwroot}/mod/exelearning/editor/preview_session.php`. The routing
+lives in `serving::route_management()` (method + path → operation); an unknown path
+is `404` and a known path with the wrong method is `405` (with an `Allow` header).
+There is no `action=` back-compat shim.
 
 Enforced v2 semantics (identical to core):
 
@@ -61,12 +68,18 @@ Enforced v2 semantics (identical to core):
   re-uploading a key returns it in `alreadyStored` and never replaces bytes.
 - **Two-stage byte budget** — declared sizes before buffering, actual bytes while
   buffering (`413`); per-entry `size-mismatch` / `asset-too-large` / budget reasons.
+- **Failed writes are never indexed** — an asset whose bytes cannot be durably
+  written is reported `rejected {reason:"write-failed"}` and is *not* added to the
+  index or the byte counter, so a later revision that references it fails
+  `missing-assets` rather than serving a blank `404`.
 - **Revision validation order** — `409 {reason:"revision-conflict", currentRevision}`
   (stale/ non-consecutive) → `400` (unsafe path) → `422 {reason:"missing-assets", missing}`
   → `422 {reason:"unknown-fixed-resources", resources}` → `413` (file-count / byte budgets).
 - **Atomicity** — the full document set is staged in `revisions/{n}` and published
   by an atomic swap of a `current` pointer; a GET reads the pointer once and serves
-  from that immutable revision directory, never mixing revision *N* and *N+1*.
+  from that immutable revision directory, never mixing revision *N* and *N+1*. A
+  document write/copy failure while staging aborts the publish **before** the swap
+  (`500`), discarding the staged revision and leaving the active revision intact.
 - **Budgets & TTL** — 30-min idle TTL, 4 sessions/user, 5000 files/session,
   200 MiB/session, 128 MiB/asset, 2 GiB global (LRU eviction on create).
 
@@ -83,11 +96,18 @@ Reference endpoint: [`preview.php`](../preview.php).
   `previewId` + idle TTL — the model the published package uses via
   `tokenpluginfile.php`.
 - `previewId` must match the UUID shape; anything else → `404`.
+- **Bare capability root** — `GET /preview.php/{previewId}` and
+  `GET /preview.php/{previewId}/` (empty relative path) → **`302` redirect** to
+  `{previewId}/index.html`. Document bytes are never served from the bare URL, so
+  the opaque iframe's base URL is always the session directory.
 - **Three-layer resolution** against the active revision only:
   `documents[path]` → `assets[assetRefs[path]]` → `manifest[fixedRefs[path]]` → `404`.
   A client path never becomes a filesystem path; only manifest-controlled paths
   reach the disk (under the distribution root, with containment checks).
-- **Range** (`206`/`416`) and **conditional** (`ETag`/`304`) requests on session assets.
+- **Range** on session assets — a single satisfiable range → `206`; a
+  syntactically valid but unsatisfiable single range → `416`; a malformed /
+  multi-range / non-`bytes` header is **ignored** and served as a normal `200`
+  full body (never `416`). **Conditional** (`ETag`/`304`) requests are honored.
 
 ## Required response headers (on every response, including 404s)
 
@@ -158,10 +178,38 @@ immutability, TTL, eviction, ownership), `management_test.php` (wire validation
 and status mapping), and `fixed_resources_test.php` (manifest resolution +
 containment).
 
-## Client wiring (follow-up)
+## Client wiring (editor bootstrap)
 
-The editor's transport selection (`embeddingConfig.previewTransport = "http"` +
-`previewBasePath`) in `editor/index.php` is intentionally **not** wired yet; these
-endpoints ship first. When wired, point `previewBasePath` at
-`/mod/exelearning/preview.php` and the management calls at
-`editor/preview_session.php` (with `cmid` + `sesskey`).
+`editor/index.php` injects the normalized activation block into
+`window.__EXE_EMBEDDING_CONFIG__` so a preview-capable editor build selects the
+opaque HTTP transport (`HttpPreviewProvider`) against this plugin's own routes:
+
+```jsonc
+"previewHttp": {
+  "protocolVersion": 2,
+  "managementBaseUrl": "{wwwroot}/mod/exelearning/editor/preview_session.php",
+  "servingBaseUrl":    "{wwwroot}/mod/exelearning/preview.php",
+  "managementQuery":   { "cmid": "<cmid>", "sesskey": "<sesskey>" }
+}
+```
+
+Two URLs, two trust models (matching §A / §B):
+
+- **`managementBaseUrl`** — authenticated + owner-scoped. Auth is the Moodle login
+  cookie plus the `sesskey` query value (no `managementHeaders` are needed); the
+  client appends `managementQuery` to every management request.
+- **`servingBaseUrl`** — the authless capability URL that backs the opaque iframe.
+
+**Editor-build dependency.** The endpoints, the routing, and this config block are
+in place, but they stay **dormant** until an embedded editor build that ships
+`HttpPreviewProvider` (and a `bundles/preview-fixed-resources.json` manifest for
+the fixed layer) is installed. Older builds ignore `previewHttp`; nothing breaks.
+
+**Playground.** Under the php-wasm Moodle Playground (the `MOODLE_PLAYGROUND`
+constant) `previewHttp` is **omitted**, so a preview-capable editor **fails closed**
+with a clear error rather than silently downgrading: a service worker cannot serve
+a genuinely opaque iframe, so the Playground has no safe HTTP preview. Enabling
+preview there is a **blueprint-only, development-only** opt-in to
+`previewTransport: 'static-service-worker'` (which the core preview panel renders
+with a visible warning banner) — it is never an admin setting and is never
+auto-activated.

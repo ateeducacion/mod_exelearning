@@ -2,11 +2,15 @@
 
 `vectors.json` is a machine-readable sequence of requests and expected
 responses that every host implementing the
-[preview serving contract v2](../../../doc/development/preview-serving-contract.md)
+[preview serving contract v2](../../../docs/preview-serving-contract.md)
 (Moodle, WordPress, Omeka S, Nextcloud, Procomún, Electron, eXe core) should
-replay against its own endpoints. The reference consumer is
-[`src/routes/preview-session.conformance.spec.ts`](../../../src/routes/preview-session.conformance.spec.ts) —
-port its interpretation, not just its assertions.
+replay against its own endpoints. This file is vendored verbatim from eXe core;
+its own canonical home and the reference consumer live upstream:
+
+- canonical contract: <https://github.com/exelearning/exelearning/blob/main/doc/development/preview-serving-contract.md>
+- reference consumer: <https://github.com/exelearning/exelearning/blob/main/src/routes/preview-session.conformance.spec.ts>
+
+Port the reference consumer's interpretation, not just its assertions.
 
 ## Harness semantics
 
