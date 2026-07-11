@@ -139,7 +139,7 @@ $parsedwwwroot = parse_url($CFG->wwwroot);
 $wwwrootorigin = $parsedwwwroot['scheme'] . '://' . $parsedwwwroot['host']
     . (!empty($parsedwwwroot['port']) ? ':' . $parsedwwwroot['port'] : '');
 
-$embeddingconfig = json_encode([
+$embeddingconfigdata = [
     'basePath' => $editorbaseurl,
     'parentOrigin' => $wwwrootorigin,
     'trustedOrigins' => [$wwwrootorigin],
@@ -151,7 +151,32 @@ $embeddingconfig = json_encode([
     ],
     'platform' => 'moodle',
     'pluginVersion' => get_config('mod_exelearning', 'version'),
-]);
+];
+
+// Normalized HTTP preview activation (serving contract v2). Once the embedded
+// editor build ships HttpPreviewProvider it renders the opaque preview over the
+// plugin's own capability URLs: management (authenticated, sesskey + cmid in the
+// query) at editor/preview_session.php, authless serving at preview.php.
+//
+// Omitted under the php-wasm Playground: a service worker cannot serve a
+// genuinely opaque iframe, so the editor must FAIL CLOSED there (a clear preview
+// error) rather than silently downgrade the isolation boundary. Enabling preview
+// in the Playground is a blueprint-only, dev-only opt-in to previewTransport
+// 'static-service-worker' (which the core preview panel renders with a visible
+// warning) — never an admin setting. See docs/preview-serving-contract.md.
+if (!(defined('MOODLE_PLAYGROUND') && MOODLE_PLAYGROUND)) {
+    $embeddingconfigdata['previewHttp'] = [
+        'protocolVersion' => 2,
+        'managementBaseUrl' => (new moodle_url('/mod/exelearning/editor/preview_session.php'))->out(false),
+        'servingBaseUrl' => (new moodle_url('/mod/exelearning/preview.php'))->out(false),
+        'managementQuery' => [
+            'cmid' => (string) $cm->id,
+            'sesskey' => sesskey(),
+        ],
+    ];
+}
+
+$embeddingconfig = json_encode($embeddingconfigdata);
 
 // Approved style registry consumed by the editor's themeRegistryOverride
 // hook (see exelearning/exelearning#1722). Filters built-ins, appends
