@@ -78,8 +78,10 @@ Enforced v2 semantics (identical to core):
 - **Atomicity** — the full document set is staged in `revisions/{n}` and published
   by an atomic swap of a `current` pointer; a GET reads the pointer once and serves
   from that immutable revision directory, never mixing revision *N* and *N+1*. A
-  document write/copy failure while staging aborts the publish **before** the swap
-  (`500`), discarding the staged revision and leaving the active revision intact.
+  document write/copy **or manifest (`revision.json`)** write failure while staging
+  aborts the publish **before** the swap (`500`), discarding the staged revision
+  and leaving the active revision intact — no revision goes live without its bytes
+  or its document map.
 - **Budgets & TTL** — 30-min idle TTL, 4 sessions/user, 5000 files/session,
   200 MiB/session, 128 MiB/asset, 2 GiB global (LRU eviction on create).
 

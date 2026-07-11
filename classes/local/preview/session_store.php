@@ -569,12 +569,21 @@ final class session_store {
                 }
             }
         }
-        self::write_json($revdir . '/revision.json', [
+        // The manifest is checked like the documents: a revision published with a
+        // missing or truncated revision.json has no document map, so every path
+        // 404s — a broken published state. A failure here also aborts before the
+        // swap, leaving the active revision intact.
+        $manifestjson = json_encode([
             'revision' => $next,
             'documents' => $newdocs,
             'assetrefs' => $assetrefs,
             'fixedrefs' => $fixedrefs,
         ]);
+        $writtenmanifest = @file_put_contents($revdir . '/revision.json', $manifestjson, LOCK_EX);
+        if ($writtenmanifest === false || $writtenmanifest !== strlen($manifestjson)) {
+            self::discard_staged_revision($revdir);
+            return false;
+        }
 
         // Atomic pointer swap: a GET reads `current` once and serves from the
         // immutable revision directory it names.

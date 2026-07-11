@@ -445,6 +445,24 @@ final class session_store_test extends advanced_testcase {
     }
 
     /**
+     * When staging a revision cannot write revision.json, the publish aborts
+     * BEFORE the pointer swap (500) and the active revision stays at 0 — a
+     * revision must never go live with a missing manifest (every path would 404).
+     * A zero-document revision makes revision.json the only write; occupying the
+     * staged revision path with a plain file fails it root-safely.
+     */
+    public function test_revision_publish_aborts_on_manifest_write_failure(): void {
+        $revdir = $this->root . '/' . $this->previewid . '/revisions/1';
+        file_put_contents($revdir, 'blocker');
+
+        $result = $this->suppress_warnings(function () {
+            return $this->publish(0, 1, []);
+        });
+        $this->assertSame(500, $result['status']);
+        $this->assertSame(0, $this->reload()->revision);
+    }
+
+    /**
      * serve() ignores a malformed / multi-range Range (a full 200, never 206 or
      * 416) but still 416s a syntactically valid unsatisfiable single range.
      */
