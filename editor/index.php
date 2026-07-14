@@ -139,6 +139,8 @@ $parsedwwwroot = parse_url($CFG->wwwroot);
 $wwwrootorigin = $parsedwwwroot['scheme'] . '://' . $parsedwwwroot['host']
     . (!empty($parsedwwwroot['port']) ? ':' . $parsedwwwroot['port'] : '');
 
+$previewmanagementurl = $CFG->wwwroot . '/mod/exelearning/editor/preview.php/' . $cm->id;
+$previewservingurl = $CFG->wwwroot . '/mod/exelearning/preview.php/';
 $embeddingconfig = json_encode([
     'basePath' => $editorbaseurl,
     'parentOrigin' => $wwwrootorigin,
@@ -151,6 +153,11 @@ $embeddingconfig = json_encode([
     ],
     'platform' => 'moodle',
     'pluginVersion' => get_config('mod_exelearning', 'version'),
+    'previewSnapshot' => [
+        'managementUrl' => $previewmanagementurl,
+        'servingBaseUrl' => $previewservingurl,
+        'managementHeaders' => ['X-Moodle-Sesskey' => sesskey()],
+    ],
 ]);
 
 // Approved style registry consumed by the editor's themeRegistryOverride
