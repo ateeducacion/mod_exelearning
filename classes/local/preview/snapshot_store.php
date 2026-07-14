@@ -198,7 +198,8 @@ final class snapshot_store {
      * @return string
      */
     public static function content_security_policy(): string {
-        return "sandbox allow-scripts allow-popups allow-forms; default-src 'self'; "
+        return "sandbox allow-scripts allow-popups allow-forms allow-downloads allow-presentation; "
+            . "default-src 'self'; "
             . "script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; "
             . "img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; "
             . "font-src 'self' data:; connect-src 'self'; frame-src 'self' https://www.youtube-nocookie.com "

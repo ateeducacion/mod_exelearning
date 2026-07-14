@@ -91,7 +91,10 @@ final class snapshot_store_test extends \advanced_testcase {
         $this->assertTrue(snapshot_store::is_scriptable('text/html; charset=utf-8'));
         $this->assertTrue(snapshot_store::is_scriptable('image/svg+xml'));
         $this->assertFalse(snapshot_store::is_scriptable('text/css'));
-        $this->assertStringStartsWith('sandbox allow-scripts', snapshot_store::content_security_policy());
+        $policy = snapshot_store::content_security_policy();
+        $this->assertStringContainsString('allow-downloads', $policy);
+        $this->assertStringContainsString('allow-presentation', $policy);
+        $this->assertStringNotContainsString('allow-same-origin', $policy);
         $this->assertSame('nosniff', snapshot_store::response_headers()['X-Content-Type-Options']);
     }
 
