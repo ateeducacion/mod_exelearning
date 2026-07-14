@@ -237,10 +237,12 @@ final class snapshot_store {
             for ($index = 0; $index < $zip->numFiles; $index++) {
                 $name = $zip->getNameIndex($index);
                 $stat = $zip->statIndex($index);
-                if (!is_string($name) || !is_array($stat) || !$this->safe_path($name)) {
+                $directory = is_string($name) && str_ends_with($name, '/');
+                $validated = $directory ? rtrim($name, '/') : $name;
+                if (!is_string($name) || !is_array($stat) || !$this->safe_path($validated)) {
                     throw new \invalid_parameter_exception('Unsafe preview ZIP path');
                 }
-                if (str_ends_with($name, '/')) {
+                if ($directory) {
                     continue;
                 }
                 if ($this->reserved_path($name)) {
