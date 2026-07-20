@@ -104,6 +104,16 @@ if [ -d dist/static ] && [ -n "$(ls -A dist/static 2>/dev/null)" ]; then
     git update-index --add --cacheinfo "100644,$tpl_sha,thirdpartylibs.xml"
 fi
 
+# Remove one leading machine-translation marker from packaged language strings.
+# Source files remain unchanged so pending human reviews stay visible in Git.
+while IFS= read -r -d '' langfile; do
+    cleaned_sha="$(
+        sed -E "s/^([[:space:]]*\\$string\\[[^]]+\\][[:space:]]*=[[:space:]]*)(['\"])~(.*)$/\\1\\2\\3/" "$langfile" \
+        | git hash-object -w --stdin
+    )"
+    git update-index --add --cacheinfo "100644,$cleaned_sha,$langfile"
+done < <(git ls-files -z -- 'lang/*/exelearning.php')
+
 echo "Packaging release $RELEASE (version $DATE_VERSION) -> $PLUGIN_NAME-$RELEASE.zip"
 TREE="$(git write-tree)"
 rm -f "$OUTPUT"
