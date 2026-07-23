@@ -18,6 +18,7 @@ research/
 # Development config files
 phpmd-rules.xml
 phpmd.xml
+codecov.yml
 Makefile
 blueprint.json
 docker-compose.yml
