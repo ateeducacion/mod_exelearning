@@ -24,7 +24,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 9999999999;       // Dev sentinel replaced with YYYYMMDDXX by `make package` (DEC-0030).
+$plugin->version   = 2026070701;       // Latest release +1; `make package` stamps the final YYYYMMDDXX (DEC-0030).
 $plugin->release   = 'dev';            // Replaced with the git tag (semver) at package time.
 $plugin->requires  = 2024100700;       // Moodle 4.5 LTS+.
 $plugin->supported = [405, 502];       // Moodle 4.5 LTS through Moodle 5.2.
