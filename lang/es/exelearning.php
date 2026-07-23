@@ -51,6 +51,7 @@ $string['completionstatusrequired_help'] = '~Cuando se activa, la actividad se m
 $string['confirmuninstall'] = '¿Está seguro de que desea desinstalar el editor embebido? Esto eliminará la copia instalada por administración de moodledata.';
 $string['confirmuninstalltitle'] = 'Confirmar desinstalación';
 $string['deleteattempt'] = '~Eliminar intento';
+$string['deleteattempt_confirm'] = '~Se eliminará definitivamente el intento {$a} de este estudiante y su calificación se recalculará a partir de los intentos restantes. Esta acción no se puede deshacer.';
 $string['detecteditems'] = '~iDevices calificables detectados:';
 $string['downloadreport'] = '~Descargar los datos del informe como';
 $string['editorbackuperror'] = 'No se pudo crear una copia de seguridad de la instalación existente del editor.';

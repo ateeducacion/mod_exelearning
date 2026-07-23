@@ -47,6 +47,7 @@ $string['completionstatusrequired_help'] = 'When enabled, the activity is marked
 $string['confirmuninstall'] = 'Are you sure you want to uninstall the embedded editor? This will remove the admin-installed copy from moodledata.';
 $string['confirmuninstalltitle'] = 'Confirm uninstall';
 $string['deleteattempt']     = 'Delete attempt';
+$string['deleteattempt_confirm'] = 'This will permanently delete attempt {$a} for this student and recalculate their grade from the remaining attempts. This action cannot be undone.';
 $string['detecteditems']    = 'Gradable iDevices detected:';
 $string['downloadreport']   = 'Download report data as';
 $string['editorbackuperror'] = 'Could not back up the existing editor installation.';

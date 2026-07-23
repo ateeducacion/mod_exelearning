@@ -51,6 +51,7 @@ $string['completionstatusrequired_help'] = '~Gaituta dagoenean, jarduera osatutz
 $string['confirmuninstall'] = 'Ziur zaude editore txertatua desinstalatu nahi duzula? Honek moodledata-ko administrazioak instalatutako kopia ezabatuko du.';
 $string['confirmuninstalltitle'] = 'Berretsi desinstalazioa';
 $string['deleteattempt'] = '~Ezabatu saialdia';
+$string['deleteattempt_confirm'] = '~Ikasle honen {$a}. saialdia behin betiko ezabatuko da, eta kalifikazioa gainerako saialdietatik birkalkulatuko da. Ekintza hau ezin da desegin.';
 $string['detecteditems'] = '~Hautemandako iDevice kalifikagarriak:';
 $string['downloadreport'] = '~Deskargatu txostenaren datuak honela:';
 $string['editorbackuperror'] = 'Ezin izan da lehendik zegoen editore-instalazioaren babeskopia sortu.';
