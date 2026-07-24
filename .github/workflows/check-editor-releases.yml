@@ -1,6 +1,15 @@
 ---
 name: Check Editor Releases
 
+# Watches exelearning/exelearning for a new editor release and opens a SYNC
+# PULL REQUEST updating .editor-version and the playground blueprint pin.
+#
+# It deliberately does NOT build a package, publish a plugin release or push to
+# main any more (DEC-0068): releases follow the release-preparation flow — a
+# human PR commits the final version.php, the tag points at that commit, and
+# release.yml builds from the tag. This workflow only keeps the editor pin in
+# sync and leaves the release decision to a maintainer.
+
 on:
   schedule:
     - cron: "0 8 * * *" # Daily at 8:00 UTC
@@ -8,10 +17,10 @@ on:
 
 permissions:
   contents: write
-  actions: write
+  pull-requests: write
 
 jobs:
-  check_and_build:
+  sync_editor_pin:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -21,7 +30,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Fetch latest release from exelearning/exelearning
           LATEST=$(gh api repos/exelearning/exelearning/releases/latest --jq '.tag_name' 2>/dev/null || echo "")
           if [ -z "$LATEST" ]; then
             echo "No release found"
@@ -31,13 +39,11 @@ jobs:
           echo "Latest editor release: $LATEST"
           echo "tag=$LATEST" >> $GITHUB_OUTPUT
 
-          # Check if we already built this version
-          MARKER_FILE=".editor-version"
           CURRENT=""
-          if [ -f "$MARKER_FILE" ]; then
-            CURRENT=$(cat "$MARKER_FILE")
+          if [ -f .editor-version ]; then
+            CURRENT=$(cat .editor-version)
           fi
-          echo "Current built version: $CURRENT"
+          echo "Current pinned version: $CURRENT"
 
           if [ "$LATEST" = "$CURRENT" ]; then
             echo "Already up to date"
@@ -47,57 +53,40 @@ jobs:
             echo "found=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Setup Bun
-        if: steps.check.outputs.found == 'true'
-        uses: oven-sh/setup-bun@v2
-
-      - name: Build static editor
+      - name: Open editor-pin sync pull request
         if: steps.check.outputs.found == 'true'
         env:
-          EXELEARNING_EDITOR_REPO_URL: https://github.com/exelearning/exelearning.git
-          EXELEARNING_EDITOR_REF: ${{ steps.check.outputs.tag }}
-          EXELEARNING_EDITOR_REF_TYPE: tag
-        run: make build-editor
-
-      - name: Compute version
-        if: steps.check.outputs.found == 'true'
-        id: version
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${{ steps.check.outputs.tag }}"
-          VERSION="${TAG#v}"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          BRANCH="sync/editor-${TAG}"
 
-      - name: Create package
-        if: steps.check.outputs.found == 'true'
-        run: make package RELEASE=${{ steps.version.outputs.version }}
+          if gh pr list --head "$BRANCH" --state open --json number --jq 'length' | grep -qv '^0$'; then
+            echo "A sync PR for $TAG is already open; nothing to do."
+            exit 0
+          fi
 
-      - name: Update editor version marker
-        if: steps.check.outputs.found == 'true'
-        run: |
-          TAG="${{ steps.check.outputs.tag }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+
           echo "$TAG" > .editor-version
           # Keep the playground blueprint's editor URL in sync with .editor-version,
-          # otherwise the preview stays pinned to the hardcoded version.
+          # otherwise the preview stays pinned to the previous version.
           sed -i -E \
             -e "s#(release=)v[0-9][0-9A-Za-z.-]*#\1$TAG#g" \
             -e "s#(releases/download/)v[0-9][0-9A-Za-z.-]*#\1$TAG#g" \
             -e "s#(exelearning-static-)v[0-9][0-9A-Za-z.-]*(\.zip)#\1$TAG\2#g" \
             blueprint.json
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .editor-version blueprint.json
-          git commit -m "Update editor version to $TAG"
-          git push
 
-      - name: Create GitHub Release
-        if: steps.check.outputs.found == 'true'
-        uses: softprops/action-gh-release@v3
-        with:
-          tag_name: ${{ steps.version.outputs.tag }}
-          name: "${{ steps.version.outputs.tag }}"
-          body: |
-            Automated build with eXeLearning editor ${{ steps.version.outputs.tag }}.
-          files: mod_exelearning-${{ steps.version.outputs.version }}.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          git add .editor-version blueprint.json
+          git commit -m "Sync editor pin to $TAG"
+          git push origin "$BRANCH"
+
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "Sync editor pin to $TAG" \
+            --body "The editor published [$TAG](https://github.com/exelearning/exelearning/releases/tag/$TAG). This updates \`.editor-version\` and the playground blueprint pin.
+
+To ship a plugin release bundling this editor, follow the release-preparation flow (DEVELOPMENT.md, \"Versioning and releases\"): commit the final \`version.php\`, merge, tag that commit, and publish the release — release.yml builds the ZIP from the tag."

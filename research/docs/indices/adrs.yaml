@@ -29,7 +29,7 @@ items:
   - id: 'DEC-0027', titulo: 'Aceptar también .zip (con content.xml) además de .elpx en la subida', estado: 'Aceptada', fecha: '2026-06-03', ruta: 'decisiones/adr/DEC-0027-aceptar-zip-con-content-xml.md'
   - id: 'DEC-0028', titulo: "Enlaces del libro de calificaciones: análisis y destino del 'grade analysis' (issue #13 #4)", estado: 'Aceptada', fecha: '2026-06-03', ruta: 'decisiones/adr/DEC-0028-enlaces-libro-calificaciones.md'
   - id: 'DEC-0029', titulo: "Interruptor 'Calificable' por actividad (issue #13)", estado: 'Aceptada', fecha: '2026-06-03', ruta: 'decisiones/adr/DEC-0029-interruptor-calificable-por-actividad.md'
-  - id: 'DEC-0030', titulo: "Versión 'sentinela' (9999999999/dev) en main; la versión real la inyecta make package (issue #13)", estado: 'Aceptada', fecha: '2026-06-03', ruta: 'decisiones/adr/DEC-0030-version-sentinela-en-main.md'
+  - id: 'DEC-0030', titulo: "Versión 'sentinela' (9999999999/dev) en main; la versión real la inyecta make package (issue #13)", estado: 'Superseded', fecha: '2026-06-03', ruta: 'decisiones/adr/DEC-0030-version-sentinela-en-main.md'
   - id: 'DEC-0031', titulo: "Separar el formulario del recurso en 'Grading' y 'Attempts management' (issue #13)", estado: 'Aceptada', fecha: '2026-06-03', ruta: 'decisiones/adr/DEC-0031-split-grading-attempts-formulario.md'
   - id: 'DEC-0032', titulo: 'Ingesta dual de tracking: shim SCORM 1.2 + xAPI (exe_xapi.js) sobre una tubería común', estado: 'Propuesta', fecha: '2026-06-04', ruta: 'decisiones/adr/DEC-0032-ingesta-dual-scorm-xapi.md'
   - id: 'DEC-0033', titulo: 'Actualización de contenido: reemplazo del paquete .elpx y origen por URL con sincronización', estado: 'Propuesta', fecha: '2026-06-04', ruta: 'decisiones/adr/DEC-0033-actualizacion-paquete-y-origen-url.md'
@@ -63,3 +63,4 @@ items:
   - id: 'DEC-0065', titulo: 'Editor embebido exclusivamente empaquetado en la release: eliminar el instalador/actualizador en runtime', estado: 'Aceptada', fecha: '2026-07-24', ruta: 'decisiones/adr/DEC-0065-editor-empaquetado-solo-en-release.md'
   - id: 'DEC-0066', titulo: 'Interruptor global del editor embebido: modo reproductor puro vía ajuste de sitio', estado: 'Aceptada', fecha: '2026-07-24', ruta: 'decisiones/adr/DEC-0066-interruptor-global-editor-embebido.md'
   - id: 'DEC-0067', titulo: 'La página de estilos queda como endpoint de acciones: se elimina el gestor visible duplicado', estado: 'Aceptada', fecha: '2026-07-24', ruta: 'decisiones/adr/DEC-0067-pagina-estilos-solo-endpoint.md'
+  - id: 'DEC-0068', titulo: 'Versión Moodle real y monótona en main: fin del centinela; el empaquetado valida y nunca reescribe', estado: 'Aceptada', fecha: '2026-07-24', ruta: 'decisiones/adr/DEC-0068-version-real-monotona-en-main.md'

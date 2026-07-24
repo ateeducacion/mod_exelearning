@@ -9,9 +9,13 @@
 #
 # Usage: bash scripts/package.sh <RELEASE> [<PLUGIN_NAME>]
 #
-# version.php is stamped inside the temporary index (the working tree is never
-# modified) and the produced ZIP places everything under the Moodle install
-# folder "exelearning/" (the component is mod_exelearning).
+# RELEASE only names the output ZIP. version.php ships EXACTLY as committed
+# (DEC-0068): the packager validates nothing and rewrites nothing there — a
+# release-preparation PR commits the final version/release before tagging, and
+# `make package` runs scripts/check-version.sh first. Rebuilding the same tag on
+# any day therefore produces the same version.php. The produced ZIP places
+# everything under the Moodle install folder "exelearning/" (the component is
+# mod_exelearning).
 
 set -euo pipefail
 
@@ -34,7 +38,6 @@ ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
 
 OUTPUT="$ROOT/$PLUGIN_NAME-$RELEASE.zip"
-DATE_VERSION="$(date +%Y%m%d)00"
 
 # The bundled editor is a release requirement (DEC-0065): the ZIP is the only
 # supported distribution mechanism for it, so a package without a valid editor
@@ -92,14 +95,6 @@ while IFS= read -r -d '' f; do
     printf '%s\0' "$f"
 done < <(git ls-files -z -c -o) | git update-index -z --add --stdin
 
-# Stamp version.php in the index only (working tree stays at the dev sentinels).
-stamped_sha="$(
-    sed -e "s/\(plugin->version[[:space:]]*=[[:space:]]*\)[0-9]*/\1$DATE_VERSION/" \
-        -e "s/\(plugin->release[[:space:]]*=[[:space:]]*'\)[^']*/\1$RELEASE/" version.php \
-    | git hash-object -w --stdin
-)"
-git update-index --add --cacheinfo "100644,$stamped_sha,version.php"
-
 # Stamp thirdpartylibs.xml in the index only: the committed file must not list
 # dist/static (the path is absent in a plain checkout and would break
 # moodle-plugin-ci install), but the release ZIP always bundles the editor
@@ -131,7 +126,7 @@ while IFS= read -r -d '' langfile; do
     git update-index --add --cacheinfo "100644,$cleaned_sha,$langfile"
 done < <(git ls-files -z -- 'lang/*/exelearning.php')
 
-echo "Packaging release $RELEASE (version $DATE_VERSION) -> $PLUGIN_NAME-$RELEASE.zip"
+echo "Packaging release $RELEASE (version.php shipped as committed) -> $PLUGIN_NAME-$RELEASE.zip"
 TREE="$(git write-tree)"
 rm -f "$OUTPUT"
 git archive --format=zip --prefix="$INSTALL_DIR/" -o "$OUTPUT" "$TREE"

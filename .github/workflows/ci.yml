@@ -316,5 +316,10 @@ jobs:
       - name: Validate release workflow editor pinning
         run: bash scripts/check-release-workflow.sh
 
+      - name: Validate version metadata (DEC-0068)
+        run: |
+          bash scripts/check-version-selftest.sh
+          bash scripts/check-version.sh
+
       - name: Validate release packaging
         run: bash scripts/check-package.sh
