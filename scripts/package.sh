@@ -106,9 +106,11 @@ fi
 
 # Remove one leading machine-translation marker from packaged language strings.
 # Source files remain unchanged so pending human reviews stay visible in Git.
+# The $ of $string is escaped as \\\$ so the shell passes a literal \$ to sed
+# instead of expanding an (unset) "string" variable, which aborts under `set -u`.
 while IFS= read -r -d '' langfile; do
     cleaned_sha="$(
-        sed -E "s/^([[:space:]]*\\$string\\[[^]]+\\][[:space:]]*=[[:space:]]*)(['\"])~(.*)$/\\1\\2\\3/" "$langfile" \
+        sed -E "s/^([[:space:]]*\\\$string\\[[^]]+\\][[:space:]]*=[[:space:]]*)(['\"])~(.*)$/\\1\\2\\3/" "$langfile" \
         | git hash-object -w --stdin
     )"
     git update-index --add --cacheinfo "100644,$cleaned_sha,$langfile"

@@ -216,7 +216,7 @@ jobs:
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          slug: exelearning/mod_exelearning
+          slug: exelearning/moodle-mod_exelearning
           files: ./coverage.xml
           # Flag the PHP report so it is tracked as its own flag/component
           # (the JS job uploads under `javascript`); without a flag PHP would be
@@ -286,7 +286,7 @@ jobs:
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          slug: exelearning/mod_exelearning
+          slug: exelearning/moodle-mod_exelearning
           files: ./coverage/lcov.info
           flags: javascript
           disable_search: true
@@ -301,10 +301,12 @@ jobs:
           flags: javascript
           disable_search: true
 
-  # Static guard for the Release workflow (DEC-0058): assert that a published
-  # release builds the embedded editor from the matching editor TAG, never from
-  # the moving `main` branch, so two builds of the same plugin tag always bundle
-  # the same editor. Fast, no matrix, no PHP/DB/Moodle dependency.
+  # Guards for the release pipeline. Static (DEC-0058): a published release must
+  # build the embedded editor from the matching editor TAG, never from the moving
+  # `main` branch, so two builds of the same plugin tag always bundle the same
+  # editor. Executable: the packager itself is run, because its stamping and
+  # marker-stripping only break at runtime. Fast, no matrix, no PHP/DB/Moodle
+  # dependency.
   release-workflow-check:
     runs-on: ubuntu-22.04
     steps:
@@ -313,3 +315,6 @@ jobs:
 
       - name: Validate release workflow editor pinning
         run: bash scripts/check-release-workflow.sh
+
+      - name: Validate release packaging
+        run: bash scripts/check-package.sh
