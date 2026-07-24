@@ -52,7 +52,6 @@ $string['editorenabled'] = 'Enable the embedded editor';
 $string['editorenabled_desc'] = 'When enabled, users who can manage an activity see the "Edit with eXeLearning" button and can author packages in place. When disabled, the plugin works as a pure player: uploading and serving .elpx packages keeps working, but the editor is hidden and its endpoints refuse requests.';
 $string['editorreaderror'] = 'Could not read the eXeLearning embedded editor files. Please check file permissions and contact your administrator.';
 $string['editorsettings'] = 'Embedded editor';
-$string['editorsettings_desc'] = 'The eXeLearning editor ships inside the plugin release package and cannot be installed or updated separately. This switch only controls whether in-place editing is offered.';
 $string['editwitheditor'] = 'Edit with eXeLearning';
 $string['embeddednotinstalledadmin'] = 'The embedded editor is not included in this installation. Install the plugin from an official release ZIP, which bundles the editor.';
 $string['embeddednotinstalledcontactadmin'] = 'The embedded editor is not available on this site. Please contact your site administrator.';

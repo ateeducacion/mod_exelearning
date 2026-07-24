@@ -61,7 +61,7 @@ if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_heading(
         'mod_exelearning/editorsettingsheading',
         get_string('editorsettings', 'mod_exelearning'),
-        get_string('editorsettings_desc', 'mod_exelearning')
+        ''
     ));
 
     $settings->add(new admin_setting_configcheckbox(

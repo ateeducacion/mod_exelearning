@@ -56,7 +56,6 @@ $string['editorenabled'] = '~Activar el editor integrado';
 $string['editorenabled_desc'] = '~Si está activado, quienes pueden gestionar una actividad ven el botón «Editar con eXeLearning» y pueden crear o modificar paquetes desde Moodle. Si está desactivado, el plugin funciona como un reproductor puro: subir y mostrar paquetes .elpx sigue funcionando, pero el editor se oculta y sus endpoints rechazan las peticiones.';
 $string['editorreaderror'] = 'No se pudieron leer los archivos del editor integrado eXeLearning. Compruebe los permisos de los archivos y contacte con el administrador.';
 $string['editorsettings'] = '~Editor integrado';
-$string['editorsettings_desc'] = '~El editor de eXeLearning viene incluido en el paquete de la release del plugin y no puede instalarse ni actualizarse por separado. Este interruptor solo controla si se ofrece la edición desde Moodle.';
 $string['editwitheditor'] = 'Editar con eXeLearning';
 $string['embeddednotinstalledadmin'] = '~El editor integrado no está incluido en esta instalación. Instale el plugin desde un ZIP de release oficial, que incluye el editor.';
 $string['embeddednotinstalledcontactadmin'] = '~El editor integrado no está disponible en este sitio. Contacte con el administrador del sitio.';

@@ -56,7 +56,6 @@ $string['editorenabled'] = '~Aktibatu editore txertatua';
 $string['editorenabled_desc'] = '~Aktibatuta badago, jarduera bat kudea dezaketenek «Editatu eXeLearning-ekin» botoia ikusten dute eta paketeak Moodletik sortu edo aldatu ditzakete. Desaktibatuta badago, pluginak erreproduzitzaile huts gisa funtzionatzen du: .elpx paketeak igotzea eta erakustea funtzionatzen jarraitzen du, baina editorea ezkutatu egiten da eta haren amaiera-puntuek eskaerak ukatzen dituzte.';
 $string['editorreaderror'] = 'Ezin izan dira eXeLearning editore txertatuaren fitxategiak irakurri. Egiaztatu fitxategien baimenak eta jarri harremanetan administratzailearekin.';
 $string['editorsettings'] = '~Editore txertatua';
-$string['editorsettings_desc'] = '~eXeLearning editorea pluginaren bertsio-paketearen barruan dator eta ezin da bereizita instalatu edo eguneratu. Etengailu honek Moodletik editatzea eskaintzen den ala ez baino ez du kontrolatzen.';
 $string['editwitheditor'] = '~Editatu eXeLearning-ekin';
 $string['embeddednotinstalledadmin'] = '~Editore txertatua ez dago instalazio honetan sartuta. Instalatu plugina bertsio ofizialeko ZIP batetik; horrek editorea barne dakar.';
 $string['embeddednotinstalledcontactadmin'] = '~Editore txertatua ez dago erabilgarri gune honetan. Jarri harremanetan guneko administratzailearekin.';
