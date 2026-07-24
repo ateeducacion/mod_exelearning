@@ -285,3 +285,30 @@ GNU General Public License for more details.
 
 You should receive a copy of the GNU General Public License
 along with this program.
+
+### Third-party code
+
+Third-party code shipped with the plugin is declared in `thirdpartylibs.xml`,
+and each folder carries a `readme_moodle.txt` documenting its origin, the
+modifications applied (none, in both cases) and how to update it.
+
+| Location | Component | Licence |
+|---|---|---|
+| `assets/scorm/` | pipwerks SCORM API wrapper and ADL-derived SCO functions, as shipped by eXeLearning inside exported packages | MIT |
+| `dist/static/` (release ZIP only) | eXeLearning v4 editor, built from [`exelearning/exelearning`](https://github.com/exelearning/exelearning) | AGPL-3.0-or-later |
+
+**Why an AGPL editor ships inside a GPLv3 plugin.** The embedded editor is not a
+third-party dependency in the usual sense: it is the eXeLearning application
+itself, developed and maintained by the same team as this plugin (Cedec-INTEF
+and the collaborating regional administrations), with its own public repository,
+release cycle and licence. Each release bundles it unmodified, exactly as
+produced by the upstream build, so that editing works right after installation
+without downloading anything.
+
+Distributing the two together is explicitly permitted: section 13 of the GPLv3
+grants permission to combine a GPLv3 work with an AGPLv3 work, and section 13 of
+the AGPLv3 grants the mirror-image permission. Each part keeps its own licence
+in the combination — the plugin code remains GPL-3.0-or-later and the bundled
+editor remains AGPL-3.0-or-later, the AGPL's network-interaction requirement
+included. The editor's own dependencies and their licences are listed in
+`dist/static/libs/LICENSES.md`.
