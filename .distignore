@@ -34,7 +34,11 @@ package-lock.json
 vitest.config.mjs
 tests/js/*
 
-# Internal documentation (README.md and CHANGELOG.md are shipped)
+# Internal documentation (README.md and CHANGELOG.md are shipped). docs/ is
+# developer/maintainer material (architecture notes, audits, internal decision
+# references) with no runtime role — administrators read the README and the
+# plugin pages.
+docs/
 CLAUDE.md
 AGENTS.md
 DEVELOPMENT.md

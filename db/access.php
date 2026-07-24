@@ -75,7 +75,7 @@ $capabilities = [
 
     // Manage the eXeLearning style packages (upload/enable/disable/delete) from the
     // Styles admin pages. Historically this also gated the runtime editor installer;
-    // that installer is gone (DEC-0065, the editor ships inside the release ZIP) but
+    // that installer is gone (the editor ships inside the release ZIP) but
     // the capability name is kept to avoid churning existing role assignments.
     'mod/exelearning:manageembeddededitor' => [
         'riskbitmask' => RISK_CONFIG | RISK_DATALOSS,
@@ -87,7 +87,7 @@ $capabilities = [
     ],
 
     // Run the site-wide migration tool that copies mod_exeweb / mod_exescorm
-    // activities into new eXeLearning activities (issue #13 #3, DEC-0026). It
+    // activities into new eXeLearning activities. It
     // creates activities across all courses, hence system level + manager only.
     'mod/exelearning:migrate' => [
         'riskbitmask' => RISK_DATALOSS,
