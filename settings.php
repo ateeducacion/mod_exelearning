@@ -54,6 +54,23 @@ if (isset($exelearninginstalledmods['exeweb']) || isset($exelearninginstalledmod
 }
 
 if ($ADMIN->fulltree) {
+    // Embedded editor (DEC-0066): a single site-wide toggle. The editor itself
+    // ships inside the release package (DEC-0065) and has no runtime management;
+    // this switch lets a site use the plugin as a pure .elpx player — uploads
+    // keep working, only in-place editing is hidden and refused.
+    $settings->add(new admin_setting_heading(
+        'mod_exelearning/editorsettingsheading',
+        get_string('editorsettings', 'mod_exelearning'),
+        get_string('editorsettings_desc', 'mod_exelearning')
+    ));
+
+    $settings->add(new admin_setting_configcheckbox(
+        'exelearning/editorenabled',
+        get_string('editorenabled', 'mod_exelearning'),
+        get_string('editorenabled_desc', 'mod_exelearning'),
+        1
+    ));
+
     // Defined styles management (upload / enable / disable / lockdown).
     $settings->add(new admin_setting_heading(
         'mod_exelearning/stylesheading',
