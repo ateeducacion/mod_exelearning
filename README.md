@@ -1,9 +1,9 @@
 # eXeLearning resource for Moodle
 
-[![Moodle Plugin CI](https://github.com/exelearning/mod_exelearning/actions/workflows/ci.yml/badge.svg)](https://github.com/exelearning/mod_exelearning/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/exelearning/mod_exelearning/graph/badge.svg)](https://codecov.io/gh/exelearning/mod_exelearning)
+[![Moodle Plugin CI](https://github.com/exelearning/moodle-mod_exelearning/actions/workflows/ci.yml/badge.svg)](https://github.com/exelearning/moodle-mod_exelearning/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/exelearning/moodle-mod_exelearning/graph/badge.svg)](https://codecov.io/gh/exelearning/moodle-mod_exelearning)
 
-<a href="https://moodle-playground.com/?blueprint-url=https://raw.githubusercontent.com/exelearning/mod_exelearning/main/blueprint.json"><img src="https://raw.githubusercontent.com/ateeducacion/action-moodle-playground-pr-preview/refs/heads/main/assets/playground-preview-button.svg" alt="Preview in Moodle Playground" width="224"></a>
+<a href="https://moodle-playground.com/?blueprint-url=https://raw.githubusercontent.com/exelearning/moodle-mod_exelearning/main/blueprint.json"><img src="https://raw.githubusercontent.com/ateeducacion/action-moodle-playground-pr-preview/refs/heads/main/assets/playground-preview-button.svg" alt="Preview in Moodle Playground" width="224"></a>
 
 > ℹ️ The eXeLearning editor is fetched from the shared release and unpacked into the plugin when the playground boots, so the first load may take a few extra seconds. ELPX upload, viewer and preview work normally.
 
@@ -73,7 +73,7 @@ Nothing to install locally; everything runs in the browser via WebAssembly.
 
 ## Installation
 
-> **Important:** It is recommended to install from a [release ZIP](https://github.com/exelearning/mod_exelearning/releases),
+> **Important:** It is recommended to install from a [release ZIP](https://github.com/exelearning/moodle-mod_exelearning/releases),
 > which includes the embedded editor pre-built for optimal performance. If the
 > release ZIP does not include the editor, or if you want to install a newer
 > version, administrators can download it from GitHub Releases via the
@@ -82,7 +82,7 @@ Nothing to install locally; everything runs in the browser via WebAssembly.
 ### Installing via uploaded ZIP file
 
 1. Download the latest ZIP from
-   [Releases](https://github.com/exelearning/mod_exelearning/releases).
+   [Releases](https://github.com/exelearning/moodle-mod_exelearning/releases).
 2. Log in to your Moodle site as an admin and go to _Site administration >
    Plugins > Install plugins_.
 3. Upload the ZIP file with the plugin code. You should only be prompted to add
@@ -92,7 +92,7 @@ Nothing to install locally; everything runs in the browser via WebAssembly.
 ### Installing manually
 
 1. Download and extract the latest ZIP from
-   [Releases](https://github.com/exelearning/mod_exelearning/releases).
+   [Releases](https://github.com/exelearning/moodle-mod_exelearning/releases).
 2. Place the extracted contents in `{your/moodle/dirroot}/mod/exelearning`.
 3. Log in to your Moodle site as an admin and go to _Site administration >
    Notifications_ to complete the installation.

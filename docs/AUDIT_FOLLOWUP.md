@@ -42,7 +42,7 @@ incoherence requiring a fix**; this follow-up is documentation plus one ADR
 | V5 | Best-designed of the three for evolution (domain classes, secure parsing, shared pipeline). | Confirmed by the responsibility map. | `docs/ARCHITECTURE.md`. |
 
 Note: the report dinged `mod_exeweb` for a copied `composer.json`. This does **not**
-apply here — `mod_exelearning`'s metadata is correct (`exelearning/mod_exelearning`,
+apply here — `mod_exelearning`'s metadata is correct (`exelearning/moodle-mod_exelearning`,
 accurate description). `composer.json:2-3`.
 
 ## 4. Improvements applied in this change
