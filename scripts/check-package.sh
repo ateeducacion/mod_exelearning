@@ -82,13 +82,11 @@ PKG="$WORK/exelearning"
 #    the ZIP is called.
 [ -d "$PKG" ] || report "the ZIP must place everything under exelearning/"
 
-# 2) The dev sentinel must be stamped with a real date version and release
-#    (DEC-0030); shipping 9999999999 would make every later release a downgrade.
+# 2) version.php ships EXACTLY as committed (DEC-0068): the packager must not
+#    rewrite it, so the packaged copy is byte-identical to the working tree's.
 if [ -f "$PKG/version.php" ]; then
-    grep -qE '\$plugin->version[[:space:]]*=[[:space:]]*20[0-9]{8};' "$PKG/version.php" \
-        || report "version.php was not stamped with a YYYYMMDDXX version"
-    grep -qE "\\\$plugin->release[[:space:]]*=[[:space:]]*'$RELEASE'" "$PKG/version.php" \
-        || report "version.php was not stamped with release '$RELEASE'"
+    diff -q version.php "$PKG/version.php" > /dev/null \
+        || report "packaged version.php differs from the committed version.php (the packager must not rewrite it)"
 else
     report "version.php is missing from the ZIP"
 fi
@@ -159,4 +157,4 @@ if [ "$fail" -ne 0 ]; then
     exit 1
 fi
 
-echo "OK: release packaging requires the bundled editor, stamps version.php and thirdpartylibs.xml, strips '~' markers and keeps dev files out."
+echo "OK: release packaging requires the bundled editor, ships version.php verbatim, stamps thirdpartylibs.xml, strips '~' markers and keeps dev files out."
