@@ -68,9 +68,9 @@ Feature: View a mod_exelearning activity and its attempts report
       | activity    | name            | course | idnumber | packagefilepath                                |
       | exelearning | Multi-page unit | C1     | exemp    | research/fixtures/elpx/multipage-gradable.elpx |
     And the following eXeLearning SCORM scores exist:
-      | activity | user     | sessiontoken     | objectid            | score |
-      | exemp    | student1 | multipage-attempt | idevice-tf-0001     | 90    |
-      | exemp    | student1 | multipage-attempt | idevice-guess-0002  | 30    |
+      | activity | user     | sessiontoken      | objectid           | score |
+      | exemp    | student1 | multipage-attempt | idevice-tf-0001    | 90    |
+      | exemp    | student1 | multipage-attempt | idevice-guess-0002 | 30    |
     When I am on the "Multi-page unit" "exelearning activity" page logged in as teacher1
     And I follow "View attempts report"
     Then I should see "Page One"
@@ -79,8 +79,9 @@ Feature: View a mod_exelearning activity and its attempts report
     And I should see "30.00 / 100.00"
 
   # Delete flow (DEC-0007 phase 2, server-rendered, no @javascript): the delete
-  # link carries its own server-side sesskey in the URL, so a plain "I follow"
-  # exercises the capability + sesskey + recalculation redirect path end to end.
+  # link carries its own server-side sesskey in the URL. Following it renders the
+  # confirmation page; pressing Continue exercises the capability + sesskey +
+  # recalculation redirect path end to end.
   # The objectid is the trueorfalse iDevice of the default fixture
   # (actividad-evaluable.elpx, itemnumber 1), so the seeded score produces one
   # attempt row that can be deleted, returning the report to its empty state.
@@ -91,6 +92,7 @@ Feature: View a mod_exelearning activity and its attempts report
     And I am on the "Evaluable unit" "exelearning activity" page logged in as teacher1
     When I follow "View attempts report"
     And I follow "Delete attempt"
+    And I press "Continue"
     Then I should see "The attempt was deleted and the grade was recalculated."
     And I should see "No attempts have been recorded yet."
 
@@ -116,8 +118,8 @@ Feature: View a mod_exelearning activity and its attempts report
       | student1 | GA    |
       | student2 | GB    |
     And the following "permission overrides" exist:
-      | capability                   | permission | role           | contextlevel | reference |
-      | moodle/site:accessallgroups  | Prohibit   | editingteacher | Course       | C1        |
+      | capability                  | permission | role           | contextlevel | reference |
+      | moodle/site:accessallgroups | Prohibit   | editingteacher | Course       | C1        |
     And the following "activities" exist:
       | activity    | name         | course | idnumber | groupmode |
       | exelearning | Grouped unit | C1     | exegrp   | 1         |

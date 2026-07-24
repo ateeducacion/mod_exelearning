@@ -51,6 +51,7 @@ $string['completionstatusrequired_help'] = '~Quan està habilitat, l\'activitat 
 $string['confirmuninstall'] = 'Segur que voleu desinstal·lar l\'editor incrustat? Això eliminarà la còpia instal·lada per administració de moodledata.';
 $string['confirmuninstalltitle'] = 'Confirma la desinstal·lació';
 $string['deleteattempt'] = '~Elimina l\'intent';
+$string['deleteattempt_confirm'] = '~S\'eliminarà definitivament l\'intent {$a} d\'aquest estudiant i la seva qualificació es recalcularà a partir dels intents restants. Aquesta acció no es pot desfer.';
 $string['detecteditems'] = '~iDevices qualificables detectats:';
 $string['downloadreport'] = '~Baixa les dades de l\'informe com a';
 $string['editorbackuperror'] = 'No s\'ha pogut fer una còpia de seguretat de la instal·lació existent de l\'editor.';
