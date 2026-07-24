@@ -151,7 +151,14 @@ instance.
 
 ## Packaging a release
 
-Build a distributable ZIP with:
+First update `CHANGELOG.md`: it ships inside the ZIP, so it is what an
+administrator reads when deciding whether to upgrade. The `changelog` agent skill
+(`.agents/skills/changelog/SKILL.md`) drafts the block from the pull requests
+merged since the last published release — run `/changelog` in Claude Code, pick
+mode B for a new version block or mode A to top up the existing draft, then review
+every entry by hand before committing.
+
+Then build a distributable ZIP with:
 
 ```bash
 make build-editor               # ensure the editor exists in dist/static/ (make up also builds it)

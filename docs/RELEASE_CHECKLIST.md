@@ -157,6 +157,12 @@ mariadb10.11):
 
 - [ ] `README.md`, `DEVELOPMENT.md` and `docs/` reflect the shipped behavior.
 - [ ] ADR index in `AGENTS.md` updated; any newly accepted DEC referenced.
+- [ ] `CHANGELOG.md` carries a block for the version being released, with the
+      `Unreleased` heading replaced by `## vX.Y.Z – YYYY-MM-DD`. Draft it with the
+      `changelog` agent skill (`.agents/skills/changelog/SKILL.md`), which reads the
+      pull requests merged since the last published release, then review every
+      entry by hand — the skill produces a draft, not a finished changelog. The file
+      ships inside the release ZIP, so administrators read it.
 
 ## 11. Exit criteria — conditions that must hold for a STABLE release
 
