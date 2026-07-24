@@ -43,12 +43,12 @@ $returnurl = new moodle_url('/mod/exelearning/admin/styles.php');
 
 if ($action !== '' && confirm_sesskey()) {
     if ($action === 'enable' || $action === 'disable') {
-        $slug = required_param('slug', PARAM_RAW);
+        $slug = required_param('slug', PARAM_ALPHANUMEXT);
         styles_service::set_uploaded_enabled($slug, $action === 'enable');
         \core\notification::success(get_string('changessaved'));
         redirect($returnurl);
     } else if ($action === 'delete') {
-        $slug = required_param('slug', PARAM_RAW);
+        $slug = required_param('slug', PARAM_ALPHANUMEXT);
         // Delete is destructive and arrives as a sesskey-protected GET link, so confirm
         // server-side: a first hit (or a link prefetch) only shows the confirmation; the
         // actual delete needs the confirmed POST that $OUTPUT->confirm() generates.
@@ -72,7 +72,7 @@ if ($action !== '' && confirm_sesskey()) {
         \core\notification::success(get_string('stylesdelete_success', 'mod_exelearning'));
         redirect($returnurl);
     } else if ($action === 'enablebuiltin' || $action === 'disablebuiltin') {
-        $id = required_param('id', PARAM_RAW);
+        $id = required_param('id', PARAM_ALPHANUMEXT);
         styles_service::set_builtin_enabled($id, $action === 'enablebuiltin');
         \core\notification::success(get_string('changessaved'));
         redirect($returnurl);
