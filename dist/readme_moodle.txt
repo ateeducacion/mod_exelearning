@@ -22,9 +22,9 @@ regional administrations), with its own public repository, release cycle and
 licence.
 
 Bundling it lets the plugin offer in-place editing right after installation,
-with no download step. Administrators may still install a newer editor from
-GitHub Releases through the "Manage embedded editor" admin page; that copy goes
-to moodledata and takes precedence over this one
+with no download step. It is the only editor source the plugin uses: there is no
+runtime installer and no moodledata copy — updating the editor means installing
+the next plugin release, which always bundles the matching editor build
 (classes/local/embedded_editor_source_resolver.php).
 
 
