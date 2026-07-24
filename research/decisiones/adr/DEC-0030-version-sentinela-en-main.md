@@ -1,7 +1,7 @@
 ---
 id: DEC-0030
 titulo: "Versión 'sentinela' (9999999999/dev) en main; la versión real la inyecta make package (issue #13)"
-estado: Aceptada
+estado: Superseded
 fecha: 2026-06-03
 agentes:
   - erseco
@@ -11,10 +11,18 @@ fuentes:
   - REPO-004
 relacionados:
   - DEC-0004
+  - DEC-0068
 herramienta_ia:
   interfaz: claude-code
   modelo: claude-opus-4-8
 ---
+
+> **Superseded por [DEC-0068](DEC-0068-version-real-monotona-en-main.md) (2026-07-24).**
+> El centinela `9999999999` brickeaba las instalaciones hechas desde el checkout (toda
+> release futura es un downgrade) y el estampado por fecha hacía irreproducible el build
+> del mismo tag. `main` pasa a llevar una versión real y monótona; el empaquetado valida y
+> nunca reescribe `version.php`. Se conservan intactos el contexto y la decisión
+> originales de abajo.
 
 ## Contexto
 

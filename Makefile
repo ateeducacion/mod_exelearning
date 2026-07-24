@@ -212,18 +212,31 @@ clean-editor:
 
 PLUGIN_NAME = mod_exelearning
 
-# Create a distributable ZIP package
-# Usage: make package RELEASE=0.0.2
-# VERSION (YYYYMMDDXX) is auto-generated from the current date.
-# Delegates to scripts/package.sh, which uses only git ("git archive") so it
-# needs no zip/rsync/python/php and works in Git Bash on Windows. version.php is
-# stamped in a temporary index (the working tree is never modified) and the ZIP
-# is rooted at the Moodle install folder "exelearning/".
-package:
+# Validate the committed version metadata (DEC-0068): real, monotonic
+# YYYYMMDDXX version, release = 'dev' on the development branch, strictly above
+# every db/upgrade.php savepoint.
+check-version:
+	bash scripts/check-version.sh
+
+# Validate release metadata before packaging: version.php must already carry the
+# final semantic release (committed by the release-preparation PR) matching
+# RELEASE, and the tagged commit when building from a tag.
+check-release-version:
 	@if [ -z "$(RELEASE)" ]; then \
-		echo "Error: RELEASE not specified. Use 'make package RELEASE=0.0.2'"; \
+		echo "Error: RELEASE is required."; \
 		exit 1; \
 	fi
+	bash scripts/check-version.sh --release "$(RELEASE)"
+
+# Create a distributable ZIP package
+# Usage: make package RELEASE=4.0.3
+# The Moodle version is NOT generated here: version.php ships exactly as
+# committed (DEC-0068); check-release-version validates it first. Delegates to
+# scripts/package.sh, which uses only git ("git archive") so it needs no
+# zip/rsync/python/php and works in Git Bash on Windows. The working tree is
+# never modified and the ZIP is rooted at the Moodle install folder
+# "exelearning/".
+package: check-release-version
 	@command -v git >/dev/null 2>&1 || { echo "Error: git is required to build the package."; exit 1; }
 	@bash scripts/package.sh "$(RELEASE)" "$(PLUGIN_NAME)"
 
