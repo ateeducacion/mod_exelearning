@@ -57,7 +57,7 @@
   - [ ] `tests/external_test.php`
   - [ ] `tests/events_test.php`
   - [ ] `tests/package_test.php`
-  - [ ] `tests/embedded_editor_installer_test.php`
+  - [ ] `tests/embedded_editor_source_resolver_test.php`
 
 ## 2. Backup / restore round-trip
 

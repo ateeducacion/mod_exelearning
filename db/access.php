@@ -73,6 +73,10 @@ $capabilities = [
         ],
     ],
 
+    // Manage the eXeLearning style packages (upload/enable/disable/delete) from the
+    // Styles admin pages. Historically this also gated the runtime editor installer;
+    // that installer is gone (DEC-0065, the editor ships inside the release ZIP) but
+    // the capability name is kept to avoid churning existing role assignments.
     'mod/exelearning:manageembeddededitor' => [
         'riskbitmask' => RISK_CONFIG | RISK_DATALOSS,
         'captype' => 'write',

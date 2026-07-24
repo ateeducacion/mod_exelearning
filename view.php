@@ -405,24 +405,21 @@ if (!$mainfile) {
     $emitsxapi = exelearning_xapi_primary_enabled()
             && exelearning_package_emits_xapi($context->id, (int) $exelearning->revision);
 
-    $trackurl = (new moodle_url(
-        '/mod/exelearning/track.php',
-        ['id' => $cm->id, 'sesskey' => sesskey(), 'mode' => $mode]
-    ))->out(false);
     // The tracker logic is a single source of truth in js/scorm_tracker.js, also
     // unit-tested with Vitest (tests/js/scorm_tracker.test.js). It is injected inline
     // (not as an AMD module) so window.API is defined synchronously before the package
     // iframe's pipwerks findAPI() runs — an async AMD load would race the SCO and break
-    // grading. Config (cmid, track URL, per-page attempt token) is passed as JSON to the
-    // createScormApi() factory instead of string-substituted placeholders.
+    // grading. The config (cmid, track URL, per-page attempt token, sesskey) is built by
+    // tracking_endpoint, which keeps the session key out of the URL (SEC-04), and passed
+    // as JSON to the createScormApi() factory instead of string-substituted placeholders.
     $scormcfg = json_encode(
-        [
-            'cmid' => (int) $cm->id,
-            'trackurl' => $trackurl,
-            'session' => $sessiontoken,
+        \mod_exelearning\local\tracking_endpoint::scorm_config(
+            (int) $cm->id,
+            $mode,
+            $sessiontoken,
             // Inert SCORM shim for xAPI-primary packages (DEC-0064).
-            'disableTracking' => $emitsxapi,
-        ],
+            $emitsxapi
+        ),
         JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
     );
     $trackerjs = file_get_contents(__DIR__ . '/js/scorm_tracker.js');
@@ -435,19 +432,14 @@ if (!$mainfile) {
     // SCORM tracker (js/xapi_listener.js, Vitest-tested). It shares $sessiontoken as the
     // xAPI registration so every statement of this view maps to the same attempt.
     if ($emitsxapi) {
-        $xapitrackurl = (new moodle_url(
-            '/mod/exelearning/xapi_track.php',
-            ['id' => $cm->id, 'sesskey' => sesskey(), 'mode' => $mode]
-        ))->out(false);
         $hostorigin = preg_replace('~^(https?://[^/]+).*~', '$1', $CFG->wwwroot);
         $xapicfg = json_encode(
-            [
-                'cmid' => (int) $cm->id,
-                'trackurl' => $xapitrackurl,
-                'registration' => $sessiontoken,
-                'mode' => $mode,
-                'allowedOrigin' => $hostorigin,
-            ],
+            \mod_exelearning\local\tracking_endpoint::xapi_config(
+                (int) $cm->id,
+                $mode,
+                $sessiontoken,
+                $hostorigin
+            ),
             JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
         );
         $listenerjs = file_get_contents(__DIR__ . '/js/xapi_listener.js');

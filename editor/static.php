@@ -117,7 +117,7 @@ $contenttype = isset($mimetypes[$ext]) ? $mimetypes[$ext] : 'application/octet-s
 // Release session lock early so parallel requests are not blocked.
 \core\session\manager::write_close();
 
-if (!exelearning_embedded_editor_uses_local_assets()) {
+if (!exelearning_embedded_editor_enabled()) {
     send_header_404();
     die('Editor assets not installed');
 }

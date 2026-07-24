@@ -115,14 +115,26 @@
     /**
      * Serialize the track.php POST body.
      *
+     * The sesskey travels here rather than in the endpoint's query string (SEC-04):
+     * a URL parameter is recorded verbatim by web-server access logs, reverse proxies
+     * and diagnostic tooling, while a POST body is not. track.php confirms it with an
+     * explicit confirm_sesskey() after decoding.
+     *
      * @param {number} cmid       Course module id.
      * @param {string} session    Per-page attempt token.
      * @param {Object} cmi        Buffered CMI key/value pairs.
      * @param {Object} itemscores objectid -> {scorepct, weighted, title}.
+     * @param {string} sesskey    Moodle session key, validated server-side.
      * @returns {string} JSON payload.
      */
-    function buildPayload(cmid, session, cmi, itemscores) {
-        return JSON.stringify({ id: cmid, session: session, cmi: cmi, itemscores: itemscores });
+    function buildPayload(cmid, session, cmi, itemscores, sesskey) {
+        return JSON.stringify({
+            id: cmid,
+            session: session,
+            cmi: cmi,
+            itemscores: itemscores,
+            sesskey: sesskey,
+        });
     }
 
     /**
@@ -145,6 +157,8 @@
         var cmid = config.cmid;
         var trackurl = config.trackurl;
         var session = config.session;
+        // Sent in the POST body, never appended to trackurl (SEC-04).
+        var sesskey = config.sesskey;
         var setTimeoutFn = config.setTimeout || (typeof setTimeout !== 'undefined' ? setTimeout : null);
         var clearTimeoutFn = config.clearTimeout || (typeof clearTimeout !== 'undefined' ? clearTimeout : null);
         var xhrFactory = config.xhrFactory || function () { return new XMLHttpRequest(); };
@@ -169,7 +183,7 @@
             if (disableTracking) { dirty = false; return true; }
             if (!dirty) { return true; }
             var snapshot = JSON.stringify(cmi);
-            var payload = buildPayload(cmid, session, cmi, itemScores);
+            var payload = buildPayload(cmid, session, cmi, itemScores, sesskey);
             try {
                 var xhr = xhrFactory();
                 // Synchronous in LMSFinish (student closes the tab); async otherwise.

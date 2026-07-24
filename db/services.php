@@ -25,23 +25,6 @@
 defined('MOODLE_INTERNAL') || die();
 
 $functions = [
-    'mod_exelearning_manage_embedded_editor_action' => [
-        'classname'   => 'mod_exelearning\external\manage_embedded_editor',
-        'methodname'  => 'execute_action',
-        'description' => 'Install, update, repair, or uninstall the embedded editor.',
-        'type'        => 'write',
-        'ajax'        => true,
-        'capabilities' => 'moodle/site:config, mod/exelearning:manageembeddededitor',
-    ],
-    'mod_exelearning_manage_embedded_editor_status' => [
-        'classname'   => 'mod_exelearning\external\manage_embedded_editor',
-        'methodname'  => 'get_status',
-        'description' => 'Get the current status of the embedded editor installation.',
-        'type'        => 'read',
-        'ajax'        => true,
-        'capabilities' => 'moodle/site:config, mod/exelearning:manageembeddededitor',
-    ],
-
     // Mobile / external client services. Available to the official Moodle App and
     // any external client; each enforces context, login and capabilities in code.
     'mod_exelearning_get_exelearnings_by_courses' => [

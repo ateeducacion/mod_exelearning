@@ -55,15 +55,8 @@ return new class extends phpunit_coverage_info {
     ];
 
     /**
-     * @var array Files excluded from coverage.
-     *
-     * Nothing is excluded by file: the embedded_editor_installer GitHub-release
-     * adapter — previously scoped out as "untestable network I/O" — is now covered
-     * by embedded_editor_installer_test, which drives the discover/fetch path with
-     * Moodle's \curl::mock_response() and the full install pipeline by stubbing the
-     * single download_to_temp() seam against a fixture ZIP. The only lines left
-     * uncovered are the curl error branches (get_errno()/http_code != 200), which
-     * the mock cannot reach because it always resolves successfully.
+     * @var array Files excluded from coverage. Nothing is excluded by file
+     * (DEC-0048: testable code must stay in scope).
      */
     protected $excludelistfiles = [];
 };
