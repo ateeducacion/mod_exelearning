@@ -72,11 +72,18 @@ describe('xapi_listener pure helpers', () => {
     });
 
     it('builds the POST body with id/statement/registration/mode', () => {
-        const body = JSON.parse(buildPayload(42, answered('a'), 'tok', 'grading'));
+        const body = JSON.parse(buildPayload(42, answered('a'), 'tok', 'grading', 'k1'));
         expect(body.id).toBe(42);
         expect(body.statement.id).toBe('a');
         expect(body.registration).toBe('tok');
         expect(body.mode).toBe('grading');
+    });
+
+    // SEC-04: the session key used to travel in the xapi_track.php query string, where
+    // proxies and web-server access logs record it verbatim. It belongs in the body.
+    it('carries the sesskey in the body', () => {
+        const body = JSON.parse(buildPayload(42, answered('a'), 'tok', 'grading', 'secretkey'));
+        expect(body.sesskey).toBe('secretkey');
     });
 });
 
@@ -88,7 +95,7 @@ describe('xapi_listener createListener().handleMessage', () => {
         xhr = makeXhr();
         listener = createListener({
             cmid: 42,
-            trackurl: '/mod/exelearning/xapi_track.php?id=42&sesskey=abc',
+            trackurl: '/mod/exelearning/xapi_track.php?id=42&mode=grading',
             registration: 'tok',
             mode: 'grading',
             allowedOrigin: HOST,
@@ -103,6 +110,26 @@ describe('xapi_listener createListener().handleMessage', () => {
         expect(open.method).toBe('POST');
         expect(open.url).toContain('xapi_track.php');
         expect(JSON.parse(send.body).statement.id).toBe('s1');
+    });
+
+    // SEC-04: the key travels in the body, and the listener must not append it to the
+    // endpoint URL, where logs and proxies would keep it.
+    it('sends the sesskey in the POST body and leaves the endpoint URL untouched', () => {
+        const keyed = makeXhr();
+        const withkey = createListener({
+            cmid: 42,
+            trackurl: '/mod/exelearning/xapi_track.php?id=42&mode=grading',
+            registration: 'tok',
+            mode: 'grading',
+            sesskey: 'secretkey',
+            allowedOrigin: HOST,
+            xhrFactory: () => keyed,
+        });
+        withkey.handleMessage(messageEvent(answered('s1')));
+        const open = keyed.calls.find((c) => c.method);
+        const send = keyed.calls.find((c) => c.body);
+        expect(JSON.parse(send.body).sesskey).toBe('secretkey');
+        expect(open.url).not.toContain('sesskey');
     });
 
     it('drops a statement from a mismatched origin', () => {
@@ -164,7 +191,7 @@ describe('xapi_listener createListener() bounded resend (DEC-0064)', () => {
         timers = [];                       // captured backoff callbacks, fired manually
         listener = createListener({
             cmid: 42,
-            trackurl: '/mod/exelearning/xapi_track.php?id=42&sesskey=abc',
+            trackurl: '/mod/exelearning/xapi_track.php?id=42&mode=grading',
             registration: 'tok',
             allowedOrigin: HOST,
             xhrFactory: factory,

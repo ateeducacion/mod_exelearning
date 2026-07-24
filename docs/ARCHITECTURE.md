@@ -47,7 +47,8 @@ these `grades\*` / `local\*` classes ([[DEC-0054]]).
 
 **Delivery + grading (learner):**
 `view.php` (sandboxed iframe + `window.API` shim) → iDevice JS (pipwerks SCORM 1.2) →
-POST `track.php` (`require_sesskey` + `require_capability('mod/exelearning:savetrack')`)
+POST `track.php` (sesskey confirmed from the JSON body, SEC-04, +
+`require_capability('mod/exelearning:savetrack')`)
 → `local\track::ingest()` (normalise/clamp, objectid routing, server-side overall
 recompute, attempt cap) → `local\attempts` (record) → `grade_update` + completion.
 See `docs/TRACKING.md`.
