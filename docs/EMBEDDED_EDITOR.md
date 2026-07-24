@@ -49,6 +49,16 @@ removed installer era is obsolete and ignored; upgrading cleans the installer's
 config keys (`db/upgrade.php`, stage 2026072400) but deliberately leaves the
 directory for the administrator to delete.
 
+**Site-wide toggle (DEC-0066).** Embedded editing can be switched off with the
+`exelearning/editordisabled` admin setting (a deliberately negative checkbox,
+unticked by default, so the unset config and the unticked box both mean
+"editing on"). `exelearning_embedded_editor_enabled()` combines the toggle with bundle
+validation, so the edit button, `editor/static.php` and the create-from-scratch
+CTA all react to it; `editor/index.php` and `editor/save.php` additionally
+refuse direct requests via `exelearning_require_embedded_editor_enabled()`.
+Uploading and serving `.elpx` packages is unaffected — the plugin degrades to a
+pure player.
+
 ## 2. Embedding the editor and the postMessage bridge
 
 The editor bootstrap page is `editor/index.php`. Access requires
