@@ -349,4 +349,4 @@ $string['viewstub']      = 'This is a placeholder view. The full mod_exelearning
 $string['xapiprimaryenabled'] = 'Use xAPI grading when the package supports it';
 $string['xapiprimaryenabled_desc'] = 'If checked, a package that bundles the eXeLearning xAPI emitter is graded through xAPI instead of SCORM (recommended). Uncheck to grade those packages through SCORM 1.2. Packages without the emitter always use SCORM. This is not cmi5 and not an external LRS integration; SCORM 1.2 remains the compatibility path.';
 $string['xapisettings'] = 'xAPI ingestion';
-$string['xapisettings_desc'] = 'Grading channel for packages that emit xAPI statements (DEC-0064). SCORM 1.2 stays the compatibility path for packages without the emitter.';
+$string['xapisettings_desc'] = 'Grading channel for packages that emit xAPI statements. SCORM 1.2 stays the compatibility path for packages without the emitter.';

@@ -17,20 +17,20 @@
         <FIELD NAME="revision"      TYPE="int"  LENGTH="10"  NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Incremented on each file change to bust caches."/>
         <FIELD NAME="grademax"      TYPE="number" LENGTH="10" DECIMALS="5" NOTNULL="true" DEFAULT="100" SEQUENCE="false" COMMENT="Max score per gradable iDevice (default 100)."/>
         <FIELD NAME="grademin"      TYPE="number" LENGTH="10" DECIMALS="5" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
-        <FIELD NAME="gradepass"     TYPE="number" LENGTH="10" DECIMALS="5" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Overall grade required to pass (DEC-0010). 0 disables pass-based completion. Mirrors db/upgrade.php stage 5 (2026052804) for fresh installs."/>
+        <FIELD NAME="gradepass"     TYPE="number" LENGTH="10" DECIMALS="5" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Overall grade required to pass. 0 disables pass-based completion. Mirrors db/upgrade.php stage 5 (2026052804) for fresh installs."/>
         <FIELD NAME="gradedisplaytype" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="GRADE_DISPLAY_TYPE_* constant; 0=DEFAULT (inherit course), 1=REAL, 2=PERCENTAGE, 3=LETTER, 12=REAL_PERCENTAGE."/>
-        <FIELD NAME="grademethod"   TYPE="int"  LENGTH="4"   NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Attempt aggregation for the gradebook: 0=highest, 1=average, 2=first, 3=last, 4=lowest (DEC-0007)."/>
-        <FIELD NAME="grademodel"    TYPE="int"  LENGTH="4"   NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Gradebook columns model (DEC-0008, rev. 2026-05-29): 0=overall only, 1=per-iDevice only (default). The legacy 'both' (2) was removed."/>
-        <FIELD NAME="gradeenabled"  TYPE="int"  LENGTH="2"   NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Master grading switch (DEC-0029): 1=activity is graded (detect iDevices, gradebook columns, reports); 0=not graded (no grade items, no reports, behaves like a plain resource)."/>
-        <FIELD NAME="maxattempt"    TYPE="int"  LENGTH="10"  NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Max attempts per user (DEC-0007 phase 2): 0=unlimited."/>
-        <FIELD NAME="reviewmode"    TYPE="int"  LENGTH="4"   NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Student attempt review (DEC-0007 phase 2): 0=never, 1=always, 2=after completion."/>
+        <FIELD NAME="grademethod"   TYPE="int"  LENGTH="4"   NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Attempt aggregation for the gradebook: 0=highest, 1=average, 2=first, 3=last, 4=lowest."/>
+        <FIELD NAME="grademodel"    TYPE="int"  LENGTH="4"   NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Gradebook columns model: 0=overall only, 1=per-iDevice only (default). The legacy 'both' (2) was removed."/>
+        <FIELD NAME="gradeenabled"  TYPE="int"  LENGTH="2"   NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Master grading switch: 1=activity is graded (detect iDevices, gradebook columns, reports); 0=not graded (no grade items, no reports, behaves like a plain resource)."/>
+        <FIELD NAME="maxattempt"    TYPE="int"  LENGTH="10"  NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Max attempts per user: 0=unlimited."/>
+        <FIELD NAME="reviewmode"    TYPE="int"  LENGTH="4"   NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Student attempt review: 0=never, 1=always, 2=after completion."/>
         <FIELD NAME="teachermodevisible" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="If 1, append the eXeLearning package's ?exe-teacher=1 URL parameter so its teacher-layer selector is available; if 0 (default) the package is served unchanged with teacher content hidden."/>
         <FIELD NAME="timecreated"   TYPE="int"  LENGTH="10"  NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="timemodified"  TYPE="int"  LENGTH="10"  NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="usermodified"  TYPE="int"  LENGTH="10"  NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="gradesyncrev"  TYPE="int"  LENGTH="10"  NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Highest package revision already scanned for gradable iDevices. Gates the view.php self-heal so content-only packages (0 gradable iDevices) are not fully re-extracted/re-parsed on every page view."/>
-        <FIELD NAME="gradecat"      TYPE="int"  LENGTH="10"  NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Gradebook category id every grade item of this activity is placed under via grade_item::set_parent (DEC-0034); grade_update() ignores categoryid. 0 = leave at the course top category."/>
-        <FIELD NAME="completionstatusrequired" TYPE="int" LENGTH="1" NOTNULL="false" SEQUENCE="false" COMMENT="Custom completion rule (DEC-0052): required attempt status to complete the activity. NULL = rule disabled, 1 = passed, 2 = completed, 3 = passed or completed (any). Module-level (one state per module)."/>
+        <FIELD NAME="gradecat"      TYPE="int"  LENGTH="10"  NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Gradebook category id every grade item of this activity is placed under via grade_item::set_parent; grade_update() ignores categoryid. 0 = leave at the course top category."/>
+        <FIELD NAME="completionstatusrequired" TYPE="int" LENGTH="1" NOTNULL="false" SEQUENCE="false" COMMENT="Custom completion rule: required attempt status to complete the activity. NULL = rule disabled, 1 = passed, 2 = completed, 3 = passed or completed (any). Module-level (one state per module)."/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
@@ -67,7 +67,7 @@
       </INDEXES>
     </TABLE>
 
-    <TABLE NAME="exelearning_attempt" COMMENT="One row per user submission per gradable item. Keeps attempt history (DEC-0007), mirroring mod_h5pactivity/mod_scorm.">
+    <TABLE NAME="exelearning_attempt" COMMENT="One row per user submission per gradable item. Keeps attempt history, mirroring mod_h5pactivity/mod_scorm.">
       <FIELDS>
         <FIELD NAME="id"             TYPE="int"  LENGTH="10"  NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="exelearningid"  TYPE="int"  LENGTH="10"  NOTNULL="true" SEQUENCE="false"/>
@@ -93,7 +93,7 @@
       </INDEXES>
     </TABLE>
 
-    <TABLE NAME="exelearning_migration" COMMENT="Audit/idempotency map of activities migrated from mod_exeweb/mod_exescorm into mod_exelearning (issue #13 #3, DEC-0026).">
+    <TABLE NAME="exelearning_migration" COMMENT="Audit/idempotency map of activities migrated from mod_exeweb/mod_exescorm into mod_exelearning.">
       <FIELDS>
         <FIELD NAME="id"              TYPE="int"  LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="sourcecomponent" TYPE="char" LENGTH="64" NOTNULL="true" SEQUENCE="false" COMMENT="Frankenstyle of the source module, e.g. mod_exeweb or mod_exescorm."/>
@@ -112,12 +112,12 @@
       </INDEXES>
     </TABLE>
 
-    <TABLE NAME="exelearning_tracking_events" COMMENT="Audit/idempotency log of ingested xAPI statements (DEC-0032/DEC-0064). One row per processed statement.id; the grade/UI never depend on it, the flat exelearning_attempt table does.">
+    <TABLE NAME="exelearning_tracking_events" COMMENT="Audit/idempotency log of ingested xAPI statements. One row per processed statement.id; the grade/UI never depend on it, the flat exelearning_attempt table does.">
       <FIELDS>
         <FIELD NAME="id"            TYPE="int"  LENGTH="10"  NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="exelearningid" TYPE="int"  LENGTH="10"  NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="userid"        TYPE="int"  LENGTH="10"  NOTNULL="true" SEQUENCE="false" COMMENT="The Moodle user the statement was attributed to ($USER); the client actor is always ignored."/>
-        <FIELD NAME="statementid"   TYPE="char" LENGTH="36"  NOTNULL="true" SEQUENCE="false" COMMENT="The xAPI statement.id (UUID). UNIQUE: a repeated id is not re-applied (LRS idempotency, DEC-0063)."/>
+        <FIELD NAME="statementid"   TYPE="char" LENGTH="36"  NOTNULL="true" SEQUENCE="false" COMMENT="The xAPI statement.id (UUID). UNIQUE: a repeated id is not re-applied (LRS idempotency)."/>
         <FIELD NAME="verb"          TYPE="char" LENGTH="32"  NOTNULL="true" SEQUENCE="false" COMMENT="The statement verb display key: answered|completed|passed|failed|initialized|terminated."/>
         <FIELD NAME="objectid"      TYPE="char" LENGTH="191" NOTNULL="false" SEQUENCE="false" COMMENT="For an answered statement, the stable iDevice objectid it routed to (matches exelearning_grade_item.objectid); NULL for package/lifecycle verbs."/>
         <FIELD NAME="registration"  TYPE="char" LENGTH="40"  NOTNULL="false" SEQUENCE="false" COMMENT="Attempt-grouping token (the xAPI registration), used as the attempt sessiontoken."/>

@@ -122,7 +122,7 @@ if [ "$sourcemarkers" -eq 0 ]; then
 fi
 
 # 4) Development-only paths stay out of the distributed plugin.
-for excluded in research scripts .github AGENTS.md composer.json codecov.yml tests/js; do
+for excluded in research scripts docs .github AGENTS.md composer.json codecov.yml tests/js; do
     if [ -e "$PKG/$excluded" ]; then
         report "$excluded must not ship in the release ZIP"
     fi
