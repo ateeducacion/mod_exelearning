@@ -50,8 +50,9 @@ config keys (`db/upgrade.php`, stage 2026072400) but deliberately leaves the
 directory for the administrator to delete.
 
 **Site-wide toggle (DEC-0066).** Embedded editing can be switched off with the
-`exelearning/editorenabled` admin setting (default on; an unset config counts as
-on). `exelearning_embedded_editor_enabled()` combines the toggle with bundle
+`exelearning/editordisabled` admin setting (a deliberately negative checkbox,
+unticked by default, so the unset config and the unticked box both mean
+"editing on"). `exelearning_embedded_editor_enabled()` combines the toggle with bundle
 validation, so the edit button, `editor/static.php` and the create-from-scratch
 CTA all react to it; `editor/index.php` and `editor/save.php` additionally
 refuse direct requests via `exelearning_require_embedded_editor_enabled()`.

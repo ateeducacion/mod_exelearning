@@ -165,15 +165,15 @@ final class lib_helpers_test extends advanced_testcase {
         $this->assertSame($dir . '/index.html', exelearning_get_embedded_editor_index_source());
         $this->assertSame($dir, exelearning_get_embedded_editor_local_static_dir());
 
-        // With no editorenabled config at all (fresh site), editing stays on and
+        // With no editordisabled config at all (fresh site), editing stays on and
         // the endpoint guard passes.
         exelearning_require_embedded_editor_enabled();
     }
 
     /**
-     * The site-wide editorenabled toggle disables embedded editing even when a
-     * valid bundle is present (DEC-0066): the button helper reports false and the
-     * editor endpoints' guard throws.
+     * The site-wide editordisabled toggle switches embedded editing off even when
+     * a valid bundle is present (DEC-0066): the button helper reports false and
+     * the editor endpoints' guard throws.
      */
     public function test_admin_toggle_disables_embedded_editing(): void {
         global $CFG;
@@ -184,7 +184,7 @@ final class lib_helpers_test extends advanced_testcase {
         file_put_contents($dir . '/index.html', 'x');
         $CFG->mod_exelearning_bundled_editor_dir = $dir;
 
-        set_config('editorenabled', 0, 'exelearning');
+        set_config('editordisabled', 1, 'exelearning');
 
         $this->assertFalse(exelearning_embedded_editor_enabled());
         $this->expectException(\moodle_exception::class);

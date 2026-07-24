@@ -1059,8 +1059,10 @@ function exelearning_get_embedded_editor_index_source(): ?string {
  *
  * Two conditions must hold (DEC-0065, DEC-0066): the bundled editor passes
  * validation, and the administrator has not switched embedded editing off via
- * the site-wide `editorenabled` setting. An unset config (a site that never
- * saved the settings page) counts as enabled, preserving the default.
+ * the site-wide `editordisabled` setting. The toggle is deliberately negative
+ * (like `stylesblockimport`) so the unset state and the unticked checkbox both
+ * mean "editing on" — a positive default would render unticked until
+ * upgradesettings materialises it, contradicting the real behaviour.
  *
  * Used by view.php to decide whether to show the "Edit with eXeLearning" button
  * and by editor/static.php before serving editor assets. Activities keep
@@ -1070,8 +1072,7 @@ function exelearning_get_embedded_editor_index_source(): ?string {
  * @return bool True when the editor is bundled, valid and not disabled.
  */
 function exelearning_embedded_editor_enabled(): bool {
-    $setting = get_config('exelearning', 'editorenabled');
-    if ($setting !== false && !$setting) {
+    if (!empty(get_config('exelearning', 'editordisabled'))) {
         return false;
     }
     return \mod_exelearning\local\embedded_editor_source_resolver::is_available();

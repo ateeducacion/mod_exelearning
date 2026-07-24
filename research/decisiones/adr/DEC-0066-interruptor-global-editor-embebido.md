@@ -36,7 +36,7 @@ Se valoraron dos mecanismos:
 
 ## Decisión
 
-**Ajuste global `exelearning/editorenabled`** (checkbox, activado por defecto), por ser lo
+**Ajuste global `exelearning/editordisabled`** (checkbox negativo, desmarcado por defecto = edición activa), por ser lo
 más sencillo y lo más parecido a cómo los plugins de actividad de Moodle apagan
 funcionalidades completas de sitio (los ajustes `scorm_*` de mod_scorm, los toggles de
 características en admin settings). La capability se descarta como mecanismo primario: el
@@ -52,8 +52,11 @@ Alcance del interruptor:
   de error explicativa y `editor/save.php` con `exelearning_require_embedded_editor_enabled()`
   (ocultar el botón no es un control de acceso); `editor/static.php` deja de servir assets
   (ya pasaba por el helper). La subida y reproducción de `.elpx` no cambian.
-- **Encendido** (default): comportamiento actual. Config ausente (sitio que nunca guardó
-  ajustes) cuenta como encendido para no cambiar el comportamiento en upgrade.
+- **Encendido** (default): comportamiento actual. El checkbox es **negativo a propósito**
+  ("Desactivar el editor integrado", patrón de `stylesblockimport`): así config ausente y
+  casilla desmarcada significan lo mismo (edición activa) y se evita la confusión de un
+  default positivo que se muestra desmarcado hasta que `upgradesettings` lo materializa
+  (observada en la revisión del PR).
 
 ## Consecuencias
 

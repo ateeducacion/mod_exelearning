@@ -57,7 +57,10 @@ if ($ADMIN->fulltree) {
     // Embedded editor (DEC-0066): a single site-wide toggle. The editor itself
     // ships inside the release package (DEC-0065) and has no runtime management;
     // this switch lets a site use the plugin as a pure .elpx player — uploads
-    // keep working, only in-place editing is hidden and refused.
+    // keep working, only in-place editing is hidden and refused. The checkbox is
+    // negative (disable) on purpose: unset config and unticked box then agree,
+    // avoiding the "Default: Yes but unticked" confusion before upgradesettings
+    // materialises a positive default (same pattern as stylesblockimport).
     $settings->add(new admin_setting_heading(
         'mod_exelearning/editorsettingsheading',
         get_string('editorsettings', 'mod_exelearning'),
@@ -65,10 +68,10 @@ if ($ADMIN->fulltree) {
     ));
 
     $settings->add(new admin_setting_configcheckbox(
-        'exelearning/editorenabled',
-        get_string('editorenabled', 'mod_exelearning'),
-        get_string('editorenabled_desc', 'mod_exelearning'),
-        1
+        'exelearning/editordisabled',
+        get_string('editordisabled', 'mod_exelearning'),
+        get_string('editordisabled_desc', 'mod_exelearning'),
+        0
     ));
 
     // Defined styles management (upload / enable / disable / lockdown).

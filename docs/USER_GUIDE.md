@@ -242,10 +242,10 @@ from an official release ZIP.
 
 ### Disabling in-place editing
 
-If your site only plays packages authored elsewhere, untick **Enable the
+If your site only plays packages authored elsewhere, tick **Disable the
 embedded editor** on the settings page. Teachers keep uploading and serving
 `.elpx` packages exactly as before, but the **Edit with eXeLearning** button
-disappears and the editor pages refuse requests. Tick it again at any time to
+disappears and the editor pages refuse requests. Untick it at any time to
 restore in-place editing — no data is affected either way.
 
 ### Managing styles
