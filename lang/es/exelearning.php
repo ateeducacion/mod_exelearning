@@ -408,4 +408,4 @@ $string['viewstub'] = '~Esta es una vista provisional. La representación comple
 $string['xapiprimaryenabled'] = '~Usar calificación xAPI cuando el paquete lo soporte';
 $string['xapiprimaryenabled_desc'] = '~Si se marca, un paquete que incluye el emisor xAPI de eXeLearning se califica mediante xAPI en lugar de SCORM (recomendado). Desmárcalo para calificar esos paquetes mediante SCORM 1.2. Los paquetes sin el emisor siempre usan SCORM. Esto no es cmi5 ni una integración con un LRS externo; SCORM 1.2 sigue siendo la vía de compatibilidad.';
 $string['xapisettings'] = '~Ingesta xAPI';
-$string['xapisettings_desc'] = '~Canal de calificación para paquetes que emiten statements xAPI (DEC-0064). SCORM 1.2 sigue siendo la vía de compatibilidad para los paquetes sin el emisor.';
+$string['xapisettings_desc'] = '~Canal de calificación para paquetes que emiten statements xAPI. SCORM 1.2 sigue siendo la vía de compatibilidad para los paquetes sin el emisor.';

@@ -179,8 +179,8 @@ SCORM wrappers.
 Exclusions are driven by `.distignore` (a path is excluded when its top
 component or full relative path matches a pattern). `README.md` and
 `thirdpartylibs.xml` are shipped; dev/CI tooling (`Makefile`, `composer.*`,
-`docker*`, `blueprint.json`, `phpmd*`, `scripts/`, `research/`, hidden files,
-internal docs) is not.
+`docker*`, `blueprint.json`, `phpmd*`, `scripts/`, `research/`, `docs/`, hidden
+files, internal docs) is not — the README links to the docs on GitHub instead.
 
 > The committed `version.php` carries a sentinel (`9999999999` / `dev`,
 > [DEC-0030](./research/decisiones/adr/DEC-0030-version-sentinela-en-main.md)); the real

@@ -11,7 +11,7 @@
 > (`.elpx`) directly in Moodle, preserving eXeLearning's native navigation and
 > supporting multiple gradebook items per activity.**
 
-> **For teachers and administrators:** see the [User Guide](docs/USER_GUIDE.md)
+> **For teachers and administrators:** see the [User Guide](https://github.com/exelearning/moodle-mod_exelearning/blob/main/docs/USER_GUIDE.md)
 > for step-by-step instructions on adding, editing and grading eXeLearning
 > resources, plus site-administration and troubleshooting notes.
 
@@ -181,7 +181,7 @@ completion-by-grade). The teacher can switch the activity to **overall only** wh
 single aggregated grade is preferred (SCORM-style). The former "both" mode was
 removed in [DEC-0008](./research/decisiones/adr/DEC-0008-grade-aggregation-y-feedback.md)
 to avoid double-counting and gradebook complexity. See
-[docs/GRADEBOOK.md](docs/GRADEBOOK.md) for the full model.
+[docs/GRADEBOOK.md](https://github.com/exelearning/moodle-mod_exelearning/blob/main/docs/GRADEBOOK.md) for the full model.
 
 Each submission is stored as an **attempt** (see
 [DEC-0007](./research/decisiones/adr/DEC-0007-gestion-intentos.md)); the
@@ -233,20 +233,20 @@ See `research/decisiones/adr/` for the full set of ADRs. Highlights:
 
 ## Technical documentation
 
-Developer/administrator reference docs live under [`docs/`](./docs/):
+Developer/administrator reference docs live under [`docs/`](https://github.com/exelearning/moodle-mod_exelearning/blob/main/docs/):
 
 | Document | Scope |
 |---|---|
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Responsibility map and request flows. |
-| [EXTERNAL_SERVICES.md](docs/EXTERNAL_SERVICES.md) | Web-service contract (`classes/external` ↔ `db/services.php`). |
-| [GRADEBOOK.md](docs/GRADEBOOK.md) | Multi-item gradebook model (OVERALL vs PER-ITEM). |
-| [TRACKING.md](docs/TRACKING.md) | End-to-end tracking pipeline + security model. |
-| [ELPX_PACKAGE.md](docs/ELPX_PACKAGE.md) | `.elpx` parsing, iDevice detection and XML hardening. |
-| [EMBEDDED_EDITOR.md](docs/EMBEDDED_EDITOR.md) | Embedded editor source/lifecycle and `postMessage` bridge. |
-| [PRIVACY_BACKUP_FILES.md](docs/PRIVACY_BACKUP_FILES.md) | Privacy, backup/restore and File API. |
-| [RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md) | Objective STABLE release gate. |
-| [AUDIT_FOLLOWUP.md](docs/AUDIT_FOLLOWUP.md) | Reconciliation of the comparative report against current code. |
-| [USER_GUIDE.md](docs/USER_GUIDE.md) | Teacher/admin step-by-step guide. |
+| [ARCHITECTURE.md](https://github.com/exelearning/moodle-mod_exelearning/blob/main/docs/ARCHITECTURE.md) | Responsibility map and request flows. |
+| [EXTERNAL_SERVICES.md](https://github.com/exelearning/moodle-mod_exelearning/blob/main/docs/EXTERNAL_SERVICES.md) | Web-service contract (`classes/external` ↔ `db/services.php`). |
+| [GRADEBOOK.md](https://github.com/exelearning/moodle-mod_exelearning/blob/main/docs/GRADEBOOK.md) | Multi-item gradebook model (OVERALL vs PER-ITEM). |
+| [TRACKING.md](https://github.com/exelearning/moodle-mod_exelearning/blob/main/docs/TRACKING.md) | End-to-end tracking pipeline + security model. |
+| [ELPX_PACKAGE.md](https://github.com/exelearning/moodle-mod_exelearning/blob/main/docs/ELPX_PACKAGE.md) | `.elpx` parsing, iDevice detection and XML hardening. |
+| [EMBEDDED_EDITOR.md](https://github.com/exelearning/moodle-mod_exelearning/blob/main/docs/EMBEDDED_EDITOR.md) | Embedded editor source/lifecycle and `postMessage` bridge. |
+| [PRIVACY_BACKUP_FILES.md](https://github.com/exelearning/moodle-mod_exelearning/blob/main/docs/PRIVACY_BACKUP_FILES.md) | Privacy, backup/restore and File API. |
+| [RELEASE_CHECKLIST.md](https://github.com/exelearning/moodle-mod_exelearning/blob/main/docs/RELEASE_CHECKLIST.md) | Objective STABLE release gate. |
+| [AUDIT_FOLLOWUP.md](https://github.com/exelearning/moodle-mod_exelearning/blob/main/docs/AUDIT_FOLLOWUP.md) | Reconciliation of the comparative report against current code. |
+| [USER_GUIDE.md](https://github.com/exelearning/moodle-mod_exelearning/blob/main/docs/USER_GUIDE.md) | Teacher/admin step-by-step guide. |
 
 ## Development
 

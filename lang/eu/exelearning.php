@@ -408,4 +408,4 @@ $string['viewstub'] = '~Hau behin-behineko ikuspegi bat da. mod_exelearning-en e
 $string['xapiprimaryenabled'] = '~Erabili xAPI kalifikazioa paketeak onartzen duenean';
 $string['xapiprimaryenabled_desc'] = '~Markatzen bada, eXeLearning-en xAPI igorlea daraman pakete bat xAPI bidez kalifikatzen da SCORMen ordez (gomendatua). Desmarkatu pakete horiek SCORM 1.2 bidez kalifikatzeko. Igorlerik gabeko paketeek beti SCORM erabiltzen dute. Hau ez da cmi5, ezta kanpoko LRS batekin integrazioa ere; SCORM 1.2 bateragarritasun-bidea izaten jarraitzen du.';
 $string['xapisettings'] = '~xAPI irensketa';
-$string['xapisettings_desc'] = '~xAPI adierazpenak igortzen dituzten paketeentzako kalifikazio-kanala (DEC-0064). SCORM 1.2 igorlerik gabeko paketeentzako bateragarritasun-bidea izaten jarraitzen du.';
+$string['xapisettings_desc'] = '~xAPI adierazpenak igortzen dituzten paketeentzako kalifikazio-kanala. SCORM 1.2 igorlerik gabeko paketeentzako bateragarritasun-bidea izaten jarraitzen du.';

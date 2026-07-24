@@ -83,7 +83,7 @@ $capabilities = [
     ],
 
     // Run the site-wide migration tool that copies mod_exeweb / mod_exescorm
-    // activities into new eXeLearning activities (issue #13 #3, DEC-0026). It
+    // activities into new eXeLearning activities. It
     // creates activities across all courses, hence system level + manager only.
     'mod/exelearning:migrate' => [
         'riskbitmask' => RISK_DATALOSS,
