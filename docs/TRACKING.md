@@ -25,12 +25,14 @@ funnels every channel into **one** server-side scoring method, `track::ingest()`
  window.API shim          view.php:380-537   (inline JS in the parent window)
         │  buffers CMI pairs; on cmi.suspend_data, resolves each scored iDevice
         │  to its stable objectid by reading the iframe DOM (DEC-0017)
-        │  POST { id:<cmid>, session, cmi, itemscores }   view.php:462-491
+        │  POST { id:<cmid>, sesskey, session, cmi, itemscores }
         ▼
  track.php                (sesskey + capability; web/AJAX entry)
-        │  required_param id (track.php:38) · require_sesskey (track.php:40)
-        │  require_login (track.php:46) · preview gate / require_capability (track.php:49-55)
-        │  payload validation (track.php:57-61)
+        │  required_param id (track.php:40) · decode body, then
+        │  tracking_endpoint::require_body_sesskey (track.php:51) — the key is in the
+        │  body, never the query string (SEC-04)
+        │  require_login (track.php:57) · preview gate / require_capability (track.php:62-65)
+        │  payload validation (track.php:68-70)
         ▼
  track::ingest()          classes/local/track.php:59-233   ← SHARED scoring pipeline
         │  clamp+normalise score · filter to registered objectids · recompute overall
@@ -94,7 +96,7 @@ server re-derives the overall and only routes to grade items it already knows.
 | 3 | Out-of-range CMI score (e.g. 150%) | `score.raw`/`score.max` or a `150%` in `cmi.suspend_data` | Overall normalised to grade scale then **clamped** to `[grademin, grademax]`; per-iDevice percentages clamped `0..100` before scaling | overall clamp `classes/local/track.php:89-93` & `:178`; suspend clamp `:272`; per-item clamp `apply_item_scores()` `:387` and `recompute_overall_pct()` `:317` |
 | 4 | Oversized `itemscores` map (abuse/DoS) | Post thousands of entries | Map `> 1000` entries is dropped with a developer-level `debugging()` notice (a real package emits one entry per gradable iDevice) | `classes/local/track.php:104-112` |
 | 5 | Grade another user | Spoof a userid in the payload | The payload carries no userid; `ingest()` is always called with `$USER->id` (web `track.php:66`, WS `save_track.php:137`) | `track.php:66`; `classes/external/save_track.php:137` |
-| 6 | CSRF on the tracking endpoint | Cross-site POST to `track.php` | `require_sesskey()` before any work | `track.php:40` |
+| 6 | CSRF on the tracking endpoint | Cross-site POST to `track.php` | The session key is confirmed before any work. It is carried in the JSON body, not the query string, so access logs and proxies never record it (SEC-04) | `track.php:51`; `classes/local/tracking_endpoint.php` |
 | 7 | Unauthorised save | Unauthenticated / unprivileged POST | `require_login($course,…,$cm)` then `require_capability('mod/exelearning:savetrack')` (preview path needs `moodle/course:manageactivities`); WS adds `validate_context()` + same capability | `track.php:46,49-55`; `save_track.php:105-107` |
 | 8 | Malicious package navigates parent / spams modals | iDevice JS tries `top.location` / `alert()` | Iframe `sandbox` grants `allow-scripts allow-same-origin allow-popups allow-forms allow-popups-to-escape-sandbox`; **no** `allow-top-navigation`, **no** `allow-modals` (also no pointer/orientation/presentation lock) | `view.php:569-579`; rationale `research/analisis/notas/AN-008-iframe-vs-scorm-player.md:116-126` |
 | 9 | Status-only commit recorded as a real 0 | Mobile sends a status update with no score | `scoreraw` is nullable; omitting it skips `cmi.core.score.raw`, so `ingest()` no-ops instead of persisting a 0-score attempt (DEC-0044 / B6) | `save_track.php:60-66,121-129`; no-op guard `classes/local/track.php:79-82` |

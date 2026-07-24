@@ -128,13 +128,21 @@ describe('captureItemScores', () => {
 
 describe('buildPayload', () => {
     it('serializes the track.php POST body', () => {
-        const body = buildPayload(42, 'tok', { 'cmi.core.score.raw': '60' }, { 'ide-aaa': { scorepct: 60 } });
+        const body = buildPayload(42, 'tok', { 'cmi.core.score.raw': '60' }, { 'ide-aaa': { scorepct: 60 } }, 'k1');
         expect(JSON.parse(body)).toEqual({
             id: 42,
             session: 'tok',
             cmi: { 'cmi.core.score.raw': '60' },
             itemscores: { 'ide-aaa': { scorepct: 60 } },
+            sesskey: 'k1',
         });
+    });
+
+    // SEC-04: the session key used to travel in the track.php query string, where
+    // proxies and web-server access logs record it verbatim. It belongs in the body.
+    it('carries the sesskey in the body', () => {
+        const body = JSON.parse(buildPayload(42, 'tok', {}, {}, 'secretkey'));
+        expect(body.sesskey).toBe('secretkey');
     });
 });
 
@@ -163,6 +171,17 @@ describe('createScormApi state machine', () => {
         api.LMSSetValue('cmi.core.student_id', 'u7');
         expect(api.LMSGetValue('cmi.core.student_id')).toBe('u7');
         expect(api.LMSGetLastError()).toBe('0');
+    });
+
+    // SEC-04: the tracker must send the key it was configured with in the body and
+    // must never append it to the endpoint URL, where logs and proxies would keep it.
+    it('sends the sesskey in the POST body and leaves the endpoint URL untouched', () => {
+        const xhr = makeXhr(200);
+        const { api } = createScormApi(baseConfig({ xhrFactory: () => xhr, sesskey: 'secretkey' }));
+        api.LMSSetValue('cmi.core.score.raw', '80');
+        scheduled();
+        expect(JSON.parse(xhr.lastPayload).sesskey).toBe('secretkey');
+        expect(xhr.calls[0].url).toBe('https://example.test/track.php');
     });
 
     it('autocommits on a score key and clears dirty on a 2xx response', () => {
