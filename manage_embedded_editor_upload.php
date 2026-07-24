@@ -102,9 +102,20 @@ try {
         'version' => $result['version'] ?? '',
         'installed_at' => $result['installed_at'] ?? '',
     ]);
-} catch (\Throwable $e) {
+} catch (\moodle_exception $e) {
+    // Intentional, localised error messages (invalid ZIP, digest mismatch,
+    // concurrent install...) are meant to be shown to the admin.
     mod_exelearning_emit_json([
         'success' => false,
         'message' => $e->getMessage(),
+    ], 500);
+} catch (\Throwable $e) {
+    // Unexpected failures may carry internal details (paths, SQL...): log
+    // them for developers and return a generic message, as editor/save.php
+    // already does.
+    debugging('mod_exelearning editor upload failed: ' . $e->getMessage(), DEBUG_DEVELOPER);
+    mod_exelearning_emit_json([
+        'success' => false,
+        'message' => get_string('error'),
     ], 500);
 }
