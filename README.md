@@ -1,9 +1,9 @@
 # eXeLearning resource for Moodle
 
-[![Moodle Plugin CI](https://github.com/exelearning/mod_exelearning/actions/workflows/ci.yml/badge.svg)](https://github.com/exelearning/mod_exelearning/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/exelearning/mod_exelearning/graph/badge.svg)](https://codecov.io/gh/exelearning/mod_exelearning)
+[![Moodle Plugin CI](https://github.com/exelearning/moodle-mod_exelearning/actions/workflows/ci.yml/badge.svg)](https://github.com/exelearning/moodle-mod_exelearning/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/exelearning/moodle-mod_exelearning/graph/badge.svg)](https://codecov.io/gh/exelearning/moodle-mod_exelearning)
 
-<a href="https://moodle-playground.com/?blueprint-url=https://raw.githubusercontent.com/exelearning/mod_exelearning/main/blueprint.json"><img src="https://raw.githubusercontent.com/ateeducacion/action-moodle-playground-pr-preview/refs/heads/main/assets/playground-preview-button.svg" alt="Preview in Moodle Playground" width="224"></a>
+<a href="https://moodle-playground.com/?blueprint-url=https://raw.githubusercontent.com/exelearning/moodle-mod_exelearning/main/blueprint.json"><img src="https://raw.githubusercontent.com/ateeducacion/action-moodle-playground-pr-preview/refs/heads/main/assets/playground-preview-button.svg" alt="Preview in Moodle Playground" width="224"></a>
 
 > ℹ️ The eXeLearning editor is fetched from the shared release and unpacked into the plugin when the playground boots, so the first load may take a few extra seconds. ELPX upload, viewer and preview work normally.
 
@@ -73,16 +73,18 @@ Nothing to install locally; everything runs in the browser via WebAssembly.
 
 ## Installation
 
-> **Important:** It is recommended to install from a [release ZIP](https://github.com/exelearning/mod_exelearning/releases),
-> which includes the embedded editor pre-built for optimal performance. If the
-> release ZIP does not include the editor, or if you want to install a newer
-> version, administrators can download it from GitHub Releases via the
-> _Manage embedded editor_ page in the plugin settings.
+> **Important:** Install from a [release ZIP](https://github.com/exelearning/moodle-mod_exelearning/releases).
+> Every official release bundles the embedded eXeLearning editor pre-built under
+> `dist/static/` — it is the only editor the plugin uses, and it cannot be
+> installed or updated separately: updating the editor means updating the plugin.
+> A source checkout (git clone or "Download ZIP" of the repository) does **not**
+> contain the editor; embedded editing stays disabled until you build it with
+> `make build-editor` (see [DEVELOPMENT.md](DEVELOPMENT.md)).
 
 ### Installing via uploaded ZIP file
 
 1. Download the latest ZIP from
-   [Releases](https://github.com/exelearning/mod_exelearning/releases).
+   [Releases](https://github.com/exelearning/moodle-mod_exelearning/releases).
 2. Log in to your Moodle site as an admin and go to _Site administration >
    Plugins > Install plugins_.
 3. Upload the ZIP file with the plugin code. You should only be prompted to add
@@ -92,7 +94,7 @@ Nothing to install locally; everything runs in the browser via WebAssembly.
 ### Installing manually
 
 1. Download and extract the latest ZIP from
-   [Releases](https://github.com/exelearning/mod_exelearning/releases).
+   [Releases](https://github.com/exelearning/moodle-mod_exelearning/releases).
 2. Place the extracted contents in `{your/moodle/dirroot}/mod/exelearning`.
 3. Log in to your Moodle site as an admin and go to _Site administration >
    Notifications_ to complete the installation.
@@ -148,26 +150,29 @@ All settings live on a single admin page (see
 rationale of dropping the eXeLearning Online integration — only the embedded
 editor remains):
 
-* **Embedded editor management** (inline widget): install / update / repair /
-  uninstall the editor, downloading the latest release from GitHub
-  (`exelearning/exelearning`) without leaving the settings page.
 * **Styles**: upload eXeLearning style packages (`.zip`), enable/disable the
   editor's built-in styles, and optionally block users from importing styles
   bundled inside an `.elpx`. A dedicated _Styles_ admin page lists and manages
   them.
+* **xAPI**: master switch for the xAPI-primary grading channel.
 
-## Embedded editor management
+## The embedded editor is a release artifact
 
-The plugin supports two editor sources with the following precedence:
+The editor has exactly one source: the pre-built copy shipped inside the release
+ZIP at `dist/static/`
+([DEC-0065](./research/decisiones/adr/DEC-0065-editor-empaquetado-solo-en-release.md)).
+There is nothing to install, update or repair at runtime — the plugin never
+downloads editor code after installation, so everything it serves is part of the
+reviewed release package, and a given plugin version always ships one known
+editor build (pinned to the matching editor tag,
+[DEC-0058](./research/decisiones/adr/DEC-0058-fijar-editor-tag-en-release.md)).
 
-1. **Admin-installed** (moodledata): downloaded from GitHub Releases via the
-   admin management page. Stored under `moodledata/mod_exelearning/embedded_editor/`.
-2. **Bundled** (plugin): included in the plugin release ZIP at `dist/static/`.
-
-An admin-installed version always takes precedence over the bundled version. If
-neither source is available, the embedded editor cannot be used. The management
-page requires the `moodle/site:config` and `mod/exelearning:manageembeddededitor`
-capabilities.
+Administrators cannot update the editor independently: updating the editor means
+installing the next plugin release. When the bundle is absent (a source checkout)
+or invalid, the plugin degrades cleanly — the "Edit with eXeLearning" button is
+not offered and the editor endpoints answer 404. A leftover
+`moodledata/mod_exelearning/embedded_editor/` directory from older plugin
+versions is obsolete and ignored; it can be deleted manually at any time.
 
 ## Gradebook behaviour
 

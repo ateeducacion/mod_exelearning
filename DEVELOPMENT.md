@@ -151,7 +151,14 @@ instance.
 
 ## Packaging a release
 
-Build a distributable ZIP with:
+First update `CHANGELOG.md`: it ships inside the ZIP, so it is what an
+administrator reads when deciding whether to upgrade. The `changelog` agent skill
+(`.agents/skills/changelog/SKILL.md`) drafts the block from the pull requests
+merged since the last published release — run `/changelog` in Claude Code, pick
+mode B for a new version block or mode A to top up the existing draft, then review
+every entry by hand before committing.
+
+Then build a distributable ZIP with:
 
 ```bash
 make build-editor               # ensure the editor exists in dist/static/ (make up also builds it)
@@ -170,11 +177,14 @@ working tree (including the built editor under `dist/static/`, which is
 emits the ZIP via `git archive --format=zip`. Temporary git objects are written
 to a scratch store, so your real `.git` is left untouched.
 
-When the editor is bundled (`dist/static/` present), `thirdpartylibs.xml` in the
-ZIP is augmented the same way with a `dist/static` declaration (version taken
-from `.editor-version`), so the release artifact documents the embedded editor;
-the committed copy is left untouched and still declares only the pipwerks
-SCORM wrappers.
+The bundled editor is mandatory (DEC-0065): packaging **fails** — with a clear
+error and no partial ZIP — unless `dist/static/` holds a valid editor
+(`index.html` plus the expected asset directories) and `.editor-version` names a
+version. Run `make build-editor` first. The ZIP's `thirdpartylibs.xml` is then
+augmented with a `dist/static` declaration (version from `.editor-version`,
+licence AGPL-3.0-or-later); the committed copy is left untouched and still
+declares only the pipwerks SCORM wrappers. There is no runtime editor
+installer: the ZIP is the only supported way the editor reaches a site.
 
 Exclusions are driven by `.distignore` (a path is excluded when its top
 component or full relative path matches a pattern). `README.md` and

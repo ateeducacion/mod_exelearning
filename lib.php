@@ -1042,10 +1042,11 @@ function exelearning_grade_analysis_url(
 }
 
 /**
- * Returns the absolute path to the index.html of the installed embedded editor.
+ * Returns the absolute path to the index.html of the bundled embedded editor.
  *
- * Wrapper for embedded_editor_source_resolver::get_index_source() (moodledata →
- * bundled → null). Ported from mod_exeweb::exeweb_get_embedded_editor_index_source().
+ * Wrapper for embedded_editor_source_resolver::get_index_source(). The editor is
+ * a release artifact shipped under dist/static/ (DEC-0065); when it is absent or
+ * invalid this returns null and embedded editing is unavailable.
  *
  * @return string|null Path to index.html, or null when no editor is available.
  */
@@ -1054,31 +1055,23 @@ function exelearning_get_embedded_editor_index_source(): ?string {
 }
 
 /**
- * Returns whether an embedded editor is available (moodledata or bundled).
+ * Returns whether the bundled embedded editor is available (DEC-0065).
  *
- * Used by view.php to decide whether to show the "Edit with eXeLearning" button.
+ * Used by view.php to decide whether to show the "Edit with eXeLearning" button
+ * and by editor/static.php before serving editor assets.
  *
- * @return bool True when a valid local editor source exists.
+ * @return bool True when the bundled editor passes validation.
  */
 function exelearning_embedded_editor_enabled(): bool {
-    return \mod_exelearning\local\embedded_editor_source_resolver::has_local_source();
+    return \mod_exelearning\local\embedded_editor_source_resolver::is_available();
 }
 
 /**
- * Whether a local editor asset bundle is available to be served by static.php.
+ * Absolute path to the bundled editor static directory, used by
+ * editor/static.php to serve the editor's assets.
  *
- * @return bool True when an admin-installed or bundled editor directory exists.
- */
-function exelearning_embedded_editor_uses_local_assets(): bool {
-    return \mod_exelearning\local\embedded_editor_source_resolver::has_local_source();
-}
-
-/**
- * Absolute path to the active editor static directory (moodledata → bundled),
- * used by editor/static.php to serve the editor's assets.
- *
- * @return string|null Directory path, or null when no editor is installed.
+ * @return string|null Directory path, or null when no editor is available.
  */
 function exelearning_get_embedded_editor_local_static_dir(): ?string {
-    return \mod_exelearning\local\embedded_editor_source_resolver::get_active_dir();
+    return \mod_exelearning\local\embedded_editor_source_resolver::get_editor_dir();
 }

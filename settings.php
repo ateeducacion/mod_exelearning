@@ -18,9 +18,9 @@
  * mod_exelearning admin settings.
  *
  * DEC-0009: embedded editor mode only. Integration with eXeLearning Online
- * was discarded to avoid external dependencies. Installing, updating, repairing,
- * and uninstalling the editor (by downloading a release from GitHub) and managing
- * defined styles are done entirely from this settings page, gated by the
+ * was discarded to avoid external dependencies. The editor itself ships inside
+ * the release package (DEC-0065) and has no runtime management; this page only
+ * manages defined styles, gated by the
  * `mod/exelearning:manageembeddededitor` capability.
  *
  * @package    mod_exelearning
@@ -54,19 +54,6 @@ if (isset($exelearninginstalledmods['exeweb']) || isset($exelearninginstalledmod
 }
 
 if ($ADMIN->fulltree) {
-    // Embedded editor management (install / update / repair / uninstall).
-    $settings->add(new admin_setting_heading(
-        'mod_exelearning/embeddededitorheading',
-        get_string('embeddededitorsettings', 'mod_exelearning'),
-        get_string('editormanagementhelp', 'mod_exelearning')
-    ));
-
-    // Inline editor management card (AJAX install/update/repair/uninstall).
-    $settings->add(new \mod_exelearning\admin\admin_setting_embeddededitor(
-        get_string('embeddededitorstatus', 'mod_exelearning'),
-        get_string('editormanagementhelp', 'mod_exelearning')
-    ));
-
     // Defined styles management (upload / enable / disable / lockdown).
     $settings->add(new admin_setting_heading(
         'mod_exelearning/stylesheading',

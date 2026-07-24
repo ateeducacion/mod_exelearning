@@ -45,8 +45,11 @@ note in the root `AGENTS.md`.
 
 ## The endpoint (`track.php`)
 
-1. `AJAX_SCRIPT`; `id` (cmid) required; **`require_sesskey()`** (`track.php:40-42`).
-2. Resolve `cm` / `course` / instance; `require_login` (`track.php:44-48`).
+1. `AJAX_SCRIPT`; `id` (cmid) required; the JSON body is decoded and its **session key
+   confirmed** with `tracking_endpoint::require_body_sesskey()` (`track.php:41-51`). The
+   key travels in the body, not the query string, so it is not written to access logs or
+   proxy logs (SEC-04).
+2. Resolve `cm` / `course` / instance; `require_login` (`track.php:53-57`).
 3. **Authorization** (`track.php:51-57`): `?mode=preview` is honoured **only** with
    `moodle/course:manageactivities` (DEC-0006); otherwise
    `require_capability('mod/exelearning:savetrack')`. A student forcing `preview` falls

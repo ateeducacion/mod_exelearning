@@ -143,7 +143,7 @@ class styles_service {
      * @return array<int, array<string,string>>
      */
     public static function list_builtin_themes(): array {
-        $active = embedded_editor_source_resolver::get_active_dir();
+        $active = embedded_editor_source_resolver::get_editor_dir();
         if ($active === null) {
             return [];
         }

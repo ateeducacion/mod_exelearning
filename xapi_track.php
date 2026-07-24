@@ -25,7 +25,9 @@
  * which ignores the statement actor (grading is attributed to $USER), validates the
  * statement (DEC-0063) and routes it through the existing grade pipeline (DEC-0032).
  *
- * Endpoint: POST with sesskey + JSON `{ id: <cmid>, statement: {...}, registration: "<token>" }`.
+ * Endpoint: POST `{ id: <cmid>, sesskey: "<key>", statement: {...}, registration: "<token>" }`.
+ * The session key is part of the JSON body, never a query-string parameter (SEC-04);
+ * {@see \mod_exelearning\local\tracking_endpoint::require_body_sesskey()} confirms it.
  *
  * @package    mod_exelearning
  * @copyright  2026 ATE (Área de Tecnología Educativa)
@@ -39,7 +41,16 @@ require_once($CFG->dirroot . '/mod/exelearning/lib.php');
 
 $cmid = required_param('id', PARAM_INT);
 $mode = optional_param('mode', 'grading', PARAM_ALPHA);
-require_sesskey();
+
+// The sesskey arrives in the POST body rather than the query string (SEC-04), so the
+// body is decoded first and the request authenticated from it. Decoding untrusted JSON
+// before authenticating is safe; nothing is read out of it until the key is confirmed.
+$raw = file_get_contents('php://input');
+$payload = $raw ? json_decode($raw, true) : null;
+if (!is_array($payload)) {
+    throw new \moodle_exception('invalidparameter', 'error');
+}
+\mod_exelearning\local\tracking_endpoint::require_body_sesskey($payload);
 
 $cm = get_coursemodule_from_id('exelearning', $cmid, 0, false, MUST_EXIST);
 $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
@@ -64,9 +75,7 @@ if (!exelearning_xapi_primary_enabled()) {
     die;
 }
 
-$raw = file_get_contents('php://input');
-$payload = $raw ? json_decode($raw, true) : null;
-if (!is_array($payload) || !isset($payload['statement'])) {
+if (!isset($payload['statement'])) {
     throw new \moodle_exception('invalidparameter', 'error');
 }
 // The listener posts the statement as a nested object; tolerate a JSON-encoded string too.

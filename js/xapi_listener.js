@@ -67,14 +67,26 @@
     /**
      * Serialize the xapi_track.php POST body.
      *
+     * The sesskey travels here rather than in the endpoint's query string (SEC-04):
+     * a URL parameter is recorded verbatim by web-server access logs, reverse proxies
+     * and diagnostic tooling, while a POST body is not. xapi_track.php confirms it with
+     * an explicit confirm_sesskey() after decoding.
+     *
      * @param {number} cmid         Course module id.
      * @param {Object} statement    The xAPI statement to forward.
      * @param {string} registration Attempt-grouping token (the page-load token).
      * @param {string} mode         grading|preview.
+     * @param {string} sesskey      Moodle session key, validated server-side.
      * @returns {string} JSON payload.
      */
-    function buildPayload(cmid, statement, registration, mode) {
-        return JSON.stringify({ id: cmid, statement: statement, registration: registration, mode: mode });
+    function buildPayload(cmid, statement, registration, mode, sesskey) {
+        return JSON.stringify({
+            id: cmid,
+            statement: statement,
+            registration: registration,
+            mode: mode,
+            sesskey: sesskey,
+        });
     }
 
     /**
@@ -95,6 +107,8 @@
         var trackurl = config.trackurl;
         var registration = config.registration || '';
         var mode = config.mode || 'grading';
+        // Sent in the POST body, never appended to trackurl (SEC-04).
+        var sesskey = config.sesskey;
         var allowed = config.allowedOrigin
             || ((typeof window !== 'undefined' && window.location) ? window.location.origin : '');
         var xhrFactory = config.xhrFactory || function () { return new XMLHttpRequest(); };
@@ -131,7 +145,7 @@
                     retry(statement, attempt);
                 };
                 xhr.onerror = function () { retry(statement, attempt); };
-                xhr.send(buildPayload(cmid, statement, registration, mode));
+                xhr.send(buildPayload(cmid, statement, registration, mode, sesskey));
                 return true;
             } catch (e) {
                 // Never let tracking break the activity; still try to recover the grade.

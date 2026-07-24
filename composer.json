@@ -1,12 +1,12 @@
 {
-    "name": "exelearning/mod_exelearning",
+    "name": "exelearning/moodle-mod_exelearning",
     "description": "Activity-type Moodle plugin to embed eXeLearning v4 packages preserving the native sidebar and recording multiple gradable items per resource.",
     "type": "moodle-plugin",
     "license": "GPL-3.0-or-later",
-    "homepage": "https://github.com/exelearning/mod_exelearning",
+    "homepage": "https://github.com/exelearning/moodle-mod_exelearning",
     "support": {
-        "issues": "https://github.com/exelearning/mod_exelearning/issues",
-        "source": "https://github.com/exelearning/mod_exelearning"
+        "issues": "https://github.com/exelearning/moodle-mod_exelearning/issues",
+        "source": "https://github.com/exelearning/moodle-mod_exelearning"
     },
     "keywords": [
         "moodle",

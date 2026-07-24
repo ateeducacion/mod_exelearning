@@ -97,7 +97,7 @@ $saveurl = new moodle_url('/mod/exelearning/editor/save.php');
 // Direct access to dist/static/ can fail on servers that block .zip, .md, etc.
 $editorbaseurl = $CFG->wwwroot . '/mod/exelearning/editor/static.php/' . $cm->id;
 
-// Read the editor template from the local installation (moodledata or bundled).
+// Read the editor template from the bundled installation (DEC-0065).
 $editorindexsource = exelearning_get_embedded_editor_index_source();
 if ($editorindexsource === null) {
     if (is_siteadmin()) {

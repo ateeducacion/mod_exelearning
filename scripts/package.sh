@@ -36,6 +36,26 @@ cd "$ROOT"
 OUTPUT="$ROOT/$PLUGIN_NAME-$RELEASE.zip"
 DATE_VERSION="$(date +%Y%m%d)00"
 
+# The bundled editor is a release requirement (DEC-0065): the ZIP is the only
+# supported distribution mechanism for it, so a package without a valid editor
+# must never be produced. Validate before creating anything and fail loudly.
+editor_fail() {
+    echo "Error: $1" >&2
+    echo "The release ZIP must bundle the editor (DEC-0065). Run 'make build-editor' first." >&2
+    exit 1
+}
+
+[ -d dist/static ] \
+    || editor_fail "dist/static/ is missing — the bundled editor has not been built."
+[ -f dist/static/index.html ] && [ -r dist/static/index.html ] \
+    || editor_fail "dist/static/index.html is missing or unreadable."
+[ -d dist/static/app ] || [ -d dist/static/libs ] || [ -d dist/static/files ] \
+    || editor_fail "dist/static/ has none of the expected asset directories (app/, libs/, files/)."
+EDITOR_VERSION="$(tr -d ' \t\r\n' < .editor-version 2>/dev/null || true)"
+EDITOR_VERSION="${EDITOR_VERSION#v}"
+[ -n "$EDITOR_VERSION" ] \
+    || editor_fail ".editor-version is missing or empty — the bundled editor version is unknown."
+
 # Read .distignore patterns (skip blanks/comments, strip trailing slash and CR).
 PATTERNS=()
 while IFS= read -r line || [ -n "$line" ]; do
@@ -82,16 +102,12 @@ git update-index --add --cacheinfo "100644,$stamped_sha,version.php"
 
 # Stamp thirdpartylibs.xml in the index only: the committed file must not list
 # dist/static (the path is absent in a plain checkout and would break
-# moodle-plugin-ci install), but the release ZIP bundles the editor and must
-# declare it (see the header comment in thirdpartylibs.xml). The editor version
-# is read from .editor-version, which is .distignore'd, so it is taken from the
-# working tree here.
-if [ -d dist/static ] && [ -n "$(ls -A dist/static 2>/dev/null)" ]; then
-    EDITOR_VERSION="$(tr -d ' \t\r\n' < .editor-version 2>/dev/null || true)"
-    EDITOR_VERSION="${EDITOR_VERSION#v}"
-    [ -n "$EDITOR_VERSION" ] || EDITOR_VERSION="unknown"
-    tpl_sha="$(
-        sed "s#^</libraries>#  <library>\\
+# moodle-plugin-ci install), but the release ZIP always bundles the editor
+# (validated above, DEC-0065) and must declare it with its version and AGPL
+# licence. The version comes from .editor-version, which is .distignore'd, so it
+# is read from the working tree here.
+tpl_sha="$(
+    sed "s#^</libraries>#  <library>\\
     <location>dist/static</location>\\
     <name>eXeLearning (static editor build)</name>\\
     <description>Embedded eXeLearning v4 editor, built from https://github.com/exelearning/exelearning and bundled into the release ZIP.</description>\\
@@ -99,16 +115,17 @@ if [ -d dist/static ] && [ -n "$(ls -A dist/static 2>/dev/null)" ]; then
     <license>AGPL-3.0-or-later</license>\\
   </library>\\
 </libraries>#" thirdpartylibs.xml \
-        | git hash-object -w --stdin
-    )"
-    git update-index --add --cacheinfo "100644,$tpl_sha,thirdpartylibs.xml"
-fi
+    | git hash-object -w --stdin
+)"
+git update-index --add --cacheinfo "100644,$tpl_sha,thirdpartylibs.xml"
 
 # Remove one leading machine-translation marker from packaged language strings.
 # Source files remain unchanged so pending human reviews stay visible in Git.
+# The $ of $string is escaped as \\\$ so the shell passes a literal \$ to sed
+# instead of expanding an (unset) "string" variable, which aborts under `set -u`.
 while IFS= read -r -d '' langfile; do
     cleaned_sha="$(
-        sed -E "s/^([[:space:]]*\\$string\\[[^]]+\\][[:space:]]*=[[:space:]]*)(['\"])~(.*)$/\\1\\2\\3/" "$langfile" \
+        sed -E "s/^([[:space:]]*\\\$string\\[[^]]+\\][[:space:]]*=[[:space:]]*)(['\"])~(.*)$/\\1\\2\\3/" "$langfile" \
         | git hash-object -w --stdin
     )"
     git update-index --add --cacheinfo "100644,$cleaned_sha,$langfile"

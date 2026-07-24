@@ -20,7 +20,7 @@ use advanced_testcase;
 use mod_exelearning\local\embedded_editor_source_resolver as resolver;
 
 /**
- * Tests for the embedded editor source resolver (precedence moodledata -> bundled -> none).
+ * Tests for the bundled-only embedded editor source resolver (DEC-0065).
  *
  * @package    mod_exelearning
  * @category   test
@@ -39,6 +39,20 @@ final class embedded_editor_source_resolver_test extends advanced_testcase {
         make_writable_directory($dir);
         make_writable_directory($dir . '/app');
         file_put_contents($dir . '/index.html', '<!doctype html><title>editor</title>');
+    }
+
+    /**
+     * Point the resolver at a bundled directory for this test.
+     *
+     * The override lives in $CFG, so resetAfterTest() restores the real
+     * dist/static path automatically.
+     *
+     * @param string $dir Absolute path to use as the bundled editor directory.
+     * @return void
+     */
+    private function override_bundled_dir(string $dir): void {
+        global $CFG;
+        $CFG->mod_exelearning_bundled_editor_dir = $dir;
     }
 
     /**
@@ -70,39 +84,74 @@ final class embedded_editor_source_resolver_test extends advanced_testcase {
     }
 
     /**
-     * An admin-installed editor in moodledata takes precedence over the bundled copy.
+     * A valid bundled editor is detected and exposed through every accessor.
      */
-    public function test_get_active_source_prefers_moodledata(): void {
+    public function test_valid_bundled_editor_is_detected(): void {
         $this->resetAfterTest();
 
-        $moodledatadir = resolver::get_moodledata_dir();
-        $this->make_valid_editor($moodledatadir);
+        $dir = make_temp_directory('mod_exelearning/resolver-' . uniqid()) . '/static';
+        $this->make_valid_editor($dir);
+        $this->override_bundled_dir($dir);
 
-        $this->assertSame(resolver::SOURCE_MOODLEDATA, resolver::get_active_source());
-        $this->assertSame($moodledatadir, resolver::get_active_dir());
-        $this->assertTrue(resolver::has_local_source());
-        $this->assertSame($moodledatadir . '/index.html', resolver::get_index_source());
-
-        remove_dir($moodledatadir);
+        $this->assertTrue(resolver::is_available());
+        $this->assertSame($dir, resolver::get_editor_dir());
+        $this->assertSame($dir . '/index.html', resolver::get_index_source());
     }
 
     /**
-     * get_status() reports the resolved paths and a clean fresh-site state.
+     * An absent bundled editor disables embedded editing cleanly (null, not errors).
      */
-    public function test_get_status_reports_paths_and_availability(): void {
+    public function test_absent_bundled_editor_yields_no_source(): void {
         $this->resetAfterTest();
 
-        $status = resolver::get_status();
+        $this->override_bundled_dir(
+            make_temp_directory('mod_exelearning/resolver-' . uniqid()) . '/missing'
+        );
 
-        $this->assertContains($status->active_source, [
-            resolver::SOURCE_MOODLEDATA,
-            resolver::SOURCE_BUNDLED,
-            resolver::SOURCE_NONE,
-        ]);
-        // A fresh site has no admin-installed editor recorded.
-        $this->assertFalse($status->moodledata_available);
-        $this->assertNull($status->moodledata_version);
-        $this->assertSame(resolver::get_moodledata_dir(), $status->moodledata_dir);
-        $this->assertSame(resolver::get_bundled_dir(), $status->bundled_dir);
+        $this->assertFalse(resolver::is_available());
+        $this->assertNull(resolver::get_editor_dir());
+        $this->assertNull(resolver::get_index_source());
+    }
+
+    /**
+     * An invalid bundled editor (index.html without assets) is rejected.
+     */
+    public function test_invalid_bundled_editor_is_rejected(): void {
+        $this->resetAfterTest();
+
+        $dir = make_temp_directory('mod_exelearning/resolver-' . uniqid()) . '/static';
+        make_writable_directory($dir);
+        file_put_contents($dir . '/index.html', 'x');
+        $this->override_bundled_dir($dir);
+
+        $this->assertFalse(resolver::is_available());
+        $this->assertNull(resolver::get_editor_dir());
+    }
+
+    /**
+     * A leftover admin-installed editor in moodledata is never considered (DEC-0065).
+     *
+     * Sites upgrading from the runtime-installer era may still carry
+     * moodledata/mod_exelearning/embedded_editor; it must be ignored even when the
+     * bundled source is absent.
+     */
+    public function test_stale_moodledata_editor_is_ignored(): void {
+        global $CFG;
+        $this->resetAfterTest();
+
+        // Plant a perfectly valid editor where the removed installer used to put it.
+        $staledir = $CFG->dataroot . '/mod_exelearning/embedded_editor';
+        $this->make_valid_editor($staledir);
+
+        // No bundled source available.
+        $this->override_bundled_dir(
+            make_temp_directory('mod_exelearning/resolver-' . uniqid()) . '/missing'
+        );
+
+        $this->assertFalse(resolver::is_available());
+        $this->assertNull(resolver::get_editor_dir());
+        $this->assertNull(resolver::get_index_source());
+
+        remove_dir($staledir);
     }
 }

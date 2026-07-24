@@ -31,7 +31,7 @@ use mod_exelearning\local\styles_service;
 final class styles_service_test extends advanced_testcase {
     /**
      * is_unsafe_zip_entry() rejects traversal, absolute, scheme and backslash
-     * entries (the shared zip-slip guard reused by the editor installer too).
+     * entries (the shared zip-slip guard).
      */
     public function test_is_unsafe_zip_entry(): void {
         // Safe relative paths inside the archive.
@@ -481,10 +481,11 @@ final class styles_service_test extends advanced_testcase {
      * list_builtin_themes() parses the active editor's data/bundle.json manifest.
      */
     public function test_list_builtin_themes_from_bundle(): void {
+        global $CFG;
         $this->resetAfterTest();
 
-        // Install an editor carrying a themes manifest.
-        $src = make_temp_directory('mod_exelearning/bt-' . random_string(6));
+        // Point the resolver at a bundled editor carrying a themes manifest (DEC-0065).
+        $src = make_temp_directory('mod_exelearning/bt-' . random_string(6)) . '/static';
         make_writable_directory($src . '/app');
         make_writable_directory($src . '/data');
         file_put_contents($src . '/index.html', 'x');
@@ -494,12 +495,10 @@ final class styles_service_test extends advanced_testcase {
                 ['name' => 'base', 'title' => 'Base'],
             ]],
         ]));
-        (new \mod_exelearning\local\embedded_editor_installer())->safe_install($src);
+        $CFG->mod_exelearning_bundled_editor_dir = $src;
 
         $ids = array_column(styles_service::list_builtin_themes(), 'id');
         $this->assertContains('intef', $ids);
         $this->assertContains('base', $ids);
-
-        remove_dir(\mod_exelearning\local\embedded_editor_source_resolver::get_moodledata_dir());
     }
 }
