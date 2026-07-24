@@ -287,7 +287,7 @@ The `.agents/skills/` directory contains Claude Code project skills — reusable
 
 | Skill | File | Purpose |
 |-------|------|---------|
-| `changelog` | `.agents/skills/changelog/SKILL.md` | Draft a CHANGELOG entry from merged GitHub PRs since the last release |
+| `changelog` | `.agents/skills/changelog/SKILL.md` | Draft or top up the `CHANGELOG.md` block from merged GitHub PRs. Mode A adds PRs merged since a given one to the existing draft; mode B opens a new version block from the last published release. Adapted from the sibling skill in `exelearning/exelearning` — keep both in sync. Required before a release (`docs/RELEASE_CHECKLIST.md` §10) |
 
 ## Atajos útiles
 

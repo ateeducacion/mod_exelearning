@@ -34,11 +34,10 @@ package-lock.json
 vitest.config.mjs
 tests/js/*
 
-# Internal documentation (README.md is shipped)
+# Internal documentation (README.md and CHANGELOG.md are shipped)
 CLAUDE.md
 AGENTS.md
 DEVELOPMENT.md
-CHANGELOG.md
 
 # Build artifacts (coverage/ is gitignored but git ls-files -o would still pick it up)
 mod_exelearning-*.zip
