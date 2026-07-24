@@ -1055,15 +1055,43 @@ function exelearning_get_embedded_editor_index_source(): ?string {
 }
 
 /**
- * Returns whether the bundled embedded editor is available (DEC-0065).
+ * Returns whether embedded editing is available on this site.
+ *
+ * Two conditions must hold (DEC-0065, DEC-0066): the bundled editor passes
+ * validation, and the administrator has not switched embedded editing off via
+ * the site-wide `editordisabled` setting. The toggle is deliberately negative
+ * (like `stylesblockimport`) so the unset state and the unticked checkbox both
+ * mean "editing on" — a positive default would render unticked until
+ * upgradesettings materialises it, contradicting the real behaviour.
  *
  * Used by view.php to decide whether to show the "Edit with eXeLearning" button
- * and by editor/static.php before serving editor assets.
+ * and by editor/static.php before serving editor assets. Activities keep
+ * accepting `.elpx` uploads either way — the toggle only affects in-place
+ * editing.
  *
- * @return bool True when the bundled editor passes validation.
+ * @return bool True when the editor is bundled, valid and not disabled.
  */
 function exelearning_embedded_editor_enabled(): bool {
+    if (!empty(get_config('exelearning', 'editordisabled'))) {
+        return false;
+    }
     return \mod_exelearning\local\embedded_editor_source_resolver::is_available();
+}
+
+/**
+ * Aborts the request when embedded editing is disabled site-wide (DEC-0066).
+ *
+ * Guard for the editor endpoints (editor/index.php bootstrap, editor/save.php):
+ * hiding the button is not enough, a direct request must be refused too.
+ *
+ * @return void
+ * @throws moodle_exception editordisabledbyadmin when the toggle is off or no
+ *                          valid bundle is available.
+ */
+function exelearning_require_embedded_editor_enabled(): void {
+    if (!exelearning_embedded_editor_enabled()) {
+        throw new moodle_exception('editordisabledbyadmin', 'mod_exelearning');
+    }
 }
 
 /**

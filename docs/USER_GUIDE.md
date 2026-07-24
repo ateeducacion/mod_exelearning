@@ -240,6 +240,14 @@ from an official release ZIP.
 > `moodledata/mod_exelearning/embedded_editor/` installed by the removed
 > management page. It is no longer used and can be deleted at any time.
 
+### Disabling in-place editing
+
+If your site only plays packages authored elsewhere, tick **Disable the
+embedded editor** on the settings page. Teachers keep uploading and serving
+`.elpx` packages exactly as before, but the **Edit with eXeLearning** button
+disappears and the editor pages refuse requests. Untick it at any time to
+restore in-place editing — no data is affected either way.
+
 ### Managing styles
 
 On the settings page you can manage the eXeLearning styles available to the
