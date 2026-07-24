@@ -29,5 +29,4 @@ $plugin->release   = 'dev';            // Replaced with the git tag (semver) at 
 $plugin->requires  = 2024100700;       // Moodle 4.5 LTS+.
 $plugin->supported = [405, 502];       // Moodle 4.5 LTS through Moodle 5.2.
 $plugin->component = 'mod_exelearning';
-$plugin->cron      = 0;
 $plugin->maturity  = MATURITY_STABLE;
