@@ -3,7 +3,7 @@
   "preferredVersions": { "php": "8.3", "moodle": "5.0" },
   "landingPage": "/course/view.php?id=2",
   "constants": {
-    "REPO": "exelearning/mod_exelearning",
+    "REPO": "exelearning/moodle-mod_exelearning",
     "REF":  "main",
     "ADMIN_USER":  "admin",
     "ADMIN_PASS":  "password",
