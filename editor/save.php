@@ -44,6 +44,9 @@ require_login($course, true, $cm);
 require_sesskey();
 $context = context_module::instance($cm->id);
 require_capability('moodle/course:manageactivities', $context);
+// Embedded editing can be switched off site-wide (DEC-0066): refuse saves too,
+// not only the editor bootstrap — this is the state-changing half of the flow.
+exelearning_require_embedded_editor_enabled();
 
 header('Content-Type: application/json; charset=utf-8');
 

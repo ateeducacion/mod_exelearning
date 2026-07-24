@@ -93,4 +93,22 @@ final class admin_setting_styles_render_test extends advanced_testcase {
         $zip->close();
         return $zippath;
     }
+
+    /**
+     * The styles admin page stays registered (it is the action endpoint the row
+     * buttons post to, and admin_externalpage_setup() needs it) but hidden from
+     * the admin menu: managing styles happens on the plugin settings page, and a
+     * second visible manager page duplicated the widgets — including an upload
+     * control that silently discarded files (UX-01, DEC-0067).
+     */
+    public function test_styles_admin_page_is_registered_but_hidden(): void {
+        global $CFG;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        require_once($CFG->libdir . '/adminlib.php');
+
+        $page = admin_get_root(true, false)->locate('mod_exelearning_styles');
+        $this->assertInstanceOf(\admin_externalpage::class, $page);
+        $this->assertTrue($page->hidden);
+    }
 }

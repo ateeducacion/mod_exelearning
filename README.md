@@ -150,10 +150,13 @@ All settings live on a single admin page (see
 rationale of dropping the eXeLearning Online integration — only the embedded
 editor remains):
 
-* **Styles**: upload eXeLearning style packages (`.zip`), enable/disable the
-  editor's built-in styles, and optionally block users from importing styles
-  bundled inside an `.elpx`. A dedicated _Styles_ admin page lists and manages
-  them.
+* **Embedded editor**: a single site-wide switch. Disabling it turns the plugin
+  into a pure `.elpx` player — uploads and playback keep working, but the
+  "Edit with eXeLearning" button is hidden and the editor endpoints refuse
+  requests.
+* **Styles**: upload eXeLearning style packages (`.zip`), list and
+  enable/disable the uploaded and built-in styles, and optionally block users
+  from importing styles bundled inside an `.elpx` — all on this page.
 * **xAPI**: master switch for the xAPI-primary grading channel.
 
 ## The embedded editor is a release artifact
