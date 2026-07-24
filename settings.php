@@ -30,14 +30,18 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-// Register the styles management external page so it can be linked from the
-// settings page and reached directly. Must be added before the $fulltree
-// guard so it is always registered in the admin tree.
+// Register the styles action endpoint. Hidden from the admin menu (DEC-0067):
+// styles are managed on this settings page; admin/styles.php only processes the
+// enable/disable/delete links (they cannot be forms nested inside the settings
+// form) and hosts the delete confirmation. The registration must stay — it is
+// what admin_externalpage_setup() resolves — and must be added before the
+// $fulltree guard so it is always present in the admin tree.
 $ADMIN->add('modsettings', new admin_externalpage(
     'mod_exelearning_styles',
     get_string('stylesmanager', 'mod_exelearning'),
     new moodle_url('/mod/exelearning/admin/styles.php'),
-    'mod/exelearning:manageembeddededitor'
+    'mod/exelearning:manageembeddededitor',
+    true
 ));
 
 // Register the site-wide migration tool only when a sibling plugin (mod_exeweb /

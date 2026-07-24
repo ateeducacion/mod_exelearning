@@ -265,8 +265,8 @@ embedded editor:
   `.elpx`. Authors may then only choose from the admin-approved list. Use this
   to keep a consistent, approved look across your site.
 
-A dedicated **Styles** management page is also reachable directly under
-*Site administration > Plugins > Activity modules*.
+All style management happens on this settings page (the per-row buttons
+confirm destructive actions before applying them).
 
 ---
 

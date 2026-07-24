@@ -154,10 +154,9 @@ editor remains):
   into a pure `.elpx` player — uploads and playback keep working, but the
   "Edit with eXeLearning" button is hidden and the editor endpoints refuse
   requests.
-* **Styles**: upload eXeLearning style packages (`.zip`), enable/disable the
-  editor's built-in styles, and optionally block users from importing styles
-  bundled inside an `.elpx`. A dedicated _Styles_ admin page lists and manages
-  them.
+* **Styles**: upload eXeLearning style packages (`.zip`), list and
+  enable/disable the uploaded and built-in styles, and optionally block users
+  from importing styles bundled inside an `.elpx` — all on this page.
 * **xAPI**: master switch for the xAPI-primary grading channel.
 
 ## The embedded editor is a release artifact
