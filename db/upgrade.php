@@ -565,5 +565,18 @@ function xmldb_exelearning_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026061800, 'exelearning');
     }
 
+    // Stage 20 (2026072400): the runtime editor installer is removed (DEC-0065) —
+    // the editor is a release artifact bundled under dist/static/. Drop the three
+    // configs the installer maintained. A leftover
+    // moodledata/mod_exelearning/embedded_editor directory is deliberately NOT
+    // deleted: nothing reads it any more and removing admin data automatically is
+    // riskier than leaving an inert directory behind.
+    if ($oldversion < 2026072400) {
+        unset_config('embedded_editor_version', 'exelearning');
+        unset_config('embedded_editor_installed_at', 'exelearning');
+        unset_config('embedded_editor_installing', 'exelearning');
+        upgrade_mod_savepoint(true, 2026072400, 'exelearning');
+    }
+
     return true;
 }
