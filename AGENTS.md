@@ -191,7 +191,7 @@ Cerradas: **TAREA-012 / RIE-001** investigación (DEC-0019); **TAREA-009 / RIE-0
 - **NO** integración eXeLearning Online (DEC-0009): no tocar `editormode`,
   `exeonlinebaseuri`, `hmackey1`, `APP_SECRET`, `EXELEARNING_WEB_*`.
 - Sidebar nativa **siempre** preservada (técnica iframe de `mod_exeweb`).
-- Repo público: `github.com/exelearning/mod_exelearning`.
+- Repo público: `github.com/exelearning/moodle-mod_exelearning`.
 - Organización: ATE = **Área de Tecnología Educativa** (no "Asistencia Técnica").
 
 ## Trampas conocidas (no repetir)

@@ -216,7 +216,7 @@ jobs:
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          slug: exelearning/mod_exelearning
+          slug: exelearning/moodle-mod_exelearning
           files: ./coverage.xml
           # Flag the PHP report so it is tracked as its own flag/component
           # (the JS job uploads under `javascript`); without a flag PHP would be
@@ -286,7 +286,7 @@ jobs:
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          slug: exelearning/mod_exelearning
+          slug: exelearning/moodle-mod_exelearning
           files: ./coverage/lcov.info
           flags: javascript
           disable_search: true
