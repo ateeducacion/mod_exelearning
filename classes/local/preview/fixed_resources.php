@@ -79,8 +79,8 @@ class fixed_resources {
     }
 
     /**
-     * The distribution root: the active installed static editor directory, or
-     * the test override. Null when no editor is installed.
+     * The distribution root: the bundled static editor directory, or the test
+     * override. Null when the release package ships no usable editor.
      *
      * @return string|null
      */
@@ -88,7 +88,9 @@ class fixed_resources {
         if (self::$rootoverride !== null) {
             return self::$rootoverride;
         }
-        return embedded_editor_source_resolver::get_active_dir();
+        // Was get_active_dir() while an admin-installed copy in moodledata was
+        // still a source; since DEC-0065 the bundle is the only one.
+        return embedded_editor_source_resolver::get_editor_dir();
     }
 
     /**
