@@ -91,7 +91,8 @@ client JS is injected synchronously and needs no AMD build).
 
 ## 4. Server endpoint (`xapi_track.php`) — *as shipped (DEC-0064)*
 
-The endpoint is a **plain AJAX script** `xapi_track.php` (`AJAX_SCRIPT`, `require_sesskey()` +
+The endpoint is a **plain AJAX script** `xapi_track.php` (`AJAX_SCRIPT`, session key confirmed
+from the JSON body (SEC-04) +
 `require_capability('mod/exelearning:savetrack')`), **mirroring `track.php`** — not a `core_external`
 service (so there is **no `db/services.php` entry**). It decodes the statement, runs
 `\mod_exelearning\local\xapi\statement_normalizer` (the canonical DEC-0063 validation) and delegates

@@ -1,149 +1,65 @@
-# Embedded eXeLearning editor — sources, lifecycle and postMessage bridge
+# Embedded eXeLearning editor — bundled source and postMessage bridge
 
-> How `mod_exelearning` resolves, installs and embeds the static eXeLearning v4
-> editor, and how the in-browser editor saves a package back into the activity.
-> Embedded-only by design (DEC-0009): no eXeLearning Online, no HMAC, no remote
-> service. (DEC-0005 — the original embedded/online toggle — is superseded.)
+> How `mod_exelearning` serves the static eXeLearning v4 editor bundled in the
+> release package, and how the in-browser editor saves a package back into the
+> activity. Embedded-only by design (DEC-0009): no eXeLearning Online, no HMAC,
+> no remote service. (DEC-0005 — the original embedded/online toggle — is
+> superseded, and so is the runtime installer: since DEC-0065 the editor is a
+> release artifact.)
 
-## 1. Source precedence: moodledata wins over bundled
+## 1. The editor is a release artifact (DEC-0065)
 
-The editor is served from a local directory; there are two possible sources and a
-fixed precedence policy `moodledata → bundled → none`, implemented in the single
-source of truth `embedded_editor_source_resolver`:
+The editor has exactly one source: the pre-built static bundle shipped inside
+the release ZIP at `$CFG->dirroot/mod/exelearning/dist/static/`. The plugin
+never downloads editor code at runtime — there is no installer, no updater and
+no moodledata copy. `embedded_editor_source_resolver` is the single source of
+truth:
 
-| Order | Source | Location | Constant |
-|-------|--------|----------|----------|
-| 1 (highest) | Admin-installed | `$CFG->dataroot/mod_exelearning/embedded_editor/` | `SOURCE_MOODLEDATA` |
-| 2 | Bundled with the plugin | `$CFG->dirroot/mod/exelearning/dist/static/` | `SOURCE_BUNDLED` |
-| 3 | None usable | — | `SOURCE_NONE` |
+- `get_bundled_dir()` returns the fixed `dist/static` path (unit tests may
+  override it via `$CFG->mod_exelearning_bundled_editor_dir`, honoured only
+  under PHPUnit, because CI checkouts carry no bundle).
+- A directory is usable only if it passes `validate_editor_dir()` — `index.html`
+  exists and is readable, plus at least one of `app`, `libs`, `files`
+  (`EXPECTED_ASSET_DIRS`).
+- `is_available()` / `get_editor_dir()` / `get_index_source()` expose the
+  validated bundle; each returns false/null when it is absent or invalid, and
+  the plugin degrades cleanly (no edit button, editor endpoints answer 404).
 
-- Precedence is decided in `embedded_editor_source_resolver::get_active_source()`
-  (`classes/local/embedded_editor_source_resolver.php:136-146`): the admin-installed
-  copy is checked first, then the bundled copy.
-- A directory is "usable" only if it passes
-  `validate_editor_dir()` — `index.html` exists and is readable, plus at least one
-  of `app`, `libs`, `files` (`embedded_editor_source_resolver.php:88-107`,
-  `EXPECTED_ASSET_DIRS` at `:57`).
-- The Moodle paths are fixed: `MOODLEDATA_SUBDIR = 'mod_exelearning/embedded_editor'`
-  (`:49`, `get_moodledata_dir()` `:64-67`) and the bundled
-  `dist/static` (`get_bundled_dir()` `:74-77`).
-- The README states the same policy in prose
-  (`README.md:160-165`), and the admin help string matches it: *"The version
-  installed by the administrator takes priority over the bundled one"*
-  (`lang/en/exelearning.php:66`, key `editormanagementhelp`).
+`lib.php` exposes thin wrappers used across the codebase:
+`exelearning_get_embedded_editor_index_source()`,
+`exelearning_embedded_editor_enabled()`,
+`exelearning_get_embedded_editor_local_static_dir()`.
 
-`lib.php` exposes thin wrappers over the resolver used across the codebase:
-`exelearning_get_embedded_editor_index_source()` (`lib.php:1683-1685`),
-`exelearning_embedded_editor_enabled()` (`lib.php:1694-1696`),
-`exelearning_embedded_editor_uses_local_assets()` (`lib.php:1703-1705`).
+Where the bundle comes from:
 
-## 2. Lifecycle: install / update / repair / uninstall
+- **Release ZIPs** always include it: `scripts/package.sh` refuses to build a
+  package without a valid `dist/static/` and a non-empty `.editor-version`, and
+  stamps the editor's version and AGPL-3.0-or-later licence into the ZIP's
+  `thirdpartylibs.xml`. The release workflow builds the editor from the tag
+  matching the plugin release (DEC-0058), so a given plugin version always ships
+  one known editor build.
+- **Source checkouts** contain no `dist/static/`; run `make build-editor` to
+  compile it locally. Until then embedded editing is simply unavailable.
+- **Moodle Playground** deploys the editor at blueprint level: `blueprint.json`
+  fetches the pinned release asset and unpacks it into `dist/static/` while the
+  site boots. The production PHP code is unaware of this.
 
-All install operations are orchestrated by
-`embedded_editor_installer` (`classes/local/embedded_editor_installer.php`).
-They write into moodledata only, never into the Moodle code tree.
+A leftover `moodledata/mod_exelearning/embedded_editor/` directory from the
+removed installer era is obsolete and ignored; upgrading cleans the installer's
+config keys (`db/upgrade.php`, stage 2026072400) but deliberately leaves the
+directory for the administrator to delete.
 
-| Operation | Method | Notes |
-|-----------|--------|-------|
-| Install latest | `install_latest()` `:70-80` | discovers the newest release, then `do_install()` |
-| Install a specific version | `install_version($v)` `:89-99` | skips discovery |
-| Install from a local ZIP | `install_from_local_zip($zip, $v)` `:109-119` | used by the Playground upload endpoint |
-| Update | (via external API) | runs `install_latest()` over the existing copy |
-| Repair | (via external API) | `uninstall()` then `install_latest()` |
-| Uninstall | `uninstall()` `:775-781` | `remove_dir()` + clear config metadata |
+**Site-wide toggle (DEC-0066).** Embedded editing can be switched off with the
+`exelearning/editordisabled` admin setting (a deliberately negative checkbox,
+unticked by default, so the unset config and the unticked box both mean
+"editing on"). `exelearning_embedded_editor_enabled()` combines the toggle with bundle
+validation, so the edit button, `editor/static.php` and the create-from-scratch
+CTA all react to it; `editor/index.php` and `editor/save.php` additionally
+refuse direct requests via `exelearning_require_embedded_editor_enabled()`.
+Uploading and serving `.elpx` packages is unaffected — the plugin degrades to a
+pure player.
 
-### Release discovery and integrity
-
-`do_install()` (`:128-153`) runs the full pipeline:
-
-1. **Discover the latest version** from the GitHub *Atom* feed
-   `https://github.com/exelearning/exelearning/releases.atom`
-   (`GITHUB_RELEASES_FEED_URL` `:41`; `discover_latest_version()` `:161-163`,
-   feed parsing `:226-243`). The first `<entry>` is newest.
-2. **Fetch the published SHA-256** for the `exelearning-static-v<version>.zip`
-   asset (`ASSET_PREFIX` `:47`) from the GitHub Releases *REST* API
-   `GITHUB_RELEASES_API_URL` (`:44`), reading the asset `digest` field
-   (`fetch_release_asset_sha256()` `:409-436`,
-   `extract_asset_sha256_from_release_api()` `:445-463`). This binds the install
-   to GitHub release metadata, not just transport TLS (TAREA-010 / RIE-008,
-   DEC-0016).
-3. **Download** the asset to a temp file (`download_to_temp()` `:486-520`) and
-   **verify** its SHA-256 with `hash_equals()`
-   (`verify_file_sha256()` `:472-477`); a mismatch raises `editordigestmismatch`.
-4. **Validate, extract, normalize, install**: ZIP magic-byte check
-   (`validate_zip()` `:528-539`), per-entry zip-slip rejection *before* extracting
-   (`extract_to_temp()` `:617-625`, reusing `styles_service::is_unsafe_zip_entry()`),
-   layout normalization for 1–3 nesting levels (`normalize_extraction()` `:654-686`),
-   content validation (`validate_editor_contents()` `:694-698`), then an atomic
-   `rename()` install with backup/rollback (`safe_install()` `:708-770`).
-5. **Store metadata**: `embedded_editor_version` and `embedded_editor_installed_at`
-   in plugin config (`store_metadata()` `:788-791`).
-
-### TLS posture
-
-Outbound requests verify the certificate chain and keep Moodle's SSRF blocklist
-active on a real server; both are relaxed **only** under the Moodle Playground
-php-wasm runtime, gated on the `MOODLE_PLAYGROUND` constant
-(`is_playground()` `:190-192`, `curl_security_options()` `:203-213`).
-
-### Concurrent-install lock
-
-Each install acquires an **atomic** Moodle lock via
-`\core\lock\lock_config::get_lock_factory('mod_exelearning')->get_lock('editor_install', 5)`
-(`acquire_lock()`/`release_lock()`), mirroring the pattern used in
-`classes/local/track.php`. A second install while one is in progress fails to
-acquire the lock and throws `editorinstallconcurrent`; the lock is released in
-`release_lock()` (called from a `finally` in each `install_*` entry point). The
-lock factory's check-and-claim is atomic, closing the race the previous
-`get_config()`/`set_config()` pair left open (two callers could both read "no
-lock" before either wrote one).
-
-The `embedded_editor_installing` config timestamp is **retained** but demoted to a
-cross-request *progress marker*: it is written while the atomic lock is held and
-read by `manage_embedded_editor::get_status()` to report `installing` /
-`install_stale` to the admin UI (a per-request core lock is not visible to a
-separate status-poll request, so the timestamp still drives that signal). It is
-considered stale after `INSTALL_LOCK_TIMEOUT = 300` seconds (`:59`), which also
-bounds the PHP time limit and the download timeout.
-
-### External API and capabilities
-
-The AJAX-facing actions live in `manage_embedded_editor`
-(`classes/external/manage_embedded_editor.php`):
-
-- `execute_action($action)` (`:70-118`) accepts `install`, `update`, `repair`,
-  `uninstall` and maps them onto the installer (`update`→`install_latest`,
-  `repair`→`uninstall`+`install_latest`).
-- `get_status($checklatest)` (`:183-250`) returns the active source, installed
-  version, `update_available`, the install-lock state (`installing`,
-  `install_stale`) and per-action capability flags.
-
-**Both** endpoints require, in the **system context**,
-`moodle/site:config` **and** `mod/exelearning:manageembeddededitor`
-(`execute_action()` `:83-84`, `get_status()` `:189-190`).
-
-### Playground same-origin upload path
-
-In Moodle Playground the browser downloads the release ZIP and POSTs it to the
-same-origin endpoint `manage_embedded_editor_upload.php`, which re-checks
-`require_login()` + `require_sesskey()` + the same two capabilities
-(`manage_embedded_editor_upload.php:51-56`), then calls
-`install_from_local_zip()` (`:96`). This keeps the heavy network fetch in the
-browser; the WASM runtime only does local extraction/install.
-
-## 3. Admin UI
-
-Editor management is an **in-settings AJAX widget**, not a standalone page. It is
-registered from `settings.php` (`:44-55`) under
-`admin/settings.php?section=modsettingexelearning`. The custom setting
-`admin_setting_embeddededitor` stores no value (`get_setting()`/`write_setting()`
-are no-ops) and only renders the status/action card
-(`classes/admin/admin_setting_embeddededitor.php:58-72`), reading
-`embedded_editor_source_resolver::get_status()` and wiring the AMD module
-`mod_exelearning/admin_embedded_editor` (`:85-135`). The card reads locally-cached
-state on render; the "latest version" check is an explicit AJAX call.
-
-## 4. Embedding the editor and the postMessage bridge
+## 2. Embedding the editor and the postMessage bridge
 
 The editor bootstrap page is `editor/index.php`. Access requires
 `require_login()` + `context_module` + `require_capability('moodle/course:manageactivities')`
@@ -227,7 +143,7 @@ parsed** (`:34`). `editorOrigin` starts as `'*'` (`:10`) and is assigned in
 > and refuse to post/accept when it cannot be resolved. Do not describe the
 > current code as strict origin validation.
 
-## 5. Save / export flow
+## 3. Save / export flow
 
 The "Save to Moodle" button drives the export round-trip
 (`editor_modal.js:676-681`, `requestExport()` `:414-430`):
@@ -240,7 +156,7 @@ The "Save to Moodle" button drives the export round-trip
    `__MOODLE_EXE_CONFIG__.saveUrl`).
 
    > Note: the save endpoint is `editor/save.php` (content save), **not**
-   > `manage_embedded_editor_upload.php` (which installs the *editor itself*, §2).
+   > `manage_embedded_editor_upload.php` (a removed editor-install endpoint; see DEC-0065).
 3. `editor/save.php` re-checks `require_login()` + `require_sesskey()` +
    `require_capability('moodle/course:manageactivities')` (`editor/save.php:43-46`),
    stores the upload in the **`package` filearea** at `itemid = revision + 1`
@@ -257,7 +173,7 @@ The "Save to Moodle" button drives the export round-trip
    reloads `view.php` so server-rendered blocks reflect the re-synced gradebook
    (`:393-406`).
 
-## 6. Relation to the eXeLearning LMS-embedding model
+## 4. Relation to the eXeLearning LMS-embedding model
 
 `mod_exelearning` uses eXeLearning's LMS-embedding model in its embedded-only
 variant. The plugin embeds the **static** editor in a same-origin iframe and
@@ -265,6 +181,6 @@ exchanges packages purely over `postMessage` + same-origin AJAX. The eXeLearning
 **Online** mode — a remote authenticated service with HMAC-signed tokens — was
 deliberately discarded (DEC-0009,
 `research/decisiones/adr/DEC-0009-solo-editor-embebido.md:23-45`): no
-`editormode` toggle, no `exeonlinebaseuri`, no `hmackey1`, no token TTL. The
-only outbound traffic is the admin-driven download of the editor release from
-GitHub (§2).
+`editormode` toggle, no `exeonlinebaseuri`, no `hmackey1`, no token TTL. There
+is no outbound traffic at all: since DEC-0065 the editor arrives inside the
+release package and the runtime performs no downloads (§1).

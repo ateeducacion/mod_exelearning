@@ -17,9 +17,6 @@
 /**
  * Embedded editor source resolver for mod_exelearning.
  *
- * Single source of truth for determining which embedded editor source is active.
- * Implements a precedence policy: moodledata → bundled → none.
- *
  * @package    mod_exelearning
  * @copyright  2025 eXeLearning
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -28,26 +25,18 @@
 namespace mod_exelearning\local;
 
 /**
- * Resolves which embedded editor source should be used at runtime.
+ * Resolves whether the bundled embedded editor is usable at runtime.
  *
- * Sources are checked in order:
- * 1. Admin-installed editor in moodledata (highest priority).
- * 2. Bundled editor inside the plugin dist/static/ directory.
- * If neither is available the embedded editor is not usable.
+ * The editor is a release artifact (DEC-0065): every official release ZIP ships
+ * it pre-built under dist/static/, and that is the only source the plugin ever
+ * serves. There is no runtime installer and no moodledata copy any more — a
+ * leftover moodledata/mod_exelearning/embedded_editor directory from the removed
+ * installer era is deliberately ignored. When the bundle is absent or fails
+ * validation (a source checkout without `make build-editor`, a broken unpack),
+ * embedded editing is simply unavailable: the edit button is not offered and the
+ * editor endpoints answer 404.
  */
 class embedded_editor_source_resolver {
-    /** @var string Active source is the admin-installed copy in moodledata. */
-    const SOURCE_MOODLEDATA = 'moodledata';
-
-    /** @var string Active source is the bundled copy inside the plugin. */
-    const SOURCE_BUNDLED = 'bundled';
-
-    /** @var string No usable source found. */
-    const SOURCE_NONE = 'none';
-
-    /** @var string Subdirectory under dataroot for admin-installed editor. */
-    const MOODLEDATA_SUBDIR = 'mod_exelearning/embedded_editor';
-
     /**
      * Directories expected in a valid static editor bundle.
      * At least one must exist alongside index.html.
@@ -57,22 +46,22 @@ class embedded_editor_source_resolver {
     const EXPECTED_ASSET_DIRS = ['app', 'libs', 'files'];
 
     /**
-     * Get the moodledata directory for the admin-installed editor.
-     *
-     * @return string Absolute path.
-     */
-    public static function get_moodledata_dir(): string {
-        global $CFG;
-        return $CFG->dataroot . '/' . self::MOODLEDATA_SUBDIR;
-    }
-
-    /**
      * Get the bundled editor directory inside the plugin.
+     *
+     * Unit tests may point this elsewhere via
+     * $CFG->mod_exelearning_bundled_editor_dir (honoured only under PHPUnit),
+     * because dist/static/ lives in dirroot and is absent from CI checkouts.
      *
      * @return string Absolute path.
      */
     public static function get_bundled_dir(): string {
         global $CFG;
+        if (
+            defined('PHPUNIT_TEST') && PHPUNIT_TEST
+            && !empty($CFG->mod_exelearning_bundled_editor_dir)
+        ) {
+            return $CFG->mod_exelearning_bundled_editor_dir;
+        }
         return $CFG->dirroot . '/mod/exelearning/dist/static';
     }
 
@@ -107,108 +96,31 @@ class embedded_editor_source_resolver {
     }
 
     /**
-     * Get the installed version of the moodledata editor, if known.
+     * Check whether the bundled editor is present and valid.
      *
-     * @return string|null Version string or null if not recorded.
+     * @return bool True when embedded editing can be offered.
      */
-    public static function get_moodledata_version(): ?string {
-        $version = get_config('exelearning', 'embedded_editor_version');
-        return ($version !== false && $version !== '') ? $version : null;
+    public static function is_available(): bool {
+        return self::validate_editor_dir(self::get_bundled_dir());
     }
 
     /**
-     * Get the installation timestamp of the moodledata editor, if known.
+     * Get the filesystem path of the bundled editor, if usable.
      *
-     * @return string|null Datetime string or null if not recorded.
+     * @return string|null Absolute path to the editor directory, or null when
+     *                     the bundle is absent or invalid.
      */
-    public static function get_moodledata_installed_at(): ?string {
-        $installedat = get_config('exelearning', 'embedded_editor_installed_at');
-        return ($installedat !== false && $installedat !== '') ? $installedat : null;
+    public static function get_editor_dir(): ?string {
+        return self::is_available() ? self::get_bundled_dir() : null;
     }
 
     /**
-     * Determine which source is active according to the precedence policy.
+     * Get the path of the editor index HTML, if usable.
      *
-     * Precedence: moodledata → bundled → none.
-     *
-     * @return string One of the SOURCE_* constants.
-     */
-    public static function get_active_source(): string {
-        if (self::validate_editor_dir(self::get_moodledata_dir())) {
-            return self::SOURCE_MOODLEDATA;
-        }
-
-        if (self::validate_editor_dir(self::get_bundled_dir())) {
-            return self::SOURCE_BUNDLED;
-        }
-
-        return self::SOURCE_NONE;
-    }
-
-    /**
-     * Get the filesystem path for the active local editor source.
-     *
-     * @return string|null Absolute path to the active editor directory, or null if no source is available.
-     */
-    public static function get_active_dir(): ?string {
-        $source = self::get_active_source();
-
-        switch ($source) {
-            case self::SOURCE_MOODLEDATA:
-                return self::get_moodledata_dir();
-            case self::SOURCE_BUNDLED:
-                return self::get_bundled_dir();
-            default:
-                return null;
-        }
-    }
-
-    /**
-     * Check whether any local editor source (moodledata or bundled) is available.
-     *
-     * @return bool True if at least one local source passes validation.
-     */
-    public static function has_local_source(): bool {
-        return self::get_active_dir() !== null;
-    }
-
-    /**
-     * Get the source used to read the editor index HTML.
-     *
-     * Returns a filesystem path when a local source is available, or null otherwise.
-     *
-     * @return string|null Path to index.html, or null if no source is available.
+     * @return string|null Path to index.html, or null when no editor is available.
      */
     public static function get_index_source(): ?string {
-        $activedir = self::get_active_dir();
-        if ($activedir !== null) {
-            return $activedir . '/index.html';
-        }
-
-        return null;
-    }
-
-    /**
-     * Build a comprehensive status object for the admin UI.
-     *
-     * @return \stdClass Status information with all relevant fields.
-     */
-    public static function get_status(): \stdClass {
-        $status = new \stdClass();
-
-        $status->active_source = self::get_active_source();
-        $status->active_dir = self::get_active_dir();
-
-        // Moodledata source.
-        $status->moodledata_dir = self::get_moodledata_dir();
-        $status->moodledata_available = self::validate_editor_dir($status->moodledata_dir);
-        $status->moodledata_version = self::get_moodledata_version();
-        $status->moodledata_installed_at = self::get_moodledata_installed_at();
-
-        // Bundled source.
-        $status->bundled_dir = self::get_bundled_dir();
-        $status->bundled_available = self::validate_editor_dir($status->bundled_dir);
-
-        return $status;
+        $dir = self::get_editor_dir();
+        return ($dir !== null) ? $dir . '/index.html' : null;
     }
 }

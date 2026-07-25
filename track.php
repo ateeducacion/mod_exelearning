@@ -23,7 +23,9 @@
  * script only does the web-specific part: sesskey + capability authentication and
  * the JSON response (including the 409 status when the attempt cap is reached).
  *
- * Endpoint: POST with sesskey + JSON `{ id: <cmid>, cmi: { "cmi.core.score.raw": "85", ... } }`.
+ * Endpoint: POST `{ id: <cmid>, sesskey: "<key>", cmi: { "cmi.core.score.raw": "85", ... } }`.
+ * The session key is part of the JSON body, never a query-string parameter (SEC-04);
+ * {@see \mod_exelearning\local\tracking_endpoint::require_body_sesskey()} confirms it.
  *
  * @package    mod_exelearning
  * @copyright  2026 ATE (Área de Tecnología Educativa)
@@ -37,7 +39,16 @@ require_once($CFG->dirroot . '/mod/exelearning/lib.php');
 
 $cmid = required_param('id', PARAM_INT);
 $mode = optional_param('mode', 'grading', PARAM_ALPHA);
-require_sesskey();
+
+// The sesskey arrives in the POST body rather than the query string (SEC-04), so the
+// body is decoded first and the request authenticated from it. Decoding untrusted JSON
+// before authenticating is safe; nothing is read out of it until the key is confirmed.
+$raw = file_get_contents('php://input');
+$payload = $raw ? json_decode($raw, true) : null;
+if (!is_array($payload)) {
+    throw new \moodle_exception('invalidparameter', 'error');
+}
+\mod_exelearning\local\tracking_endpoint::require_body_sesskey($payload);
 
 $cm = get_coursemodule_from_id('exelearning', $cmid, 0, false, MUST_EXIST);
 $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
@@ -54,9 +65,7 @@ if (!$ispreview) {
     require_capability('mod/exelearning:savetrack', $context);
 }
 
-$raw = file_get_contents('php://input');
-$payload = $raw ? json_decode($raw, true) : null;
-if (!is_array($payload) || !isset($payload['cmi']) || !is_array($payload['cmi'])) {
+if (!isset($payload['cmi']) || !is_array($payload['cmi'])) {
     throw new \moodle_exception('invalidparameter', 'error');
 }
 

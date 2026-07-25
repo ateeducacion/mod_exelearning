@@ -18,6 +18,7 @@ research/
 # Development config files
 phpmd-rules.xml
 phpmd.xml
+codecov.yml
 Makefile
 blueprint.json
 docker-compose.yml
@@ -33,11 +34,14 @@ package-lock.json
 vitest.config.mjs
 tests/js/*
 
-# Internal documentation (README.md is shipped)
+# Internal documentation (README.md and CHANGELOG.md are shipped). docs/ is
+# developer/maintainer material (architecture notes, audits, internal decision
+# references) with no runtime role — administrators read the README and the
+# plugin pages.
+docs/
 CLAUDE.md
 AGENTS.md
 DEVELOPMENT.md
-CHANGELOG.md
 
 # Build artifacts (coverage/ is gitignored but git ls-files -o would still pick it up)
 mod_exelearning-*.zip

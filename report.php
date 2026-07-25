@@ -79,6 +79,27 @@ if (
     if ($restrictusers !== null && !in_array((int) $deleteuser, $restrictusers, true)) {
         throw new \moodle_exception('attemptnotingroup', 'mod_exelearning');
     }
+    // Deletion is destructive and arrives as a sesskey-protected GET link, so
+    // confirm server-side (same pattern as admin/styles.php): a first hit - or
+    // a browser/proxy link prefetch - only renders the confirmation page; the
+    // actual delete needs the confirmed request $OUTPUT->confirm() generates.
+    if (!optional_param('confirm', 0, PARAM_BOOL)) {
+        $confirmurl = new moodle_url('/mod/exelearning/report.php', $baseurlparams + [
+            'deleteuser'    => $deleteuser,
+            'deleteattempt' => $deleteattempt,
+            'confirm'       => 1,
+            'sesskey'       => sesskey(),
+        ]);
+        $returnurl = new moodle_url('/mod/exelearning/report.php', $baseurlparams);
+        echo $OUTPUT->header();
+        echo $OUTPUT->confirm(
+            get_string('deleteattempt_confirm', 'mod_exelearning', $deleteattempt),
+            $confirmurl,
+            $returnurl
+        );
+        echo $OUTPUT->footer();
+        exit;
+    }
     // Delete and recalculate atomically: if recalculation failed after the
     // delete committed, the gradebook would keep the deleted attempt's grade.
     $transaction = $DB->start_delegated_transaction();

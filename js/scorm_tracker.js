@@ -115,14 +115,26 @@
     /**
      * Serialize the track.php POST body.
      *
+     * The sesskey travels here rather than in the endpoint's query string (SEC-04):
+     * a URL parameter is recorded verbatim by web-server access logs, reverse proxies
+     * and diagnostic tooling, while a POST body is not. track.php confirms it with an
+     * explicit confirm_sesskey() after decoding.
+     *
      * @param {number} cmid       Course module id.
      * @param {string} session    Per-page attempt token.
      * @param {Object} cmi        Buffered CMI key/value pairs.
      * @param {Object} itemscores objectid -> {scorepct, weighted, title}.
+     * @param {string} sesskey    Moodle session key, validated server-side.
      * @returns {string} JSON payload.
      */
-    function buildPayload(cmid, session, cmi, itemscores) {
-        return JSON.stringify({ id: cmid, session: session, cmi: cmi, itemscores: itemscores });
+    function buildPayload(cmid, session, cmi, itemscores, sesskey) {
+        return JSON.stringify({
+            id: cmid,
+            session: session,
+            cmi: cmi,
+            itemscores: itemscores,
+            sesskey: sesskey,
+        });
     }
 
     /**
@@ -151,6 +163,8 @@
         var cmid = config.cmid;
         var trackurl = config.trackurl;
         var session = config.session;
+        // Sent in the POST body, never appended to trackurl (SEC-04).
+        var sesskey = config.sesskey;
         var setTimeoutFn = config.setTimeout || (typeof setTimeout !== 'undefined' ? setTimeout : null);
         var clearTimeoutFn = config.clearTimeout || (typeof clearTimeout !== 'undefined' ? clearTimeout : null);
         var xhrFactory = config.xhrFactory || function () { return new XMLHttpRequest(); };
@@ -179,6 +193,7 @@
             // scores to the injected sink instead of doing the XHR here. The sink
             // (js/scorm_bridge_shim.js) posts them to the Moodle parent, which owns
             // the authenticated track.php request, retry and the pagehide beacon.
+            // The parent carries its own sesskey, so none travels with the message.
             // Fire-and-forget: clear dirty once the message leaves; a thrown/false
             // result keeps it dirty so the next autocommit re-sends it.
             if (transport) {
@@ -188,7 +203,8 @@
                     return false;
                 } catch (te) { errCode = '101'; return false; }
             }
-            var payload = buildPayload(cmid, session, cmi, itemScores);
+            // Direct transport: the sesskey travels in the POST body, not the URL.
+            var payload = buildPayload(cmid, session, cmi, itemScores, sesskey);
             try {
                 var xhr = xhrFactory();
                 // Synchronous in LMSFinish (student closes the tab); async otherwise.

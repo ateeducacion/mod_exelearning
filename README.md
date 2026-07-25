@@ -1,9 +1,9 @@
 # eXeLearning resource for Moodle
 
-[![Moodle Plugin CI](https://github.com/exelearning/mod_exelearning/actions/workflows/ci.yml/badge.svg)](https://github.com/exelearning/mod_exelearning/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/exelearning/mod_exelearning/graph/badge.svg)](https://codecov.io/gh/exelearning/mod_exelearning)
+[![Moodle Plugin CI](https://github.com/exelearning/moodle-mod_exelearning/actions/workflows/ci.yml/badge.svg)](https://github.com/exelearning/moodle-mod_exelearning/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/exelearning/moodle-mod_exelearning/graph/badge.svg)](https://codecov.io/gh/exelearning/moodle-mod_exelearning)
 
-<a href="https://moodle-playground.com/?blueprint-url=https://raw.githubusercontent.com/exelearning/mod_exelearning/main/blueprint.json"><img src="https://raw.githubusercontent.com/ateeducacion/action-moodle-playground-pr-preview/refs/heads/main/assets/playground-preview-button.svg" alt="Preview in Moodle Playground" width="224"></a>
+<a href="https://moodle-playground.com/?blueprint-url=https://raw.githubusercontent.com/exelearning/moodle-mod_exelearning/main/blueprint.json"><img src="https://raw.githubusercontent.com/ateeducacion/action-moodle-playground-pr-preview/refs/heads/main/assets/playground-preview-button.svg" alt="Preview in Moodle Playground" width="224"></a>
 
 > ℹ️ The eXeLearning editor is fetched from the shared release and unpacked into the plugin when the playground boots, so the first load may take a few extra seconds. ELPX upload, viewer and preview work normally.
 
@@ -11,7 +11,7 @@
 > (`.elpx`) directly in Moodle, preserving eXeLearning's native navigation and
 > supporting multiple gradebook items per activity.**
 
-> **For teachers and administrators:** see the [User Guide](docs/USER_GUIDE.md)
+> **For teachers and administrators:** see the [User Guide](https://github.com/exelearning/moodle-mod_exelearning/blob/main/docs/USER_GUIDE.md)
 > for step-by-step instructions on adding, editing and grading eXeLearning
 > resources, plus site-administration and troubleshooting notes.
 
@@ -73,16 +73,18 @@ Nothing to install locally; everything runs in the browser via WebAssembly.
 
 ## Installation
 
-> **Important:** It is recommended to install from a [release ZIP](https://github.com/exelearning/mod_exelearning/releases),
-> which includes the embedded editor pre-built for optimal performance. If the
-> release ZIP does not include the editor, or if you want to install a newer
-> version, administrators can download it from GitHub Releases via the
-> _Manage embedded editor_ page in the plugin settings.
+> **Important:** Install from a [release ZIP](https://github.com/exelearning/moodle-mod_exelearning/releases).
+> Every official release bundles the embedded eXeLearning editor pre-built under
+> `dist/static/` — it is the only editor the plugin uses, and it cannot be
+> installed or updated separately: updating the editor means updating the plugin.
+> A source checkout (git clone or "Download ZIP" of the repository) does **not**
+> contain the editor; embedded editing stays disabled until you build it with
+> `make build-editor` (see [DEVELOPMENT.md](DEVELOPMENT.md)).
 
 ### Installing via uploaded ZIP file
 
 1. Download the latest ZIP from
-   [Releases](https://github.com/exelearning/mod_exelearning/releases).
+   [Releases](https://github.com/exelearning/moodle-mod_exelearning/releases).
 2. Log in to your Moodle site as an admin and go to _Site administration >
    Plugins > Install plugins_.
 3. Upload the ZIP file with the plugin code. You should only be prompted to add
@@ -92,7 +94,7 @@ Nothing to install locally; everything runs in the browser via WebAssembly.
 ### Installing manually
 
 1. Download and extract the latest ZIP from
-   [Releases](https://github.com/exelearning/mod_exelearning/releases).
+   [Releases](https://github.com/exelearning/moodle-mod_exelearning/releases).
 2. Place the extracted contents in `{your/moodle/dirroot}/mod/exelearning`.
 3. Log in to your Moodle site as an admin and go to _Site administration >
    Notifications_ to complete the installation.
@@ -148,13 +150,14 @@ All settings live on a single admin page (see
 rationale of dropping the eXeLearning Online integration — only the embedded
 editor remains):
 
-* **Embedded editor management** (inline widget): install / update / repair /
-  uninstall the editor, downloading the latest release from GitHub
-  (`exelearning/exelearning`) without leaving the settings page.
-* **Styles**: upload eXeLearning style packages (`.zip`), enable/disable the
-  editor's built-in styles, and optionally block users from importing styles
-  bundled inside an `.elpx`. A dedicated _Styles_ admin page lists and manages
-  them.
+* **Embedded editor**: a single site-wide switch. Disabling it turns the plugin
+  into a pure `.elpx` player — uploads and playback keep working, but the
+  "Edit with eXeLearning" button is hidden and the editor endpoints refuse
+  requests.
+* **Styles**: upload eXeLearning style packages (`.zip`), list and
+  enable/disable the uploaded and built-in styles, and optionally block users
+  from importing styles bundled inside an `.elpx` — all on this page.
+* **xAPI**: master switch for the xAPI-primary grading channel.
 * **Package iframe security mode** (`iframemode`, default **Secure**): in _Secure_
   mode the eXeLearning package runs in a sandboxed, **opaque-origin** iframe so its
   JavaScript cannot read or modify the surrounding Moodle page, its cookies or the
@@ -189,18 +192,23 @@ The mechanism has unit tests (`npm run test:js` — Vitest, incl. a SCORM-coexis
 guard) and a cross-browser end-to-end test in Firefox (`npm run test:e2e:embed` —
 Playwright, loads the real shim/relay against an opaque-origin harness).
 
-## Embedded editor management
+## The embedded editor is a release artifact
 
-The plugin supports two editor sources with the following precedence:
+The editor has exactly one source: the pre-built copy shipped inside the release
+ZIP at `dist/static/`
+([DEC-0065](./research/decisiones/adr/DEC-0065-editor-empaquetado-solo-en-release.md)).
+There is nothing to install, update or repair at runtime — the plugin never
+downloads editor code after installation, so everything it serves is part of the
+reviewed release package, and a given plugin version always ships one known
+editor build (pinned to the matching editor tag,
+[DEC-0058](./research/decisiones/adr/DEC-0058-fijar-editor-tag-en-release.md)).
 
-1. **Admin-installed** (moodledata): downloaded from GitHub Releases via the
-   admin management page. Stored under `moodledata/mod_exelearning/embedded_editor/`.
-2. **Bundled** (plugin): included in the plugin release ZIP at `dist/static/`.
-
-An admin-installed version always takes precedence over the bundled version. If
-neither source is available, the embedded editor cannot be used. The management
-page requires the `moodle/site:config` and `mod/exelearning:manageembeddededitor`
-capabilities.
+Administrators cannot update the editor independently: updating the editor means
+installing the next plugin release. When the bundle is absent (a source checkout)
+or invalid, the plugin degrades cleanly — the "Edit with eXeLearning" button is
+not offered and the editor endpoints answer 404. A leftover
+`moodledata/mod_exelearning/embedded_editor/` directory from older plugin
+versions is obsolete and ignored; it can be deleted manually at any time.
 
 ## Gradebook behaviour
 
@@ -214,7 +222,7 @@ completion-by-grade). The teacher can switch the activity to **overall only** wh
 single aggregated grade is preferred (SCORM-style). The former "both" mode was
 removed in [DEC-0008](./research/decisiones/adr/DEC-0008-grade-aggregation-y-feedback.md)
 to avoid double-counting and gradebook complexity. See
-[docs/GRADEBOOK.md](docs/GRADEBOOK.md) for the full model.
+[docs/GRADEBOOK.md](https://github.com/exelearning/moodle-mod_exelearning/blob/main/docs/GRADEBOOK.md) for the full model.
 
 Each submission is stored as an **attempt** (see
 [DEC-0007](./research/decisiones/adr/DEC-0007-gestion-intentos.md)); the
@@ -274,20 +282,20 @@ See `research/decisiones/adr/` for the full set of ADRs. Highlights:
 
 ## Technical documentation
 
-Developer/administrator reference docs live under [`docs/`](./docs/):
+Developer/administrator reference docs live under [`docs/`](https://github.com/exelearning/moodle-mod_exelearning/blob/main/docs/):
 
 | Document | Scope |
 |---|---|
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Responsibility map and request flows. |
-| [EXTERNAL_SERVICES.md](docs/EXTERNAL_SERVICES.md) | Web-service contract (`classes/external` ↔ `db/services.php`). |
-| [GRADEBOOK.md](docs/GRADEBOOK.md) | Multi-item gradebook model (OVERALL vs PER-ITEM). |
-| [TRACKING.md](docs/TRACKING.md) | End-to-end tracking pipeline + security model. |
-| [ELPX_PACKAGE.md](docs/ELPX_PACKAGE.md) | `.elpx` parsing, iDevice detection and XML hardening. |
-| [EMBEDDED_EDITOR.md](docs/EMBEDDED_EDITOR.md) | Embedded editor source/lifecycle and `postMessage` bridge. |
-| [PRIVACY_BACKUP_FILES.md](docs/PRIVACY_BACKUP_FILES.md) | Privacy, backup/restore and File API. |
-| [RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md) | Objective STABLE release gate. |
-| [AUDIT_FOLLOWUP.md](docs/AUDIT_FOLLOWUP.md) | Reconciliation of the comparative report against current code. |
-| [USER_GUIDE.md](docs/USER_GUIDE.md) | Teacher/admin step-by-step guide. |
+| [ARCHITECTURE.md](https://github.com/exelearning/moodle-mod_exelearning/blob/main/docs/ARCHITECTURE.md) | Responsibility map and request flows. |
+| [EXTERNAL_SERVICES.md](https://github.com/exelearning/moodle-mod_exelearning/blob/main/docs/EXTERNAL_SERVICES.md) | Web-service contract (`classes/external` ↔ `db/services.php`). |
+| [GRADEBOOK.md](https://github.com/exelearning/moodle-mod_exelearning/blob/main/docs/GRADEBOOK.md) | Multi-item gradebook model (OVERALL vs PER-ITEM). |
+| [TRACKING.md](https://github.com/exelearning/moodle-mod_exelearning/blob/main/docs/TRACKING.md) | End-to-end tracking pipeline + security model. |
+| [ELPX_PACKAGE.md](https://github.com/exelearning/moodle-mod_exelearning/blob/main/docs/ELPX_PACKAGE.md) | `.elpx` parsing, iDevice detection and XML hardening. |
+| [EMBEDDED_EDITOR.md](https://github.com/exelearning/moodle-mod_exelearning/blob/main/docs/EMBEDDED_EDITOR.md) | Embedded editor source/lifecycle and `postMessage` bridge. |
+| [PRIVACY_BACKUP_FILES.md](https://github.com/exelearning/moodle-mod_exelearning/blob/main/docs/PRIVACY_BACKUP_FILES.md) | Privacy, backup/restore and File API. |
+| [RELEASE_CHECKLIST.md](https://github.com/exelearning/moodle-mod_exelearning/blob/main/docs/RELEASE_CHECKLIST.md) | Objective STABLE release gate. |
+| [AUDIT_FOLLOWUP.md](https://github.com/exelearning/moodle-mod_exelearning/blob/main/docs/AUDIT_FOLLOWUP.md) | Reconciliation of the comparative report against current code. |
+| [USER_GUIDE.md](https://github.com/exelearning/moodle-mod_exelearning/blob/main/docs/USER_GUIDE.md) | Teacher/admin step-by-step guide. |
 
 ## Development
 

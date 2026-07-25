@@ -161,7 +161,7 @@ Cerradas: **TAREA-012 / RIE-001** investigación (DEC-0019); **TAREA-009 / RIE-0
 | DEC-0027 | **Aceptada** (2026-06-03) | Aceptar `.zip` (con `content.xml`) además de `.elpx` en la subida |
 | DEC-0028 | **Aceptada** (2026-06-03) | Enlaces del gradebook: análisis y destino del 'grade analysis' → issue #13 #4 |
 | DEC-0029 | **Aceptada** (2026-06-03) | Interruptor 'Calificable' por actividad (`gradeenabled`) → issue #13 |
-| DEC-0030 | **Aceptada** (2026-06-03) | Versión 'sentinela' (`9999999999`/dev) en main; la real la inyecta `make package` |
+| DEC-0030 | **Superseded** by DEC-0068 | Versión 'sentinela' (`9999999999`/dev) en main; la real la inyectaba `make package` |
 | DEC-0031 | **Aceptada** (2026-06-03) | Separar el formulario en 'Grading' y 'Attempts management' → issue #13 |
 | DEC-0032 | **Propuesta** (2026-06-04) | Ingesta dual de tracking: shim SCORM 1.2 + xAPI (`exe_xapi.js`) sobre tubería común → TAREA-015 |
 | DEC-0033 | **Propuesta** (2026-06-04) | Actualización de contenido: reemplazo del `.elpx` + origen por URL con sincronización (patrón `mod_scorm`) → TAREA-016 |
@@ -182,7 +182,7 @@ Cerradas: **TAREA-012 / RIE-001** investigación (DEC-0019); **TAREA-009 / RIE-0
 | DEC-0048 | **Aceptada** (2026-06-12) | Estrategia de cobertura de tests: mockear la red con `\curl::mock_response()` + mock parcial de `download_to_temp()` en vez de excluir; no excluir del scope código testeable (`excludelistfiles` vacío); xdebug/Codecov es la medida autoritativa (pcov local subacredita llamadas anidadas — artefacto, no límite); gate `codecov project: target: auto` (trinquete). Cobertura honesta 85.71%→87.2% (PR #65) |
 | DEC-0049 | **Aceptada** (2026-06-12) | Auditoría estándar de repositorio (2026-06-11, tras DEC-0016/DEC-0044): 9 mejoras P1–P3 implementadas (PRs #46–#54: hardening XML de estilos, thirdpartylibs en el ZIP, fidelidad backup/restore, lock de intentos, participación vs grademethod, recálculo de notas en lote, `zip_utils`, descarga del informe, Behat) + registro de **hallazgos descartados** y opciones de dirección para no re-auditar |
 | DEC-0050 | **Aceptada** (2026-06-12) | La herramienta de migración exeweb/exescorm vive en `mod_exelearning` (destino, dueño de los internals); orígenes como fuentes legacy de solo lectura tras `source_interface`. Endurecimiento de la rama issue #13: fix `mod_exeweb` itemid=revision (antes leía 0 → todo `nosource`); clasificación `mod_exescorm` (`.elpx` directo / 1 embebido / 0=nosource / >1=ambiguous / external+aiccurl+localsync=unsupported, `localsync` excluido por sincronización aunque tenga snapshot local); limpieza compensatoria con `course_delete_module` ante fallo parcial (sin transacción, caveat recycle bin); preservación de metadatos del cm (idnumber **nunca** se copia); validación post-extracción anti shell-vacío (`migrateextractfailed`); eventos (started/migrated/skipped/failed, patrón DEC-0041); columnas `userid`/`timemodified` (upgrade 2026061201); preflight + `\core\progress\display`. Refactor a `classes/local/migration/` (elimina `import_service`). CLI diferido |
-| DEC-0051..0063 | (varias, 2026-06-12 → 2026-06-17) | **Ver índice completo en `research/docs/indices/adrs.yaml`.** Resumen: DEC-0051 eventos selectivos · DEC-0052 completion por estado · DEC-0053 búsqueda global · DEC-0054 refactor `lib.php` (extracción a clases) · DEC-0055 auditoría post-refactor · DEC-0056 tests JS (Vitest) · DEC-0057 extracción no-destructiva (BETA→STABLE) · DEC-0058 fijar tag del editor en release · DEC-0063 validación canónica del endpoint xAPI + política de versión (1.0.3 tolerante a 2.0). *(DEC-0059..0062 = iframe seguro en rama `feature/secure-iframe-scorm-bridge`, aún no en `main`.)* |
+| DEC-0051..0063 | (varias, 2026-06-12 → 2026-06-17) | **Ver índice completo en `research/docs/indices/adrs.yaml`.** Resumen: DEC-0051 eventos selectivos · DEC-0052 completion por estado · DEC-0053 búsqueda global · DEC-0054 refactor `lib.php` (extracción a clases) · DEC-0055 auditoría post-refactor · DEC-0056 tests JS (Vitest) · DEC-0057 extracción no-destructiva (BETA→STABLE) · DEC-0058 fijar tag del editor en release · DEC-0063 validación canónica del endpoint xAPI + política de versión (1.0.3 tolerante a 2.0) · DEC-0064 implementación ingesta xAPI · DEC-0065 editor solo empaquetado en release (sin instalador runtime) · DEC-0066 interruptor global del editor (modo reproductor puro) · DEC-0067 página de estilos solo-endpoint (cierra UX-01) · DEC-0068 versión real y monótona en main (supersede DEC-0030; empaquetado valida, no muta). *(DEC-0059..0062 = iframe seguro en rama `feature/secure-iframe-scorm-bridge`, aún no en `main`.)* |
 
 ## Restricciones inmutables
 
@@ -191,7 +191,7 @@ Cerradas: **TAREA-012 / RIE-001** investigación (DEC-0019); **TAREA-009 / RIE-0
 - **NO** integración eXeLearning Online (DEC-0009): no tocar `editormode`,
   `exeonlinebaseuri`, `hmackey1`, `APP_SECRET`, `EXELEARNING_WEB_*`.
 - Sidebar nativa **siempre** preservada (técnica iframe de `mod_exeweb`).
-- Repo público: `github.com/exelearning/mod_exelearning`.
+- Repo público: `github.com/exelearning/moodle-mod_exelearning`.
 - Organización: ATE = **Área de Tecnología Educativa** (no "Asistencia Técnica").
 
 ## Trampas conocidas (no repetir)
@@ -225,11 +225,9 @@ Cerradas: **TAREA-012 / RIE-001** investigación (DEC-0019); **TAREA-009 / RIE-0
   (varios archivos separados por espacio; **no** apuntar al directorio entero —el
   `vendor/phpunit` del plugin colisiona) y `make test-js`. Si el entorno PHPUnit dice
   "initialised for different version", ejecutar
-  `docker compose exec moodle php /var/www/html/admin/tool/phpunit/cli/init.php`. NOTA:
-  los tests del editor embebido (`embedded_editor_installer_test`,
-  `manage_embedded_editor_test`) extraen un tarball-fixture que corrompe `/etc/passwd`
-  del contenedor (`openat etc/passwd`) — si pasa, `docker compose up -d --force-recreate moodle`
-  y re-init; correrlos aislados.
+  `docker compose exec moodle php /var/www/html/admin/tool/phpunit/cli/init.php`.
+  (NOTA histórica: los tests del instalador del editor corrompían `/etc/passwd`
+  del contenedor; ese instalador y sus tests se eliminaron en DEC-0065.)
 - **Comentarios de código en INGLÉS.** Todo `.php`/`.js` del plugin. La carpeta
   `research/` (ADRs, fichas, diario, notas) va en **español**. Las librerías de
   terceros vendoradas (`assets/scorm/*`, wrappers SCORM/pipwerks) no se tocan.
@@ -261,8 +259,7 @@ mod_exelearning/
 ├── view.php                   # iframe + SCORM 1.2 shim (autocommit 500ms)
 ├── track.php                  # AJAX endpoint (sesskey + mode preview/grading)
 ├── mod_form.php
-├── settings.php               # 1 toggle (embeddededitor) + link a manage page
-├── manage_embedded_editor.php # Página admin (instalar/borrar/actualizar editor)
+├── settings.php               # Estilos + xAPI (el editor no se gestiona en runtime, DEC-0065)
 ├── editor/index.php           # Página bootstrap del editor embebido por actividad
 ├── classes/
 │   ├── grades/gradeitems.php  # itemnumber_mapping (MAX 100)
@@ -287,7 +284,7 @@ The `.agents/skills/` directory contains Claude Code project skills — reusable
 
 | Skill | File | Purpose |
 |-------|------|---------|
-| `changelog` | `.agents/skills/changelog/SKILL.md` | Draft a CHANGELOG entry from merged GitHub PRs since the last release |
+| `changelog` | `.agents/skills/changelog/SKILL.md` | Draft or top up the `CHANGELOG.md` block from merged GitHub PRs. Mode A adds PRs merged since a given one to the existing draft; mode B opens a new version block from the last published release. Adapted from the sibling skill in `exelearning/exelearning` — keep both in sync. Required before a release (`docs/RELEASE_CHECKLIST.md` §10) |
 
 ## Atajos útiles
 

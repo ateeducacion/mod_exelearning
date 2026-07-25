@@ -469,10 +469,18 @@ if (!$mainfile) {
     // onto SCORM without a code change.
     $emitsxapi = exelearning_xapi_primary_enabled()
             && exelearning_package_emits_xapi($context->id, (int) $exelearning->revision);
-    $trackurl = (new moodle_url(
-        '/mod/exelearning/track.php',
-        ['id' => $cm->id, 'sesskey' => sesskey(), 'mode' => $mode]
-    ))->out(false);
+    // Tracker config (cmid, track URL, per-page attempt token, sesskey). Built by
+    // tracking_endpoint, which keeps the session key out of the endpoint URL and in the
+    // POST body (SEC-04); both clients below consume the same array, and track.php
+    // validates it with require_body_sesskey().
+    $scormcfg = \mod_exelearning\local\tracking_endpoint::scorm_config(
+        (int) $cm->id,
+        $mode,
+        $sessiontoken,
+        // Inert SCORM shim for xAPI-primary packages (DEC-0064): window.API stays alive
+        // so the iDevices run and emit statements, but no score is ever POSTed.
+        $emitsxapi
+    );
 
     // Emit an inline <script> that loads a bundled js/ module and boots it. Centralises
     // the HTML-hardening JSON flags, the js/ path and the "\n(function () { ... })();"
@@ -495,21 +503,15 @@ if (!$mainfile) {
         // window identity (event.source === iframe.contentWindow), a closed action
         // list and a per-view nonce, then performs the authenticated track.php POST
         // (and a sendBeacon flush on pagehide). The nonce and the per-page attempt token
-        // are handed to the in-iframe shim during the handshake; the sesskey is NEVER
-        // sent across the bridge. blockedid points at
+        // are handed to the in-iframe shim during the handshake; the sesskey stays on
+        // this trusted side — it reaches track.php in the relay's own POST body and
+        // never crosses the bridge. blockedid points at
         // the hidden notice the relay reveals (watchdog) if the iframe never signals
         // ready, i.e. the secure mode could not render here.
-        $emitinlinemodule('scorm_bridge_relay.js', [
+        $emitinlinemodule('scorm_bridge_relay.js', $scormcfg + [
             'iframeid' => 'exelearningobject',
-            'cmid' => (int) $cm->id,
-            'trackurl' => $trackurl,
-            'session' => $sessiontoken,
             'nonce' => random_string(32),
             'blockedid' => 'exelearning-secure-blocked',
-            // Inert under xAPI-primary (DEC-0065): keep the bridge live (window.API,
-            // handshake, watchdog) but forward no SCORM score; the package is graded via
-            // the xAPI listener below.
-            'disableTracking' => $emitsxapi,
         ], 'window.exeScormBridge.init(%s);');
     } else {
         // Legacy same-origin: host window.API in this parent window. The tracker logic
@@ -517,18 +519,17 @@ if (!$mainfile) {
         // Vitest (tests/js/scorm_tracker.test.js). It is injected inline (not as an AMD
         // module) so window.API is defined synchronously before the package iframe's
         // pipwerks findAPI() runs — an async AMD load would race the SCO and break
-        // grading. Config (cmid, track URL, per-page attempt token) is passed as JSON
-        // to the createScormApi() factory instead of string-substituted placeholders.
+        // grading. Config is passed as JSON to the createScormApi() factory instead of
+        // string-substituted placeholders.
         // disableTracking makes the shim inert for an xAPI-primary package (DEC-0064):
         // window.API still answers pipwerks so the iDevices run and emit statements, but
         // it never POSTs to track.php, leaving xAPI as the sole grade channel. The secure
         // bridge relay above is made inert the same way (DEC-0065); see $emitsxapi.
-        $emitinlinemodule('scorm_tracker.js', [
-            'cmid' => (int) $cm->id,
-            'trackurl' => $trackurl,
-            'session' => $sessiontoken,
-            'disableTracking' => $emitsxapi,
-        ], 'window.API = window.exeScormTracker.createScormApi(%s).api;');
+        $emitinlinemodule(
+            'scorm_tracker.js',
+            $scormcfg,
+            'window.API = window.exeScormTracker.createScormApi(%s).api;'
+        );
     }
 
     // Parent-side external-embed relay (js/exe_embed_relay.js). Independent of SCORM:
@@ -580,20 +581,21 @@ if (!$mainfile) {
     // secure is opaque (event.origin is "null"), so it is trusted by window identity
     // (event.source === the iframe), exactly like the SCORM bridge relay above.
     if ($emitsxapi) {
-        $xapitrackurl = (new moodle_url(
-            '/mod/exelearning/xapi_track.php',
-            ['id' => $cm->id, 'sesskey' => sesskey(), 'mode' => $mode]
-        ))->out(false);
-        $xapicfg = [
-            'cmid' => (int) $cm->id,
-            'trackurl' => $xapitrackurl,
-            'registration' => $sessiontoken,
-            'mode' => $mode,
-        ];
+        $hostorigin = preg_replace('~^(https?://[^/]+).*~', '$1', $CFG->wwwroot);
+        // Same endpoint builder as the SCORM tracker: routing params in the URL, the
+        // session key in the POST body (SEC-04), validated by require_body_sesskey().
+        $xapicfg = \mod_exelearning\local\tracking_endpoint::xapi_config(
+            (int) $cm->id,
+            $mode,
+            $sessiontoken,
+            $hostorigin
+        );
         if ($securemode) {
+            // The package runs in an opaque origin, so event.origin is "null" and can
+            // never match the host origin: anchor the trust gate on window identity
+            // instead, exactly like the SCORM bridge relay.
             $xapicfg['iframeid'] = 'exelearningobject';
-        } else {
-            $xapicfg['allowedOrigin'] = preg_replace('~^(https?://[^/]+).*~', '$1', $CFG->wwwroot);
+            unset($xapicfg['allowedOrigin']);
         }
         $emitinlinemodule('xapi_listener.js', $xapicfg, 'window.exeXapiListener.createListener(%s).start();');
     }

@@ -1,15 +1,20 @@
 ---
 name: Release
 
+# Builds the distributable ZIP for a published GitHub release (or a manual test
+# build). Under the DEC-0068 version policy this workflow VALIDATES metadata and
+# never mutates it: the release-preparation PR commits the final
+# $plugin->version / $plugin->release before the tag is created, the tag points
+# at that exact commit, and the package ships version.php verbatim. Nothing here
+# derives a version from the runner date, the run date, the tag date or the
+# release publication date — rebuilding the same tag always produces the same
+# version.php. This workflow never commits or pushes.
+
 on:
   release:
     types: [published]
   workflow_dispatch:
     inputs:
-      release_tag:
-        description: "Release label for package name (e.g. 1.2.3 or 1.2.3-beta)"
-        required: false
-        default: ""
       editor_repo_url:
         description: "Editor source repository URL"
         required: false
@@ -53,14 +58,34 @@ jobs:
             echo "EXELEARNING_EDITOR_REF=v${VERSION_TAG}" >> $GITHUB_ENV
             echo "EXELEARNING_EDITOR_REF_TYPE=tag" >> $GITHUB_ENV
           else
-            INPUT_RELEASE="${{ github.event.inputs.release_tag }}"
-            if [ -z "$INPUT_RELEASE" ]; then
-              INPUT_RELEASE="manual-$(date +%Y%m%d)-${GITHUB_SHA::7}"
-            fi
-            echo "RELEASE_TAG=${INPUT_RELEASE}" >> $GITHUB_ENV
+            # Manual test build: version.php on a development branch carries
+            # release = 'dev', and check-version validates exactly that. To test
+            # the full release path, run this from a release-preparation branch
+            # whose version.php already carries the final release, tag it, and
+            # publish the release instead.
+            echo "RELEASE_TAG=dev" >> $GITHUB_ENV
             echo "EXELEARNING_EDITOR_REPO_URL=${{ github.event.inputs.editor_repo_url }}" >> $GITHUB_ENV
             echo "EXELEARNING_EDITOR_REF=${{ github.event.inputs.editor_ref }}" >> $GITHUB_ENV
             echo "EXELEARNING_EDITOR_REF_TYPE=${{ github.event.inputs.editor_ref_type }}" >> $GITHUB_ENV
+          fi
+
+      - name: Validate release metadata (DEC-0068)
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            # The checked-out commit must be exactly the tagged commit, and
+            # version.php must already carry the final release (never 'dev'):
+            # check-version.sh asserts release == tag (without 'v'), the
+            # 10-digit monotonic version, and the savepoint bound.
+            RAW_TAG="${GITHUB_REF##*/}"
+            TAGGED_SHA="$(git rev-parse "refs/tags/${RAW_TAG}^{commit}")"
+            HEAD_SHA="$(git rev-parse HEAD)"
+            if [ "$TAGGED_SHA" != "$HEAD_SHA" ]; then
+              echo "Checked-out commit $HEAD_SHA is not the tagged commit $TAGGED_SHA" >&2
+              exit 1
+            fi
+            bash scripts/check-version.sh --release "${RELEASE_TAG}"
+          else
+            bash scripts/check-version.sh
           fi
 
       - name: Build static editor

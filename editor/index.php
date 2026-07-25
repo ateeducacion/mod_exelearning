@@ -97,7 +97,13 @@ $saveurl = new moodle_url('/mod/exelearning/editor/save.php');
 // Direct access to dist/static/ can fail on servers that block .zip, .md, etc.
 $editorbaseurl = $CFG->wwwroot . '/mod/exelearning/editor/static.php/' . $cm->id;
 
-// Read the editor template from the local installation (moodledata or bundled).
+// Embedded editing can be switched off site-wide (DEC-0066); hiding the button
+// is not enough, a direct request to this bootstrap must be refused too.
+if (!exelearning_embedded_editor_enabled()) {
+    exelearning_editor_error_page(get_string('editordisabledbyadmin', 'mod_exelearning'));
+}
+
+// Read the editor template from the bundled installation (DEC-0065).
 $editorindexsource = exelearning_get_embedded_editor_index_source();
 if ($editorindexsource === null) {
     if (is_siteadmin()) {

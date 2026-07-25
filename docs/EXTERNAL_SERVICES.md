@@ -1,17 +1,16 @@
 # External services (web service API)
 
-The external API surface of `mod_exelearning`: 8 functions over 7 classes, all wired in `db/services.php`. No orphans.
+The external API surface of `mod_exelearning`: 6 functions over 6 classes, all wired in `db/services.php`. No orphans.
+(The two admin AJAX functions that managed the runtime editor installer were removed in DEC-0065 together with the installer.)
 
 ## Surface
 
 Every external class extends `\core_external\external_api` and defines the canonical
-`execute_parameters` / `execute` / `execute_returns` triplet (the admin editor class uses the
-`execute_action_*` / `get_status_*` variants for its two endpoints). All seven classes live under
+`execute_parameters` / `execute` / `execute_returns` triplet. All six classes live under
 `classes/external/` and **every one of them is wired** into `db/services.php`:
 
 | Class | File | Declared in `db/services.php` |
 |---|---|---|
-| `manage_embedded_editor` | `classes/external/manage_embedded_editor.php:41` | 2 functions (`execute_action`, `get_status`) |
 | `get_exelearnings_by_courses` | `classes/external/get_exelearnings_by_courses.php:41` | 1 function |
 | `view_exelearning` | `classes/external/view_exelearning.php:37` | 1 function |
 | `get_exelearning_access_information` | `classes/external/get_exelearning_access_information.php:36` | 1 function |
@@ -19,17 +18,14 @@ Every external class extends `\core_external\external_api` and defines the canon
 | `get_user_grades` | `classes/external/get_user_grades.php:40` | 1 function |
 | `save_track` | `classes/external/save_track.php:43` | 1 function |
 
-The earlier comparative report's claim of "zombie classes" and "only 2 declared functions" is **stale and
-wrong**. `db/services.php:27-96` declares **8** functions covering **all 7** classes — zero orphans, zero
-undeclared classes. This was settled in **DEC-0040** (`research/decisiones/adr/DEC-0040-mobile-external-api.md`),
-which added the six mobile/external functions alongside the two pre-existing admin editor functions.
+The earlier comparative report's claim of "zombie classes" is **stale and wrong**: every declared function
+maps to an existing class — zero orphans. This was settled in **DEC-0040**
+(`research/decisiones/adr/DEC-0040-mobile-external-api.md`), which added the six mobile/external functions.
 
 ## Master table
 
 | Function | Class::method | Type | Capability | Intended client | Service membership | Risks / notes | Tests |
 |---|---|---|---|---|---|---|---|
-| `mod_exelearning_manage_embedded_editor_action` | `manage_embedded_editor::execute_action` | write | `moodle/site:config` + `mod/exelearning:manageembeddededitor` | In-settings editor admin widget (AJAX) | **None** (`'ajax' => true`, no `services`) | Install / update / repair / uninstall of the moodledata editor; `RISK_CONFIG | RISK_DATALOSS` cap (`db/access.php:76-83`). System-context only. | `tests/embedded_editor_installer_test.php` |
-| `mod_exelearning_manage_embedded_editor_status` | `manage_embedded_editor::get_status` | read | `moodle/site:config` + `mod/exelearning:manageembeddededitor` | In-settings editor admin widget (AJAX) | **None** (`'ajax' => true`, no `services`) | Read-only status; optional GitHub Atom feed check when `checklatest=true`. | `tests/embedded_editor_installer_test.php` |
 | `mod_exelearning_get_exelearnings_by_courses` | `get_exelearnings_by_courses::execute` | read | `mod/exelearning:view` | Moodle App / external client | `MOODLE_OFFICIAL_MOBILE_SERVICE` | Lists instances in given courses (empty = the user's enrolled courses); warns (does not fail) on inaccessible courses; `packageurl` surfaced **only** to `moodle/course:manageactivities` (`get_exelearnings_by_courses.php:89-94`). | `tests/external_test.php:116,128,138` |
 | `mod_exelearning_view_exelearning` | `view_exelearning::execute` | write | `mod/exelearning:view` | Moodle App / external client | `MOODLE_OFFICIAL_MOBILE_SERVICE` | Triggers `course_module_viewed` + completion, exactly like opening `view.php`. Mirrors `mod_scorm_view_scorm`. | `tests/external_test.php:94,108` |
 | `mod_exelearning_get_exelearning_access_information` | `get_exelearning_access_information::execute` | read | *(empty — intentional)* | Moodle App / external client | `MOODLE_OFFICIAL_MOBILE_SERVICE` | Returns the caller's per-capability `can<cap>` flags dynamically (see below). Still calls `validate_context()`. Mirrors `mod_scorm_get_scorm_access_information`. | `tests/external_test.php:150` |
@@ -37,18 +33,10 @@ which added the six mobile/external functions alongside the two pre-existing adm
 | `mod_exelearning_get_user_grades` | `get_user_grades::execute` | read | `mod/exelearning:view` (+ `:viewreport` for another user) | Moodle App / external client | `MOODLE_OFFICIAL_MOBILE_SERVICE` | Reflects the real gradebook columns via `grade_get_grades()`, enriched with each iDevice's type/name from `exelearning_grade_item`. Another user's grades require `mod/exelearning:viewreport` (`get_user_grades.php:79-81`). | `tests/external_test.php:193,209` |
 | `mod_exelearning_save_track` | `save_track::execute` | write | `mod/exelearning:savetrack` | Moodle App / external client | `MOODLE_OFFICIAL_MOBILE_SERVICE` | Web-service counterpart of `track.php`; delegates to the shared `track::ingest()` (see below). Always grades `$USER` — a client cannot grade another user. | `tests/external_test.php:215,240,267,290,308` |
 
-## The split: admin editor (AJAX) vs mobile/external (service)
+## Service membership
 
-Two distinct groups in `db/services.php`:
-
-1. **`manage_embedded_editor_*`** (`db/services.php:28-43`) — both functions are `'ajax' => true` and belong to
-   **no service** (`services` key absent). They are called by the in-settings editor admin widget over AJAX, not by
-   any external token client. They require **both** `moodle/site:config` **and**
-   `mod/exelearning:manageembeddededitor` in the system context, enforced in code at
-   `manage_embedded_editor.php:83-84` (action) and `:189-190` (status).
-
-2. **The other six** (`db/services.php:47-95`) are members of `MOODLE_OFFICIAL_MOBILE_SERVICE`, exposed to the
-   official Moodle App and any external token client. Each enforces context, login and capabilities in code.
+All six functions are members of `MOODLE_OFFICIAL_MOBILE_SERVICE`, exposed to the official Moodle App and any
+external token client. Each enforces context, login and capabilities in code.
 
 ## Intentional empty capability: `get_exelearning_access_information`
 
@@ -62,13 +50,10 @@ for a user with no rights.
 
 ## In-code security per function
 
-All six mobile/external functions follow the same server-side posture (the editor functions use the system
-context instead of a module context):
+All six functions follow the same server-side posture:
 
 | Function | `validate_parameters()` | `validate_context()` | `require_capability()` | Conditional `viewreport` |
 |---|---|---|---|---|
-| `manage_embedded_editor::execute_action` | `:71` | `:82` | `:83-84` (`site:config` + `manageembeddededitor`) | — |
-| `manage_embedded_editor::get_status` | `:184` | `:188` | `:189-190` | — |
 | `get_exelearnings_by_courses::execute` | `:70` | per-module via `get_all_instances_in_courses()` + `has_capability()` (`:89`) | filtered by visibility | — |
 | `view_exelearning::execute` | `:59` | `:68` | `:69` (`view`) | — |
 | `get_exelearning_access_information::execute` | `:57` | `:63` | *(none — intentional)* | — |
@@ -108,7 +93,6 @@ priority-#1 gap ("undeclared / zombie external classes") is **resolved** by DEC-
   capability boundaries (`get_user_attempts`/`get_user_grades` other-user `viewreport` gating at lines 174 and 209)
   and the `save_track` edge cases (unknown objectid ignored `:240`, status-only no-op `:267`, savetrack capability
   required `:290`, maxattempt warning `:308`).
-- `tests/embedded_editor_installer_test.php` — installer behaviour behind the two `manage_embedded_editor` endpoints.
 - All external returns are validated through `external_api::clean_returnvalue()` in the tests, so a drift between an
   `execute` return shape and its `execute_returns` definition fails the suite.
 

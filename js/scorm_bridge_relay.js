@@ -77,8 +77,8 @@
     /**
      * Create a relay bound to a config + (injectable) environment.
      *
-     * @param {Object} config {iframeid, cmid, trackurl, session, nonce, blockedid,
-     *     disableTracking}.
+     * @param {Object} config {iframeid, cmid, trackurl, session, sesskey, nonce,
+     *     blockedid, disableTracking}.
      * @param {Object} [deps] {document, window, fetch, sendBeacon} for testing.
      * @returns {Object} {init, onMessage, flushBeacon, postTrack, acceptTrack}.
      */
@@ -96,6 +96,7 @@
         var trackurl = config.trackurl;
         var cmid = config.cmid;
         var session = config.session;
+        var sesskey = config.sesskey;
         var nonce = config.nonce;
         var blockedid = config.blockedid;
         // xAPI-primary (DEC-0065): keep the bridge fully live (handshake, window.API,
@@ -152,12 +153,14 @@
         }
 
         function buildBody(cmi, itemscores) {
-            // Mirror the legacy track.php payload, but identity (cmid in the query,
-            // sesskey, mode) lives on this trusted parent — only the CMI buffer and
-            // per-iDevice scores come from the iframe.
+            // Mirror the legacy track.php payload, but identity (cmid, sesskey, mode)
+            // lives on this trusted parent — only the CMI buffer and per-iDevice scores
+            // come from the iframe. The sesskey travels in the body, never in the query
+            // string (SEC-04): track.php validates it with require_body_sesskey().
             return JSON.stringify({
                 id: cmid,
                 session: session,
+                sesskey: sesskey,
                 cmi: cmi,
                 itemscores: itemscores || {}
             });

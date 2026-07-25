@@ -1051,10 +1051,11 @@ function exelearning_grade_analysis_url(
 }
 
 /**
- * Returns the absolute path to the index.html of the installed embedded editor.
+ * Returns the absolute path to the index.html of the bundled embedded editor.
  *
- * Wrapper for embedded_editor_source_resolver::get_index_source() (moodledata →
- * bundled → null). Ported from mod_exeweb::exeweb_get_embedded_editor_index_source().
+ * Wrapper for embedded_editor_source_resolver::get_index_source(). The editor is
+ * a release artifact shipped under dist/static/ (DEC-0065); when it is absent or
+ * invalid this returns null and embedded editing is unavailable.
  *
  * @return string|null Path to index.html, or null when no editor is available.
  */
@@ -1063,31 +1064,51 @@ function exelearning_get_embedded_editor_index_source(): ?string {
 }
 
 /**
- * Returns whether an embedded editor is available (moodledata or bundled).
+ * Returns whether embedded editing is available on this site.
  *
- * Used by view.php to decide whether to show the "Edit with eXeLearning" button.
+ * Two conditions must hold (DEC-0065, DEC-0066): the bundled editor passes
+ * validation, and the administrator has not switched embedded editing off via
+ * the site-wide `editordisabled` setting. The toggle is deliberately negative
+ * (like `stylesblockimport`) so the unset state and the unticked checkbox both
+ * mean "editing on" — a positive default would render unticked until
+ * upgradesettings materialises it, contradicting the real behaviour.
  *
- * @return bool True when a valid local editor source exists.
+ * Used by view.php to decide whether to show the "Edit with eXeLearning" button
+ * and by editor/static.php before serving editor assets. Activities keep
+ * accepting `.elpx` uploads either way — the toggle only affects in-place
+ * editing.
+ *
+ * @return bool True when the editor is bundled, valid and not disabled.
  */
 function exelearning_embedded_editor_enabled(): bool {
-    return \mod_exelearning\local\embedded_editor_source_resolver::has_local_source();
+    if (!empty(get_config('exelearning', 'editordisabled'))) {
+        return false;
+    }
+    return \mod_exelearning\local\embedded_editor_source_resolver::is_available();
 }
 
 /**
- * Whether a local editor asset bundle is available to be served by static.php.
+ * Aborts the request when embedded editing is disabled site-wide (DEC-0066).
  *
- * @return bool True when an admin-installed or bundled editor directory exists.
+ * Guard for the editor endpoints (editor/index.php bootstrap, editor/save.php):
+ * hiding the button is not enough, a direct request must be refused too.
+ *
+ * @return void
+ * @throws moodle_exception editordisabledbyadmin when the toggle is off or no
+ *                          valid bundle is available.
  */
-function exelearning_embedded_editor_uses_local_assets(): bool {
-    return \mod_exelearning\local\embedded_editor_source_resolver::has_local_source();
+function exelearning_require_embedded_editor_enabled(): void {
+    if (!exelearning_embedded_editor_enabled()) {
+        throw new moodle_exception('editordisabledbyadmin', 'mod_exelearning');
+    }
 }
 
 /**
- * Absolute path to the active editor static directory (moodledata → bundled),
- * used by editor/static.php to serve the editor's assets.
+ * Absolute path to the bundled editor static directory, used by
+ * editor/static.php to serve the editor's assets.
  *
- * @return string|null Directory path, or null when no editor is installed.
+ * @return string|null Directory path, or null when no editor is available.
  */
 function exelearning_get_embedded_editor_local_static_dir(): ?string {
-    return \mod_exelearning\local\embedded_editor_source_resolver::get_active_dir();
+    return \mod_exelearning\local\embedded_editor_source_resolver::get_editor_dir();
 }

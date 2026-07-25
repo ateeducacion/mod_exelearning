@@ -220,7 +220,10 @@ describe('relay createRelay (message handling)', () => {
         const beaconCalls = [];
         const sendBeacon = (url, blob) => { beaconCalls.push({ url, blob }); return true; };
         const r = relay.createRelay(
-            { iframeid: 'exelearningobject', cmid: 42, trackurl: '/track.php?id=42', session: 'tok', nonce: 'N' },
+            {
+                iframeid: 'exelearningobject', cmid: 42, trackurl: '/track.php?id=42',
+                session: 'tok', sesskey: 'SK', nonce: 'N',
+            },
             { document: doc, window: { addEventListener: () => {} }, fetch: fetchImpl, sendBeacon }
         );
         return { r, cw, fetchCalls, beaconCalls };
@@ -242,7 +245,20 @@ describe('relay createRelay (message handling)', () => {
         expect(fetchCalls).toHaveLength(1);
         expect(fetchCalls[0].url).toBe('/track.php?id=42');
         const body = JSON.parse(fetchCalls[0].opts.body);
-        expect(body).toEqual({ id: 42, session: 'tok', cmi: { 'cmi.core.score.raw': '80' }, itemscores: { 'ide-a': { scorepct: 80 } } });
+        expect(body).toEqual({ id: 42, session: 'tok', sesskey: 'SK', cmi: { 'cmi.core.score.raw': '80' }, itemscores: { 'ide-a': { scorepct: 80 } } });
+    });
+
+    it('carries the sesskey in the POST body, never in the endpoint URL (SEC-04)', () => {
+        // track.php authenticates with require_body_sesskey(), so a relay that leaves
+        // the key out of the body is rejected on every write. The identity fields come
+        // from this trusted parent; only cmi/itemscores cross the bridge.
+        const { r, cw, fetchCalls } = setup();
+        r.onMessage({
+            source: cw,
+            data: { type: 'scorm', action: 'track', exelearningBridge: 'N', cmi: {} },
+        });
+        expect(JSON.parse(fetchCalls[0].opts.body).sesskey).toBe('SK');
+        expect(fetchCalls[0].url).not.toContain('sesskey');
     });
 
     it('ignores a track message from a window other than the iframe', () => {

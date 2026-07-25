@@ -15,7 +15,20 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Admin page to manage uploaded eXeLearning styles.
+ * Action endpoint for the eXeLearning styles managed on the plugin settings page.
+ *
+ * This is deliberately NOT a management page (DEC-0067). Styles are managed on
+ * the plugin settings page, where the upload control sits inside the settings
+ * form and actually saves; a second visible manager here duplicated the widgets
+ * — including an upload control with no form around it, which silently discarded
+ * dropped files (UX-01 in the external validation of release 4.0.2).
+ *
+ * The script itself must survive: the per-row enable/disable/delete buttons are
+ * sesskey-protected GET links because a <form> nested inside the settings-page
+ * form is invalid HTML and used to break the whole settings save. Those links
+ * need a handler outside the settings form — this one — which processes the
+ * action (with a server-side confirmation for the destructive delete) and
+ * redirects back to the settings page. Do not add rendering back here.
  *
  * @package    mod_exelearning
  * @copyright  2025 eXeLearning
@@ -39,21 +52,22 @@ $PAGE->set_url(new moodle_url('/mod/exelearning/admin/styles.php'));
 $PAGE->set_title(get_string('stylesmanager', 'mod_exelearning'));
 $PAGE->set_heading(get_string('stylesmanager', 'mod_exelearning'));
 
-$returnurl = new moodle_url('/mod/exelearning/admin/styles.php');
+// Every outcome lands back on the settings page, the single place styles are managed.
+$returnurl = new moodle_url('/admin/settings.php', ['section' => 'modsettingexelearning']);
 
 if ($action !== '' && confirm_sesskey()) {
     if ($action === 'enable' || $action === 'disable') {
-        $slug = required_param('slug', PARAM_RAW);
+        $slug = required_param('slug', PARAM_ALPHANUMEXT);
         styles_service::set_uploaded_enabled($slug, $action === 'enable');
         \core\notification::success(get_string('changessaved'));
         redirect($returnurl);
     } else if ($action === 'delete') {
-        $slug = required_param('slug', PARAM_RAW);
+        $slug = required_param('slug', PARAM_ALPHANUMEXT);
         // Delete is destructive and arrives as a sesskey-protected GET link, so confirm
         // server-side: a first hit (or a link prefetch) only shows the confirmation; the
         // actual delete needs the confirmed POST that $OUTPUT->confirm() generates.
         if (!optional_param('confirm', 0, PARAM_BOOL)) {
-            $confirmurl = new moodle_url($returnurl, [
+            $confirmurl = new moodle_url('/mod/exelearning/admin/styles.php', [
                 'action' => 'delete',
                 'slug' => $slug,
                 'confirm' => 1,
@@ -72,44 +86,12 @@ if ($action !== '' && confirm_sesskey()) {
         \core\notification::success(get_string('stylesdelete_success', 'mod_exelearning'));
         redirect($returnurl);
     } else if ($action === 'enablebuiltin' || $action === 'disablebuiltin') {
-        $id = required_param('id', PARAM_RAW);
+        $id = required_param('id', PARAM_ALPHANUMEXT);
         styles_service::set_builtin_enabled($id, $action === 'enablebuiltin');
         \core\notification::success(get_string('changessaved'));
         redirect($returnurl);
     }
 }
 
-echo $OUTPUT->header();
-echo $OUTPUT->heading(get_string('stylesmanager', 'mod_exelearning'));
-
-echo \html_writer::tag('p', get_string('stylesmanager_intro', 'mod_exelearning'));
-
-// Upload form (native filemanager; auto-installs the dropped ZIP on save).
-$upload = new \mod_exelearning\admin\admin_setting_stylesupload(
-    'exelearning/styles_drops',
-    get_string('stylesupload_label', 'mod_exelearning'),
-    get_string(
-        'stylesupload_hint',
-        'mod_exelearning',
-        display_size(styles_service::get_max_zip_size())
-    ),
-    'styles_drops',
-    0,
-    [
-        'accepted_types' => ['.zip'],
-        'maxbytes' => styles_service::get_max_zip_size(),
-        'maxfiles' => -1,
-        'subdirs' => 0,
-    ]
-);
-echo $upload->output_html('');
-
-// Uploaded styles list.
-$uploaded = new \mod_exelearning\admin\admin_setting_stylesuploaded();
-echo $uploaded->output_html('');
-
-// Built-in themes list.
-$builtins = new \mod_exelearning\admin\admin_setting_stylesbuiltins();
-echo $builtins->output_html('');
-
-echo $OUTPUT->footer();
+// No action to process (a direct visit): there is nothing to show here.
+redirect($returnurl);
