@@ -279,6 +279,31 @@ final class snapshot_store {
     }
 
     /**
+     * Owner and course module of a snapshot or null when it does not exist.
+     *
+     * Callers need the two rejection cases apart: a capability nobody holds is a
+     * 404 while one held by another author is a 403 — the same distinction
+     * {@see replace()} already draws. delete() alone cannot express it because a
+     * single false collapses both.
+     *
+     * @param string $previewid Capability id.
+     * @return array|null Keys ownerUserId and cmid or null when unknown.
+     */
+    public static function owner_of(string $previewid): ?array {
+        if (!preg_match(serving::UUID_RE, $previewid)) {
+            return null;
+        }
+        $meta = self::metadata($previewid);
+        if ($meta === null) {
+            return null;
+        }
+        return [
+            'ownerUserId' => (int) $meta['ownerUserId'],
+            'cmid' => (int) $meta['cmid'],
+        ];
+    }
+
+    /**
      * Delete a snapshot owned by this user and course module.
      *
      * @param string $previewid   Capability id.
@@ -287,14 +312,8 @@ final class snapshot_store {
      * @return bool Whether a snapshot was removed.
      */
     public static function delete(string $previewid, int $owneruserid, int $cmid): bool {
-        if (!preg_match(serving::UUID_RE, $previewid)) {
-            return false;
-        }
-        $meta = self::metadata($previewid);
-        if (
-            $meta === null
-                || (int) $meta['ownerUserId'] !== $owneruserid || (int) $meta['cmid'] !== $cmid
-        ) {
+        $owner = self::owner_of($previewid);
+        if ($owner === null || $owner['ownerUserId'] !== $owneruserid || $owner['cmid'] !== $cmid) {
             return false;
         }
         remove_dir(self::root() . '/' . $previewid);

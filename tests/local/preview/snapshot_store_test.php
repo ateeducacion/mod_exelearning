@@ -143,6 +143,21 @@ final class snapshot_store_test extends advanced_testcase {
     }
 
     /**
+     * The two rejection cases stay distinguishable so the endpoint can answer
+     * 404 for an unknown capability and 403 for somebody else's.
+     */
+    public function test_owner_of_separates_unknown_from_foreign(): void {
+        $id = snapshot_store::replace($this->userid, $this->cmid, $this->zip(['index.html' => 'ok']))['previewid'];
+
+        $owner = snapshot_store::owner_of($id);
+        $this->assertSame($this->userid, $owner['ownerUserId']);
+        $this->assertSame($this->cmid, $owner['cmid']);
+
+        $this->assertNull(snapshot_store::owner_of('11111111-2222-4333-8444-555555555555'));
+        $this->assertNull(snapshot_store::owner_of('not-a-uuid'));
+    }
+
+    /**
      * Delete is owner-scoped and makes the capability unresolvable.
      */
     public function test_delete_is_owner_scoped(): void {

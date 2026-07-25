@@ -76,11 +76,19 @@ $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
 // already has a query string would drop cmid and sesskey.
 if ($method === 'DELETE') {
     $previewid = required_param('previewId', PARAM_ALPHANUMEXT);
-    $deleted = snapshot_store::delete($previewid, (int) $USER->id, (int) $cm->id);
-    exelearning_preview_emit([
-        'status' => $deleted ? 200 : 404,
-        'body' => $deleted ? ['success' => true] : ['success' => false, 'error' => 'previewnotfound'],
-    ]);
+    // Owner scoping reports the same two statuses as the publish path below: 404
+    // for a capability that does not exist and 403 for one held by somebody
+    // else. snapshot_store::delete() collapses both into a single false so the
+    // distinction is drawn here.
+    $owner = snapshot_store::owner_of($previewid);
+    if ($owner === null) {
+        exelearning_preview_emit(['status' => 404, 'body' => ['success' => false, 'error' => 'previewnotfound']]);
+    }
+    if ($owner['ownerUserId'] !== (int) $USER->id || $owner['cmid'] !== (int) $cm->id) {
+        exelearning_preview_emit(['status' => 403, 'body' => ['success' => false, 'error' => 'previewforbidden']]);
+    }
+    snapshot_store::delete($previewid, (int) $USER->id, (int) $cm->id);
+    exelearning_preview_emit(['status' => 200, 'body' => ['success' => true]]);
 }
 
 if ($method !== 'POST') {
