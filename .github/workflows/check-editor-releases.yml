@@ -83,10 +83,12 @@ jobs:
           git commit -m "Sync editor pin to $TAG"
           git push origin "$BRANCH"
 
+          BODY=$(printf '%s\n\n%s\n' \
+            "The editor published [$TAG](https://github.com/exelearning/exelearning/releases/tag/$TAG). This updates \`.editor-version\` and the playground blueprint pin." \
+            'To ship a plugin release bundling this editor, follow the release-preparation flow (DEVELOPMENT.md, "Versioning and releases"): commit the final `version.php`, merge, tag that commit, and publish the release — release.yml builds the ZIP from the tag.')
+
           gh pr create \
             --base main \
             --head "$BRANCH" \
             --title "Sync editor pin to $TAG" \
-            --body "The editor published [$TAG](https://github.com/exelearning/exelearning/releases/tag/$TAG). This updates \`.editor-version\` and the playground blueprint pin.
-
-To ship a plugin release bundling this editor, follow the release-preparation flow (DEVELOPMENT.md, \"Versioning and releases\"): commit the final \`version.php\`, merge, tag that commit, and publish the release — release.yml builds the ZIP from the tag."
+            --body "$BODY"
