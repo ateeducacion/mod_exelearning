@@ -297,19 +297,27 @@ final class serving_test extends advanced_testcase {
     }
 
     /**
-     * The editor bootstrap injects the normalized previewHttp activation block
-     * pointing at this plugin's two endpoints, and gates it on the Playground so a
+     * The editor bootstrap injects the previewSnapshot activation block pointing
+     * at this plugin's two endpoints, and gates it on the Playground so a
      * preview-capable editor build fails closed there (editor/index.php is an
      * entry-point script outside coverage scope, so this asserts the wiring at the
      * source level, like the preview.php checks above).
+     *
+     * The block name matters: the editor reads previewSnapshot and ignores the
+     * previewHttp one this replaced, so a stale key leaves the opaque preview
+     * silently unreachable rather than broken.
      */
-    public function test_editor_bootstrap_injects_preview_http_config(): void {
+    public function test_editor_bootstrap_injects_preview_snapshot_config(): void {
         $source = file_get_contents(__DIR__ . '/../../../editor/index.php');
         $this->assertNotFalse($source);
-        $this->assertStringContainsString("'previewHttp'", $source);
+        $this->assertStringContainsString("'previewSnapshot'", $source);
+        $this->assertStringNotContainsString("'previewHttp'", $source);
         $this->assertStringContainsString('/mod/exelearning/editor/preview_session.php', $source);
         $this->assertStringContainsString('/mod/exelearning/preview.php', $source);
-        $this->assertStringContainsString("'managementQuery'", $source);
+        // The delete template must keep cmid and sesskey, which the client's
+        // default target would drop.
+        $this->assertStringContainsString("'deleteUrlTemplate'", $source);
+        $this->assertStringContainsString('{previewId}', $source);
         // Fails closed under the Playground: the block is omitted there.
         $this->assertStringContainsString('MOODLE_PLAYGROUND', $source);
     }

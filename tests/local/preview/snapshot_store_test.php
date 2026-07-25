@@ -27,6 +27,7 @@ use ZipArchive;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \mod_exelearning\local\preview\snapshot_store
  * @covers     \mod_exelearning\local\preview\zip_inspector
+ * @covers     \mod_exelearning\local\preview\serving::serve
  */
 final class snapshot_store_test extends advanced_testcase {
     /** @var string Scratch storage root. */
@@ -242,5 +243,65 @@ final class snapshot_store_test extends advanced_testcase {
 
         $this->assertSame(snapshot_store::DEFAULT_MAX_BYTES, $limits['maxbytes']);
         $this->assertSame(snapshot_store::DEFAULT_MAX_FILES, $limits['maxfiles']);
+    }
+
+    /**
+     * Serving resolves a file inside the snapshot, with the sandbox CSP on a
+     * scriptable document and no caching of it (it is rewritten every refresh).
+     */
+    public function test_serve_returns_a_document_with_the_sandbox_csp(): void {
+        $id = snapshot_store::replace($this->userid, $this->cmid, $this->zip([
+            'index.html' => '<p>hi</p>',
+        ]))['previewid'];
+        $dir = snapshot_store::get_content_dir($id);
+
+        $response = serving::serve($dir, 'index.html', []);
+
+        $this->assertSame(200, $response['status']);
+        $this->assertSame('<p>hi</p>', $response['body']);
+        $this->assertStringContainsString('sandbox', $response['headers']['Content-Security-Policy']);
+        $this->assertSame('no-store', $response['headers']['Cache-Control']);
+    }
+
+    /**
+     * A non-scriptable file revalidates instead: ETag, 304 and Range, which is
+     * what makes a video inside the snapshot seekable.
+     */
+    public function test_serve_revalidates_and_ranges_an_asset(): void {
+        $id = snapshot_store::replace($this->userid, $this->cmid, $this->zip([
+            'index.html' => 'x',
+            'a.txt' => '0123456789',
+        ]))['previewid'];
+        $dir = snapshot_store::get_content_dir($id);
+
+        $full = serving::serve($dir, 'a.txt', []);
+        $this->assertSame(200, $full['status']);
+        $this->assertArrayNotHasKey('Content-Security-Policy', $full['headers']);
+        $this->assertSame('bytes', $full['headers']['Accept-Ranges']);
+
+        $etag = trim($full['headers']['ETag'], '"');
+        $this->assertSame(304, serving::serve($dir, 'a.txt', ['ifnonematch' => '"' . $etag . '"'])['status']);
+
+        $partial = serving::serve($dir, 'a.txt', ['range' => 'bytes=2-4']);
+        $this->assertSame(206, $partial['status']);
+        $this->assertSame('234', $partial['body']);
+        $this->assertSame('bytes 2-4/10', $partial['headers']['Content-Range']);
+    }
+
+    /**
+     * A path that climbs out of the snapshot is a 404, not a file from the
+     * filesystem: the request is normalized AND the resolved path is confirmed
+     * to sit under the snapshot root.
+     */
+    public function test_serve_refuses_to_escape_the_snapshot(): void {
+        $id = snapshot_store::replace($this->userid, $this->cmid, $this->zip([
+            'index.html' => 'ok',
+        ]))['previewid'];
+        $dir = snapshot_store::get_content_dir($id);
+        file_put_contents(dirname($dir) . '/meta.json', 'secret');
+
+        foreach (['../meta.json', '..%2fmeta.json', 'sub/../../meta.json', 'missing.html'] as $attempt) {
+            $this->assertSame(404, serving::serve($dir, $attempt, [])['status'], $attempt);
+        }
     }
 }

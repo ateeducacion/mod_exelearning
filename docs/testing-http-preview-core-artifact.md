@@ -1,6 +1,6 @@
 # Testing the HTTP preview with a core pull-request artifact
 
-The Moodle adapter implements Preview Serving Contract v2, but a released editor older than `HttpPreviewProvider` ignores the injected `previewHttp` block. Before merging or releasing an editor upgrade, test this branch against one reproducible static-editor artifact built from the target eXeLearning core commit.
+The plugin serves the opaque preview, but only an editor build that speaks the snapshot contract will use it — an older one ignores the injected `previewSnapshot` block and stays on the filtered preview. Before merging or releasing an editor upgrade, test this branch against one reproducible static-editor artifact built from the target eXeLearning core commit.
 
 ## Build the canonical editor artifact
 
@@ -43,7 +43,7 @@ The test should also cover external media, page navigation, a large ranged asset
 
 ## Playground policy
 
-A php-wasm Service Worker cannot back an opaque iframe. Moodle Playground therefore omits `previewHttp` and fails closed by default.
+A php-wasm Service Worker cannot back an opaque iframe. Moodle Playground therefore omits `previewSnapshot` and fails closed by default.
 
 A development blueprint may deliberately enable the same-origin compatibility transport only with both fields:
 

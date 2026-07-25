@@ -159,26 +159,28 @@ $embeddingconfigdata = [
     'pluginVersion' => get_config('mod_exelearning', 'version'),
 ];
 
-// Normalized HTTP preview activation (serving contract v2). Once the embedded
-// editor build ships HttpPreviewProvider it renders the opaque preview over the
-// plugin's own capability URLs: management (authenticated, sesskey + cmid in the
-// query) at editor/preview_session.php, authless serving at preview.php.
+// Opaque preview activation. The editor POSTs the whole project as one ZIP to
+// the authenticated management URL (sesskey + cmid in the query) and renders the
+// capability URL it gets back, served authless by preview.php under a sandbox CSP.
 //
 // Omitted under the php-wasm Playground: a service worker cannot serve a
 // genuinely opaque iframe, so the editor must FAIL CLOSED there (a clear preview
 // error) rather than silently downgrade the isolation boundary. Enabling preview
 // in the Playground is a blueprint-only, dev-only opt-in to previewTransport
 // 'static-service-worker' (which the core preview panel renders with a visible
-// warning) — never an admin setting. See docs/preview-serving-contract.md.
+// warning) — never an admin setting.
 if (!(defined('MOODLE_PLAYGROUND') && MOODLE_PLAYGROUND)) {
-    $embeddingconfigdata['previewHttp'] = [
-        'protocolVersion' => 2,
-        'managementBaseUrl' => (new moodle_url('/mod/exelearning/editor/preview_session.php'))->out(false),
+    $previewquery = ['cmid' => (string) $cm->id, 'sesskey' => sesskey()];
+    $embeddingconfigdata['previewSnapshot'] = [
+        'managementUrl' => (new moodle_url('/mod/exelearning/editor/preview_session.php', $previewquery))->out(false),
         'servingBaseUrl' => (new moodle_url('/mod/exelearning/preview.php'))->out(false),
-        'managementQuery' => [
-            'cmid' => (string) $cm->id,
-            'sesskey' => sesskey(),
-        ],
+        // The client's default delete target appends /{previewId} to managementUrl,
+        // and the URL constructor drops the query string when it does — taking cmid
+        // and sesskey with it. An explicit template keeps them.
+        'deleteUrlTemplate' => (new moodle_url(
+            '/mod/exelearning/editor/preview_session.php',
+            $previewquery + ['previewId' => '{previewId}']
+        ))->out(false),
     ];
 }
 

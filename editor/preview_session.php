@@ -15,22 +15,20 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Authenticated, owner-scoped management API for the editor preview
- * (serving contract v2 — docs/preview-serving-contract.md, §A).
+ * Authenticated, owner-scoped management API for the opaque editor preview.
  *
- * A single dispatcher routing the four contract operations over method + PATH_INFO
- * (the same slash-argument shape preview.php serves), gated by require_login +
- * sesskey + capability on the activity's module context and owner-scoped to the
- * authoring $USER. `cmid` and `sesskey` are query parameters on every request:
+ * Gated by require_login + sesskey + capability on the activity's module context
+ * and scoped to the authoring $USER; `cmid` and `sesskey` are query parameters on
+ * every request. Two operations, because the editor sends the whole project each
+ * time rather than patching it:
  *
- *   POST   {script}                      → create
- *   POST   {script}/{previewId}/assets    → assets   (multipart)
- *   POST   {script}/{previewId}/revisions → revision (multipart)
- *   DELETE {script}/{previewId}           → delete
+ *   POST   {script}   multipart: snapshot=<zip>, previewId? → {previewId}
+ *   DELETE {script}   ?previewId={id}
  *
- * The authless serving counterpart is preview.php. All protocol logic (including
- * the method/path routing) lives in \mod_exelearning\local\preview\serving so
- * this script only authenticates, marshals the request, and emits the JSON result.
+ * This replaces the four-operation protocol v2 (create / assets / revisions /
+ * delete) that the current editor no longer speaks.
+ *
+ * The authless serving counterpart is preview.php.
  *
  * @package    mod_exelearning
  * @copyright  2026 ATE (Área de Tecnología Educativa)
@@ -42,8 +40,7 @@ define('AJAX_SCRIPT', true);
 // @codingStandardsIgnoreLine — path is fixed relative to /mod/exelearning/editor/.
 require('../../../config.php');
 
-use mod_exelearning\local\preview\serving;
-use mod_exelearning\local\preview\session_store;
+use mod_exelearning\local\preview\snapshot_store;
 
 $cmid = required_param('cmid', PARAM_INT);
 
@@ -72,79 +69,53 @@ function exelearning_preview_emit(array $result): void {
     die;
 }
 
-// Route on method + PATH_INFO ("/{previewId}/{op}"); cmid/sesskey stay in the query.
-$route = serving::route_management($_SERVER['REQUEST_METHOD'] ?? 'GET', (string) get_file_argument());
+$method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
 
-try {
-    if ($route['op'] === 'error') {
-        if (!empty($route['allow'])) {
-            header('Allow: ' . $route['allow']);
-        }
-        exelearning_preview_emit(['status' => $route['status'], 'body' => ['success' => false, 'error' => $route['message']]]);
-    }
-
-    if ($route['op'] === 'create') {
-        exelearning_preview_emit(serving::create_session_response((int) $USER->id));
-    }
-
-    // Every other operation targets an existing, owner-scoped session.
-    $owned = session_store::get_owned($route['previewid'], (int) $USER->id);
-    if ($owned['status'] !== 200) {
-        $message = ($owned['status'] === 403) ? 'Access denied' : 'Preview session not found';
-        exelearning_preview_emit(['status' => $owned['status'], 'body' => ['success' => false, 'error' => $message]]);
-    }
-    $session = $owned['session'];
-
-    if ($route['op'] === 'assets') {
-        $parts = exelearning_preview_uploaded_parts();
-        exelearning_preview_emit(serving::handle_assets_request($session, $_POST['assets'] ?? null, $parts));
-    }
-
-    if ($route['op'] === 'revision') {
-        $parts = exelearning_preview_uploaded_parts();
-        exelearning_preview_emit(serving::handle_revision_request($session, $_POST['revision'] ?? null, $parts));
-    }
-
-    // The only remaining routed operation is delete.
-    session_store::delete_session($route['previewid']);
-    exelearning_preview_emit(['status' => 200, 'body' => ['success' => true]]);
-} catch (Throwable $e) {
-    debugging('mod_exelearning preview session endpoint failed: ' . $e->getMessage(), DEBUG_DEVELOPER);
-    exelearning_preview_emit(['status' => 500, 'body' => ['success' => false, 'error' => get_string('error')]]);
+// DELETE carries previewId in the query, not as a path segment: the editor's
+// client builds this URL from a template and appending a segment to a URL that
+// already has a query string would drop cmid and sesskey.
+if ($method === 'DELETE') {
+    $previewid = required_param('previewId', PARAM_ALPHANUMEXT);
+    $deleted = snapshot_store::delete($previewid, (int) $USER->id, (int) $cm->id);
+    exelearning_preview_emit([
+        'status' => $deleted ? 200 : 404,
+        'body' => $deleted ? ['success' => true] : ['success' => false, 'error' => 'previewnotfound'],
+    ]);
 }
 
-/**
- * Read the multipart files[] upload into an index-aligned array of parts, each
- * carrying its PHP upload error code, name and (when readable) bytes. A per-file
- * upload error is NOT collapsed to empty content here — serving::collect_upload()
- * rejects the whole batch instead, so a document that exceeded the server upload
- * limit can never be published as a 0-byte file.
- *
- * @return array<int,array{error:int,name:string,bytes:?string}>
- */
-function exelearning_preview_uploaded_parts(): array {
-    if (empty($_FILES['files']) || !isset($_FILES['files']['tmp_name'])) {
-        return [];
-    }
-    $tmpnames = $_FILES['files']['tmp_name'];
-    $errors = $_FILES['files']['error'];
-    $names = $_FILES['files']['name'] ?? [];
-    // Normalize the single-file shape to arrays.
-    if (!is_array($tmpnames)) {
-        $tmpnames = [$tmpnames];
-        $errors = [$errors];
-        $names = [$names];
-    }
-    $parts = [];
-    foreach ($tmpnames as $i => $tmpname) {
-        $error = isset($errors[$i]) ? (int) $errors[$i] : UPLOAD_ERR_NO_FILE;
-        $name = isset($names[$i]) ? (string) $names[$i] : '';
-        $bytes = null;
-        if ($error === UPLOAD_ERR_OK && is_uploaded_file($tmpname)) {
-            $read = file_get_contents($tmpname);
-            $bytes = ($read === false) ? null : $read;
-        }
-        $parts[] = ['error' => $error, 'name' => $name, 'bytes' => $bytes];
-    }
-    return $parts;
+if ($method !== 'POST') {
+    exelearning_preview_emit(['status' => 405, 'body' => ['success' => false, 'error' => 'methodnotallowed']]);
 }
+
+// One whole-project ZIP per refresh: the editor replaces the snapshot instead of
+// patching it, so there is a single upload field and no revision to track.
+$upload = $_FILES['snapshot'] ?? null;
+if (
+    !is_array($upload) || (int) ($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK
+        || !is_uploaded_file($upload['tmp_name'] ?? '')
+) {
+    exelearning_preview_emit(['status' => 400, 'body' => ['success' => false, 'error' => 'missingsnapshot']]);
+}
+
+// Absent on the first refresh (mint a capability), present afterwards (replace
+// in place). snapshot_store refuses an id that is unknown or owned by someone
+// else, so this cannot be used to claim another author's capability.
+$previewid = optional_param('previewId', null, PARAM_ALPHANUMEXT);
+
+$result = snapshot_store::replace((int) $USER->id, (int) $cm->id, $upload['tmp_name'], $previewid);
+if (isset($result['error'])) {
+    $status = [
+        'previewforbidden' => 403,
+        'missingpreview' => 404,
+        'previewtoolarge' => 413,
+        'previewtoomanyfiles' => 413,
+    ][$result['error']] ?? 400;
+    exelearning_preview_emit(['status' => $status, 'body' => ['success' => false, 'error' => $result['error']]]);
+}
+
+// No previewUrl: the client derives it from servingBaseUrl + /{previewId}/index.html,
+// which keeps one source of truth for how a capability URL is shaped.
+exelearning_preview_emit([
+    'status' => 200,
+    'body' => ['success' => true, 'previewId' => $result['previewid']],
+]);

@@ -17,10 +17,8 @@
 /**
  * Authless opaque HTTP preview serving endpoint (capability URL).
  *
- * The Moodle adapter of eXeLearning core's canonical preview serving contract v2
- * (docs/preview-serving-contract.md). It serves the three session layers —
- * generated documents, session assets, fixed installation resources — of the
- * opaque preview iframe over an unguessable capability URL.
+ * Serves the snapshot the editor uploaded for its opaque preview, over an
+ * unguessable capability URL (docs/preview-serving-contract.md).
  *
  * Route: GET /mod/exelearning/preview.php/{previewId}/<path...>
  *   `previewId` is a server-minted UUID capability. No auth cookie is required or
@@ -29,9 +27,9 @@
  *   in the session store — the cookieless model the published package uses via
  *   tokenpluginfile.php + get_user_key('core_files', ...) in view.php.
  *
- * All protocol logic (three-layer resolution, tiered Cache-Control, the sandbox
+ * All response logic (tiered Cache-Control, the sandbox
  * CSP byte-identical to core previewCspHeader(), ETag/Range) lives in
- * \mod_exelearning\local\preview\serving; the store lives in session_store. This
+ * \mod_exelearning\local\preview\serving; the store lives in snapshot_store. This
  * script only parses the capability URL and emits the computed response.
  *
  * @package    mod_exelearning
@@ -53,7 +51,7 @@ define('NO_DEBUG_DISPLAY', true);
 require(__DIR__ . '/../../config.php');
 
 use mod_exelearning\local\preview\serving;
-use mod_exelearning\local\preview\session_store;
+use mod_exelearning\local\preview\snapshot_store;
 
 /**
  * Emit a serving response ({status, headers, body}) and stop. The hardening
@@ -94,13 +92,15 @@ if ($parsed['bareroot']) {
     exelearning_preview_send(serving::redirect_to_index($location));
 }
 
-// Cookieless capability lookup: unknown or idle-expired session -> 404.
-$session = session_store::get_for_serving($previewid);
-if ($session === null) {
+// Cookieless capability lookup: unknown or idle-expired snapshot -> 404. The
+// lookup also pushes the idle clock back, so a preview in use never expires
+// under the author.
+$contentdir = snapshot_store::get_content_dir($previewid);
+if ($contentdir === null) {
     exelearning_preview_send(serving::not_found());
 }
 
-$response = serving::serve($session, $relpath, [
+$response = serving::serve($contentdir, $relpath, [
     'ifnonematch' => $_SERVER['HTTP_IF_NONE_MATCH'] ?? null,
     'range' => $_SERVER['HTTP_RANGE'] ?? null,
 ]);

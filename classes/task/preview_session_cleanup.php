@@ -16,7 +16,7 @@
 
 namespace mod_exelearning\task;
 
-use mod_exelearning\local\preview\session_store;
+use mod_exelearning\local\preview\snapshot_store;
 
 /**
  * Scheduled task: reap idle-expired editor preview sessions.
@@ -44,7 +44,7 @@ class preview_session_cleanup extends \core\task\scheduled_task {
      * Sweep every idle-expired preview session.
      */
     public function execute(): void {
-        $swept = session_store::sweep_expired();
+        $swept = snapshot_store::sweep_expired();
         if ($swept > 0) {
             mtrace('mod_exelearning: swept ' . $swept . ' expired preview session(s).');
         }
