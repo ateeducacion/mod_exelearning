@@ -307,6 +307,34 @@ final class snapshot_store_test extends advanced_testcase {
     }
 
     /**
+     * The ETag is built from identity rather than from hashing the bytes, so it
+     * has to turn over on a refresh that mtime and size alone cannot see: two
+     * publishes inside the same second where the file keeps its length. Without
+     * the content directory's inode in the tag, this case hands the browser a
+     * 304 for the previous bytes.
+     */
+    public function test_serve_etag_turns_over_on_a_same_size_refresh(): void {
+        $id = snapshot_store::replace($this->userid, $this->cmid, $this->zip([
+            'index.html' => 'x',
+            'style/main.css' => 'a{color:#111}',
+        ]))['previewid'];
+        $before = serving::serve(snapshot_store::get_content_dir($id), 'style/main.css', [])['headers']['ETag'];
+
+        // Same length, different bytes, published immediately after.
+        snapshot_store::replace($this->userid, $this->cmid, $this->zip([
+            'index.html' => 'x',
+            'style/main.css' => 'a{color:#222}',
+        ]), $id);
+        $dir = snapshot_store::get_content_dir($id);
+        $after = serving::serve($dir, 'style/main.css', []);
+
+        $this->assertNotSame($before, $after['headers']['ETag']);
+        $this->assertSame('a{color:#222}', $after['body']);
+        // The stale tag must not win a conditional request.
+        $this->assertSame(200, serving::serve($dir, 'style/main.css', ['ifnonematch' => $before])['status']);
+    }
+
+    /**
      * A path that climbs out of the snapshot is a 404, not a file from the
      * filesystem: the request is normalized AND the resolved path is confirmed
      * to sit under the snapshot root.

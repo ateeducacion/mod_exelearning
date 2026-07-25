@@ -408,6 +408,21 @@ class serving {
      * cheaply and supports Range, which is what makes a video inside the snapshot
      * seekable.
      *
+     * Nothing is read until it is known what will be sent. A 304 carries no body
+     * and a range carries a slice, so reading up front would pull a whole video
+     * into memory to answer a conditional GET with nothing — repeatedly, because
+     * that is what scrubbing does. The ETag is built from identity rather than
+     * from hashing content, for the same reason.
+     *
+     * That identity includes the content directory's inode. Path plus mtime plus
+     * size is NOT enough on its own: mtime has one-second granularity, so an
+     * author who refreshes twice within the same second with an edit that keeps a
+     * file the same length (a colour in a stylesheet) would produce the same tag
+     * and the browser would keep serving the previous bytes. Every publish
+     * extracts into a fresh directory and renames it in, so the inode always
+     * turns over. Where a filesystem does not report one it reads 0 and the tag
+     * degrades to the mtime/size form — no worse than not including it.
+     *
      * @param string $contentdir Absolute snapshot content directory.
      * @param string $relpath The requested path (below the capability prefix).
      * @param array $reqheaders Optional 'ifnonematch' and 'range' request-header values.
@@ -418,22 +433,26 @@ class serving {
         if ($file === null) {
             return self::not_found();
         }
-        $bytes = file_get_contents($file);
-        if ($bytes === false) {
-            return self::not_found();
-        }
         $mime = self::content_type_for($file);
-        $scriptable = self::is_scriptable($mime);
 
         $headers = self::base_headers();
         $headers['Content-Type'] = $mime;
-        if ($scriptable) {
+        if (self::is_scriptable($mime)) {
+            // Always sent whole, so this is the one tier that reads up front.
+            $bytes = file_get_contents($file);
+            if ($bytes === false) {
+                return self::not_found();
+            }
             $headers['Content-Security-Policy'] = self::csp_header();
             $headers['Cache-Control'] = 'no-store';
             return ['status' => 200, 'headers' => $headers, 'body' => $bytes];
         }
 
-        $etag = md5($bytes);
+        $total = (int) filesize($file);
+        $etag = sha1(
+            $relpath . '|' . (string) @fileinode($contentdir)
+                . '|' . (string) filemtime($file) . '|' . $total
+        );
         $headers['Cache-Control'] = 'no-cache';
         $headers['ETag'] = '"' . $etag . '"';
         $headers['Accept-Ranges'] = 'bytes';
@@ -441,19 +460,47 @@ class serving {
             return ['status' => 304, 'headers' => $headers, 'body' => ''];
         }
 
-        $total = strlen($bytes);
         $range = self::parse_range($reqheaders['range'] ?? null, $total);
         if ($range === 'unsatisfiable') {
             $headers['Content-Range'] = 'bytes */' . $total;
             return ['status' => 416, 'headers' => $headers, 'body' => ''];
         }
         if (is_array($range)) {
-            $body = substr($bytes, $range['start'], $range['end'] - $range['start'] + 1);
+            $length = $range['end'] - $range['start'] + 1;
+            $body = self::read_slice($file, $range['start'], $length);
             $headers['Content-Range'] = 'bytes ' . $range['start'] . '-' . $range['end'] . '/' . $total;
             $headers['Content-Length'] = (string) strlen($body);
             return ['status' => 206, 'headers' => $headers, 'body' => $body];
         }
+        $bytes = file_get_contents($file);
+        if ($bytes === false) {
+            return self::not_found();
+        }
         return ['status' => 200, 'headers' => $headers, 'body' => $bytes];
+    }
+
+    /**
+     * Read a byte window out of a file without loading the rest of it.
+     *
+     * @param string $file Absolute path.
+     * @param int $start First byte to read.
+     * @param int $length Number of bytes.
+     * @return string
+     */
+    private static function read_slice(string $file, int $start, int $length): string {
+        $handle = fopen($file, 'rb');
+        if ($handle === false) {
+            return '';
+        }
+        try {
+            if (fseek($handle, $start) !== 0) {
+                return '';
+            }
+            $data = fread($handle, $length);
+            return $data === false ? '' : $data;
+        } finally {
+            fclose($handle);
+        }
     }
 
     /**
