@@ -60,7 +60,7 @@ final class snapshot_store_test extends advanced_testcase {
     /**
      * Build a ZIP from a path => contents map.
      *
-     * @param array<string,string> $entries
+     * @param array $entries Path => contents.
      * @return string Pathname of the archive.
      */
     private function zip(array $entries): string {

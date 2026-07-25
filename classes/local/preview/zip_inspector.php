@@ -40,7 +40,7 @@ final class zip_inspector {
      * which is what a zip bomb inflates to.
      *
      * @param ZipArchive $zip    Open archive.
-     * @param array{maxfiles:int,maxbytes:int} $limits Active limits.
+     * @param array $limits Active limits, keys maxfiles and maxbytes.
      * @return bool|string True when safe to extract, otherwise an error code.
      */
     public static function inspect(ZipArchive $zip, array $limits) {

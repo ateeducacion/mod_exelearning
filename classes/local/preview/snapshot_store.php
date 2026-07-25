@@ -81,7 +81,7 @@ final class snapshot_store {
     /**
      * Shrink the limits so a test can trip them without building a huge ZIP.
      *
-     * @param array<string,int> $overrides Keys 'maxfiles' and/or 'maxbytes'.
+     * @param array $overrides Keys 'maxfiles' and/or 'maxbytes'.
      * @return void
      */
     public static function set_limits_for_testing(array $overrides): void {
