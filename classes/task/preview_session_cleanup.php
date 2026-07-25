@@ -19,12 +19,11 @@ namespace mod_exelearning\task;
 use mod_exelearning\local\preview\snapshot_store;
 
 /**
- * Scheduled task: reap idle-expired editor preview sessions.
+ * Scheduled task: reap idle-expired editor preview snapshots.
  *
- * The preview session store keeps ephemeral, file-backed sessions under the
- * Moodle temp directory (serving contract v2). Sessions are also checked
- * opportunistically on access, but a session that is created and then never
- * touched again is only reclaimed here.
+ * The snapshot store keeps ephemeral, file-backed trees under the Moodle temp
+ * directory. They are also swept opportunistically on every replace, but a
+ * snapshot that is created and then never touched again is only reclaimed here.
  *
  * @package    mod_exelearning
  * @copyright  2026 ATE (Área de Tecnología Educativa)
