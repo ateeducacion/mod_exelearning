@@ -151,13 +151,18 @@ final class snapshot_store {
      * Replacing demands an existing snapshot owned by the same user AND bound to
      * the same course module; a fresh capability has no metadata to match yet.
      *
+     * Both management verbs run through here so publish and delete can never
+     * disagree about what owner scoping means: a malformed id is
+     * `invalidpreviewid`, one nobody holds is `missingpreview` and somebody
+     * else's is `previewforbidden`. The endpoint maps those to statuses once.
+     *
      * @param string      $id          Capability id.
      * @param int         $owneruserid Authoring user.
      * @param int         $cmid        Course module id.
      * @param string|null $previewid   Existing capability when replacing.
      * @return bool|string True, or an error code.
      */
-    private static function authorize(string $id, int $owneruserid, int $cmid, ?string $previewid) {
+    public static function authorize(string $id, int $owneruserid, int $cmid, ?string $previewid) {
         if (!preg_match(serving::UUID_RE, $id)) {
             return 'invalidpreviewid';
         }
@@ -279,42 +284,17 @@ final class snapshot_store {
     }
 
     /**
-     * Owner and course module of a snapshot or null when it does not exist.
-     *
-     * Callers need the two rejection cases apart: a capability nobody holds is a
-     * 404 while one held by another author is a 403 — the same distinction
-     * {@see replace()} already draws. delete() alone cannot express it because a
-     * single false collapses both.
-     *
-     * @param string $previewid Capability id.
-     * @return array|null Keys ownerUserId and cmid or null when unknown.
-     */
-    public static function owner_of(string $previewid): ?array {
-        if (!preg_match(serving::UUID_RE, $previewid)) {
-            return null;
-        }
-        $meta = self::metadata($previewid);
-        if ($meta === null) {
-            return null;
-        }
-        return [
-            'ownerUserId' => (int) $meta['ownerUserId'],
-            'cmid' => (int) $meta['cmid'],
-        ];
-    }
-
-    /**
-     * Delete a snapshot owned by this user and course module.
+     * Delete a snapshot after {@see authorize()} has cleared the caller.
      *
      * @param string $previewid   Capability id.
      * @param int    $owneruserid Authoring user.
      * @param int    $cmid        Course module id.
-     * @return bool Whether a snapshot was removed.
+     * @return bool|string True once it is gone, or an authorize() error code.
      */
-    public static function delete(string $previewid, int $owneruserid, int $cmid): bool {
-        $owner = self::owner_of($previewid);
-        if ($owner === null || $owner['ownerUserId'] !== $owneruserid || $owner['cmid'] !== $cmid) {
-            return false;
+    public static function delete_owned(string $previewid, int $owneruserid, int $cmid) {
+        $authorized = self::authorize($previewid, $owneruserid, $cmid, $previewid);
+        if ($authorized !== true) {
+            return $authorized;
         }
         remove_dir(self::root() . '/' . $previewid);
         return true;

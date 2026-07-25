@@ -143,18 +143,18 @@ final class snapshot_store_test extends advanced_testcase {
     }
 
     /**
-     * The two rejection cases stay distinguishable so the endpoint can answer
-     * 404 for an unknown capability and 403 for somebody else's.
+     * Both verbs share one verdict, so delete reports the same error codes
+     * publish does for the same conditions.
      */
-    public function test_owner_of_separates_unknown_from_foreign(): void {
-        $id = snapshot_store::replace($this->userid, $this->cmid, $this->zip(['index.html' => 'ok']))['previewid'];
-
-        $owner = snapshot_store::owner_of($id);
-        $this->assertSame($this->userid, $owner['ownerUserId']);
-        $this->assertSame($this->cmid, $owner['cmid']);
-
-        $this->assertNull(snapshot_store::owner_of('11111111-2222-4333-8444-555555555555'));
-        $this->assertNull(snapshot_store::owner_of('not-a-uuid'));
+    public function test_delete_reports_the_same_verdict_as_publish(): void {
+        $this->assertSame(
+            'missingpreview',
+            snapshot_store::delete_owned('11111111-2222-4333-8444-555555555555', $this->userid, $this->cmid)
+        );
+        $this->assertSame(
+            'invalidpreviewid',
+            snapshot_store::delete_owned('not-a-uuid', $this->userid, $this->cmid)
+        );
     }
 
     /**
@@ -163,10 +163,13 @@ final class snapshot_store_test extends advanced_testcase {
     public function test_delete_is_owner_scoped(): void {
         $id = snapshot_store::replace($this->userid, $this->cmid, $this->zip(['index.html' => 'ok']))['previewid'];
 
-        $this->assertFalse(snapshot_store::delete($id, $this->userid + 1, $this->cmid));
+        $this->assertSame(
+            'previewforbidden',
+            snapshot_store::delete_owned($id, $this->userid + 1, $this->cmid)
+        );
         $this->assertNotNull(snapshot_store::get_content_dir($id));
 
-        $this->assertTrue(snapshot_store::delete($id, $this->userid, $this->cmid));
+        $this->assertTrue(snapshot_store::delete_owned($id, $this->userid, $this->cmid));
         $this->assertNull(snapshot_store::get_content_dir($id));
     }
 

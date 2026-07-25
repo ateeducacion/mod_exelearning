@@ -69,6 +69,22 @@ function exelearning_preview_emit(array $result): void {
     die;
 }
 
+/**
+ * Map a store error code onto an HTTP status. Shared by both verbs so owner
+ * scoping cannot answer differently depending on the method.
+ *
+ * @param string $error Error code from the snapshot store.
+ * @return int
+ */
+function exelearning_preview_status(string $error): int {
+    return [
+        'previewforbidden' => 403,
+        'missingpreview' => 404,
+        'previewtoolarge' => 413,
+        'previewtoomanyfiles' => 413,
+    ][$error] ?? 400;
+}
+
 $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
 
 // DELETE carries previewId in the query, not as a path segment: the editor's
@@ -76,18 +92,15 @@ $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
 // already has a query string would drop cmid and sesskey.
 if ($method === 'DELETE') {
     $previewid = required_param('previewId', PARAM_ALPHANUMEXT);
-    // Owner scoping reports the same two statuses as the publish path below: 404
-    // for a capability that does not exist and 403 for one held by somebody
-    // else. snapshot_store::delete() collapses both into a single false so the
-    // distinction is drawn here.
-    $owner = snapshot_store::owner_of($previewid);
-    if ($owner === null) {
-        exelearning_preview_emit(['status' => 404, 'body' => ['success' => false, 'error' => 'previewnotfound']]);
+    // Owner scoping comes from the same store verdict the publish path uses, so
+    // the two verbs cannot drift and both go through one status table.
+    $deleted = snapshot_store::delete_owned($previewid, (int) $USER->id, (int) $cm->id);
+    if ($deleted !== true) {
+        exelearning_preview_emit([
+            'status' => exelearning_preview_status($deleted),
+            'body' => ['success' => false, 'error' => $deleted],
+        ]);
     }
-    if ($owner['ownerUserId'] !== (int) $USER->id || $owner['cmid'] !== (int) $cm->id) {
-        exelearning_preview_emit(['status' => 403, 'body' => ['success' => false, 'error' => 'previewforbidden']]);
-    }
-    snapshot_store::delete($previewid, (int) $USER->id, (int) $cm->id);
     exelearning_preview_emit(['status' => 200, 'body' => ['success' => true]]);
 }
 
@@ -112,13 +125,10 @@ $previewid = optional_param('previewId', null, PARAM_ALPHANUMEXT);
 
 $result = snapshot_store::replace((int) $USER->id, (int) $cm->id, $upload['tmp_name'], $previewid);
 if (isset($result['error'])) {
-    $status = [
-        'previewforbidden' => 403,
-        'missingpreview' => 404,
-        'previewtoolarge' => 413,
-        'previewtoomanyfiles' => 413,
-    ][$result['error']] ?? 400;
-    exelearning_preview_emit(['status' => $status, 'body' => ['success' => false, 'error' => $result['error']]]);
+    exelearning_preview_emit([
+        'status' => exelearning_preview_status($result['error']),
+        'body' => ['success' => false, 'error' => $result['error']],
+    ]);
 }
 
 // No previewUrl: the client derives it from servingBaseUrl + /{previewId}/index.html,
