@@ -493,15 +493,35 @@
     function attach(iframe, opts) {
         opts = opts || {};
         var win = opts.win || root;
-        var rec = { iframe: iframe, opts: opts, session: null, win: win, handler: null };
+        var rec = { iframe: iframe, opts: opts, session: null, win: win, handler: null, io: null };
         rec.handler = function (e) {
             onWindowMessage(rec, e);
         };
         if (win.addEventListener) win.addEventListener('message', rec.handler);
         records.push(rec);
+        // Tie the promoted player's lifetime to its source iframe: when the iframe
+        // leaves the layout (removed from the DOM, display:none, a preview/modal
+        // closing, the activity iframe being replaced, …) close its player so it
+        // cannot linger as a floating top-layer <dialog>.
+        if (win.IntersectionObserver && iframe) {
+            rec.io = new win.IntersectionObserver(function (entries) {
+                for (var k = 0; k < entries.length; k++) {
+                    if (!entries[k].isIntersecting) closeActive(rec);
+                }
+            });
+            try {
+                rec.io.observe(iframe);
+            } catch (e) {
+                rec.io = null;
+            }
+        }
         return {
             detach: function () {
                 if (win.removeEventListener) win.removeEventListener('message', rec.handler);
+                if (rec.io) {
+                    rec.io.disconnect();
+                    rec.io = null;
+                }
                 teardown(rec.session);
                 var i = records.indexOf(rec);
                 if (i >= 0) records.splice(i, 1);
@@ -513,13 +533,38 @@
         for (var i = 0; i < records.length; i++) {
             var rec = records[i];
             if (rec.win && rec.win.removeEventListener) rec.win.removeEventListener('message', rec.handler);
+            if (rec.io) rec.io.disconnect();
             teardown(rec.session);
         }
         records = [];
     }
 
+    /**
+     * Close the promoted player for one record (if any) without detaching the
+     * relay, so the child can re-open on demand. Sends `closed` to the child.
+     */
+    function closeActive(rec) {
+        if (rec && rec.session && rec.session.dialog && !rec.session.closed) {
+            requestClose(rec.session);
+        }
+    }
+
+    /**
+     * Close every active promoted player. The promoted video lives on the trusted
+     * parent page; when the host UI changes context (e.g. the editor opens over
+     * the content, or the content iframe is torn down) the video must not outlive
+     * that context as a floating top-layer <dialog>. Hosts call this on such
+     * transitions.
+     */
+    function closeAll() {
+        for (var i = 0; i < records.length; i++) {
+            closeActive(records[i]);
+        }
+    }
+
     root.exeMediaHost = {
         attach: attach,
+        closeAll: closeAll,
         buildModal: buildModal,
         _youtubeAdapter: youtubeRawAdapter,
         _vimeoAdapter: vimeoRawAdapter,

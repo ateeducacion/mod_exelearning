@@ -647,6 +647,13 @@ export const open = async(cmid, editorUrl, activityName, packageUrl, saveUrl, se
         return;
     }
 
+    // Close any promoted media player floating on the trusted page. The
+    // external-media relay opens YouTube/Vimeo in a top-layer <dialog>; it must
+    // not stay above the editor overlay we are about to open.
+    if (window.exeMediaHost && typeof window.exeMediaHost.closeAll === 'function') {
+        window.exeMediaHost.closeAll();
+    }
+
     editorOrigin = getOrigin(editorUrl);
     openAttemptCount = 0;
     session = {
