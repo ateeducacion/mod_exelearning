@@ -1,5 +1,5 @@
 ---
-id: DEC-0067
+id: DEC-0071
 titulo: "Estrategia unificada de medios externos en origen opaco: overlay inline + canal id-only + control del vídeo interactivo por MessagePort (sin nonce-como-auth)"
 estado: Aceptada
 fecha: 2026-06-28
@@ -14,7 +14,7 @@ relacionados:
   - DEC-0059
   - DEC-0060
   - DEC-0061
-  - DEC-0066
+  - DEC-0070
 herramienta_ia:
   interfaz: claude-code
   modelo: claude-opus-4-8
@@ -22,7 +22,7 @@ herramienta_ia:
 
 ## Contexto
 
-Con el teacher-mode ya resuelto sin inyección ([[DEC-0066]]), se reanuda el trabajo de **medios
+Con el teacher-mode ya resuelto sin inyección ([[DEC-0070]]), se reanuda el trabajo de **medios
 externos en origen opaco**. [[DEC-0061]] dejó el vídeo YouTube/Vimeo y el PDF **funcionando** en modo
 seguro mediante *promote-to-parent* con **overlay inline**, pero con una limitación documentada (sus
 líneas 187-210): el **iDevice de vídeo interactivo** con fuente **remota** no funciona en opaco, y el

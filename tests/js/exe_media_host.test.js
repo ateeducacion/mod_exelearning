@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-// Unit tests for mod_exelearning's parent-side media host (DEC-0067). The host is vendored
+// Unit tests for mod_exelearning's parent-side media host (DEC-0071). The host is vendored
 // from eXeLearning's exe-media-host.js but drives the promoted YouTube/Vimeo player by RAW
 // postMessage (no YouTube IFrame API / Vimeo SDK on the Moodle page). These tests cover the
 // new, provider-protocol-critical pieces: the command builders, the inbound-event parsers,

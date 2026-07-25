@@ -262,7 +262,7 @@ Plan, read-only): **"SÍ, con condiciones"**.
 - En vivo (mod localhost:80, modo `open`): YouTube/Vimeo/EducaMadrid/PDF renderizan, el player lleva el
   sandbox correcto (`data-exe-embed-player`), y navegar entre páginas cambia el player (fix de nav).
 
-## Actualización (2026-06-28): dos problemas ortogonales + evolución a [[DEC-0067]]
+## Actualización (2026-06-28): dos problemas ortogonales + evolución a [[DEC-0071]]
 
 Al reanudar el trabajo de medios externos conviene **separar con claridad dos problemas** que se
 confunden a menudo (una síntesis automática los mezcló como si `referrerpolicy` arreglara el opaco):
@@ -279,7 +279,7 @@ confunden a menudo (una síntesis automática los mezcló como si `referrerpolic
   esa función de Jetpack lo resolvía. Lección host: no dejar que un sanitizador elimine `referrerpolicy`.
 
 Es decir: este ADR ya resuelve **A** (overlay) y **B** (referrerpolicy), por lo que el **vídeo simple ya
-se ve en opaco**. Lo que queda abierto se decide en **[[DEC-0067]]**: (i) **endurecer el trust model** del
+se ve en opaco**. Lo que queda abierto se decide en **[[DEC-0071]]**: (i) **endurecer el trust model** del
 relay (nonce por vista + `MessageChannel` con capability + cruzar sólo `{provider, videoId}`), alineándolo
 al bridge de eXeLearning sin abandonar el overlay inline; (ii) **arreglar el vídeo interactivo remoto**
 —la **limitación** documentada arriba (líneas 187-210)— **modificando el iDevice** de eXeLearning para que,
@@ -290,7 +290,7 @@ hijo** y no se reconstruye en el padre (que es lo que hizo frágil el prototipo 
 Notas: **Vimeo por dominio** valida el host del Referer; con el player en el padre (origen del LMS) +
 `referrerpolicy=strict-origin-when-cross-origin`, la privacidad por dominio funciona **si** el dominio del
 LMS está en la lista blanca de Vimeo. El **teacher-mode** ya no se oculta por inyección sino por el
-parámetro core `?exe-teacher` ([[DEC-0066]]), compatible con el origen opaco.
+parámetro core `?exe-teacher` ([[DEC-0070]]), compatible con el origen opaco.
 
 ## Seguimiento
 

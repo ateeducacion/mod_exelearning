@@ -155,7 +155,7 @@ describe('xapi_listener createListener().handleMessage', () => {
     });
 });
 
-describe('xapi_listener window-identity mode (secure / opaque origin, DEC-0065)', () => {
+describe('xapi_listener window-identity mode (secure / opaque origin, DEC-0069)', () => {
     let xhr;
     const frameWin = { name: 'package-iframe' };   // sentinel for the iframe's contentWindow.
 

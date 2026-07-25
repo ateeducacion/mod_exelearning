@@ -184,7 +184,7 @@ pierde el suyo (cookies/storage) y queda en blanco. Las tres implementaciones re
    cierra el residuo de exfil por pixel GET del token de sólo lectura (off por defecto para no romper
    imágenes externas/MathJax/CDN).
 
-## Actualización (2026-06-28): marco de los dos problemas + decisión ([[DEC-0066]] + [[DEC-0067]])
+## Actualización (2026-06-28): marco de los dos problemas + decisión ([[DEC-0070]] + [[DEC-0071]])
 
 **Dos problemas ortogonales (no confundir).** Esta nota cubre bien el **Problema A** (propagación del
 sandbox → player en blanco → promote-to-parent). Conviene añadir explícitamente el **Problema B —
@@ -198,16 +198,16 @@ simple **ya se ve** en opaco. `referrerpolicy` **no** sustituye al promote-to-pa
 **Decisión tomada (cierra el `[PENDIENTE]` #1 de abajo).** El usuario eligió **mantener el overlay
 inline** de mod (no migrar a modal) y **endurecer** el trust model (nonce + `MessageChannel`, cruzar
 sólo `{provider, videoId}`), y **arreglar el vídeo interactivo modificando el iDevice** de eXeLearning
-(autorizado). Registrado en **[[DEC-0067]]**. Matiz respecto a la recomendación #3 de esta nota: en vez
+(autorizado). Registrado en **[[DEC-0071]]**. Matiz respecto a la recomendación #3 de esta nota: en vez
 de delegar los cue-points al **modal** del bridge de eXe, el iDevice (modificado) conduce el control por
 el bridge endurecido mientras el **overlay mantiene el player en la geometría del `#player`** → la layout
 queda en el hijo, sin la reconstrucción en el padre que hizo frágil el prototipo revertido. El
-teacher-mode pasó a `?exe-teacher` ([[DEC-0066]]), lo que desbloqueó reanudar este trabajo en opaco.
+teacher-mode pasó a `?exe-teacher` ([[DEC-0070]]), lo que desbloqueó reanudar este trabajo en opaco.
 
 ## [PENDIENTE]
 
 - ~~ADR de seguimiento si se decide la integración complementaria con el bridge productor de eXeLearning
-  para interactive-video~~ → **decidido en [[DEC-0067]]** (overlay inline endurecido + arreglo del vídeo
+  para interactive-video~~ → **decidido en [[DEC-0071]]** (overlay inline endurecido + arreglo del vídeo
   interactivo en el iDevice; el sandbox lo sigue imponiendo mod).
 - Toggle CSP estricto (cierre del residuo de confidencialidad; eco de `anexos-tecnicos.md:181`).
 - Validación cross-engine del **camino de promoción de embeds** específicamente (el aislamiento opaco se

@@ -107,7 +107,7 @@
 
     /**
      * Recognise a known video provider from an embed src and extract its object id, so the
-     * shim can report {provider, objectId} instead of the author URL (DEC-0067 id-only
+     * shim can report {provider, objectId} instead of the author URL (DEC-0071 id-only
      * channel). The parent rebuilds the canonical URL from a fixed template; this avoids
      * passing the author's URL across the boundary for recognised providers. Returns null
      * for unknown hosts or unexpected paths (the caller then falls back to URL mode). The
@@ -202,7 +202,7 @@
             }
             placeholder.setAttribute('data-exe-embed-url', absoluteUrl);
             // For recognised providers also stamp {provider, objectId} so the parent can
-            // rebuild the canonical URL from a fixed template (DEC-0067 id-only channel)
+            // rebuild the canonical URL from a fixed template (DEC-0071 id-only channel)
             // instead of trusting the author URL. Unknown hosts keep URL-only mode.
             var provider = extractProvider(absoluteUrl);
             if (provider) {

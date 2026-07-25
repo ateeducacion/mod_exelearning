@@ -455,7 +455,7 @@ if (!$mainfile) {
     // One page-load token groups all of this view's commits into a single attempt,
     // shared by whichever channel grades (DEC-0007).
     $sessiontoken = random_string(20);
-    // Channel choice (DEC-0064, extended to secure mode by DEC-0065): a package that
+    // Channel choice (DEC-0064, extended to secure mode by DEC-0069): a package that
     // bundles the upstream xAPI emitter is graded via xAPI in BOTH iframe modes; the SCORM
     // shim stays alive (so pipwerks finds window.API and the iDevices run and emit their
     // statements) but inert, so the two channels never double-count. In legacy mode the
@@ -524,7 +524,7 @@ if (!$mainfile) {
         // disableTracking makes the shim inert for an xAPI-primary package (DEC-0064):
         // window.API still answers pipwerks so the iDevices run and emit statements, but
         // it never POSTs to track.php, leaving xAPI as the sole grade channel. The secure
-        // bridge relay above is made inert the same way (DEC-0065); see $emitsxapi.
+        // bridge relay above is made inert the same way (DEC-0069); see $emitsxapi.
         $emitinlinemodule(
             'scorm_tracker.js',
             $scormcfg,
@@ -548,7 +548,7 @@ if (!$mainfile) {
             'whitelist' => $embedstrict ? \mod_exelearning\local\ui\player_iframe::embed_whitelist() : [],
         ], 'window.exeEmbedRelay.init(%s);');
 
-        // Parent-side media host for the interactive-video iDevice (DEC-0067). When the
+        // Parent-side media host for the interactive-video iDevice (DEC-0071). When the
         // package is opaque, eXeLearning's interactive-video iDevice cannot run a nested
         // YouTube/Vimeo player, so it drives playback through window.exeMediaBridge (the
         // child runtime baked into the package by eXeLearning). This host completes that
@@ -571,7 +571,7 @@ if (!$mainfile) {
         );
     }
 
-    // The xAPI listener (DEC-0064; secure mode added by DEC-0065): for an xAPI-capable
+    // The xAPI listener (DEC-0064; secure mode added by DEC-0069): for an xAPI-capable
     // package, receive the emitter's exe-xapi-statement postMessages in this parent page
     // and forward each to xapi_track.php (the sesskey stays on this trusted side). Same
     // inline single-source-of-truth pattern as the SCORM tracker (js/xapi_listener.js,

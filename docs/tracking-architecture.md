@@ -13,7 +13,7 @@
 > ingestor}`. The overall (`itemnumber=0`) is taken from the package statement and validated
 > server-side, because per-iDevice `answered` statements carry no weight.
 >
-> **Secure iframe (DEC-0065):** in the default opaque-origin secure mode (DEC-0059/DEC-0060) the same
+> **Secure iframe (DEC-0069):** in the default opaque-origin secure mode (DEC-0059/DEC-0060) the same
 > xAPI-primary path applies, but the trust gate changes. The emitter's `event.origin` is the opaque
 > string `"null"`, so `js/xapi_listener.js` trusts a statement by **window identity**
 > (`event.source === the package iframe's contentWindow`) instead of origin — exactly like the SCORM

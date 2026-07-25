@@ -99,7 +99,7 @@
         var sesskey = config.sesskey;
         var nonce = config.nonce;
         var blockedid = config.blockedid;
-        // xAPI-primary (DEC-0065): keep the bridge fully live (handshake, window.API,
+        // xAPI-primary (DEC-0069): keep the bridge fully live (handshake, window.API,
         // watchdog) but forward NO SCORM score, because the package is graded
         // via xAPI. The decision lives here, on the trusted parent, not in the baked-in
         // shim — so it holds even for a package whose shim predates this flag.

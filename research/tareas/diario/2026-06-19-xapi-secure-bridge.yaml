@@ -6,7 +6,7 @@ resumen: >-
   (DEC-0059/0060), la configuración por defecto pasa a ser secure + xAPI-primary, y ahí el
   listener xAPI no recibía nada: en el iframe de origen opaco event.origin es la cadena "null"
   y el listener confiaba sólo por event.origin === host. El merge inicial gateó xAPI a legacy
-  como medida conservadora. Esta sesión implementa la solución definitiva (DEC-0065): el
+  como medida conservadora. Esta sesión implementa la solución definitiva (DEC-0069): el
   listener confía un statement por IDENTIDAD DE VENTANA (event.source === contentWindow del
   iframe del paquete) en modo seguro —el mismo ancla que ya usa el relay del bridge SCORM,
   imposible de falsificar y no anonimizado por el origen opaco— y conserva la validación por
@@ -16,14 +16,14 @@ resumen: >-
   root.parent, sin Worker/MessageChannel/frame hijo, así que event.source es la ventana real
   del iframe.
 acciones:
-  - "DEC-0065 (Aceptada): xAPI sobre el bridge seguro por identidad de ventana; extiende DEC-0064 al modo seguro de DEC-0059 (no lo supersede). Registra las tres opciones (gatear a legacy = status quo del merge; aceptar origin 'null' = inseguro; identidad de ventana = elegida), la evidencia del contrato del emisor y del comportamiento del origen opaco, y la propiedad de que la identidad de ventana iguala a legacy en confianza (el contenido se autocalifica y el servidor acota) sin perder el aislamiento de sesión del modo seguro."
+  - "DEC-0069 (Aceptada): xAPI sobre el bridge seguro por identidad de ventana; extiende DEC-0064 al modo seguro de DEC-0059 (no lo supersede). Registra las tres opciones (gatear a legacy = status quo del merge; aceptar origin 'null' = inseguro; identidad de ventana = elegida), la evidencia del contrato del emisor y del comportamiento del origen opaco, y la propiedad de que la identidad de ventana iguala a legacy en confianza (el contenido se autocalifica y el servidor acota) sin perder el aislamiento de sesión del modo seguro."
   - "js/xapi_listener.js: añadido el modo identidad de ventana (config.iframeid o config.expectedSource para tests; resolución perezosa de document.getElementById(iframeid).contentWindow por mensaje, porque el listener se inyecta antes de existir el elemento; función isTrusted que ignora event.origin en secure). Conserva isTrustedOrigin para legacy. Superficie de export sin cambios."
   - "js/scorm_bridge_relay.js: nuevo parámetro disableTracking; en onMessage se valida el track (identidad de ventana + nonce + forma) pero se omite postTrack cuando está activo. latest queda null, así que flushBeacon es no-op. Handshake (ready->config con nonce/teachermode) y watchdog intactos: el iframe sigue renderizando y window.API existe para que los iDevices emitan xAPI."
   - "view.php: $emitsxapi pierde el gateo !$securemode (xAPI-primary en ambos modos); el relay seguro recibe disableTracking => $emitsxapi; el bloque del listener xAPI se reescribe usando $emitinlinemodule con iframeid (secure) o allowedOrigin (legacy). Comentarios actualizados (incl. corregido el comentario legacy que decía que disableTracking 'sólo es true en legacy')."
   - "Tests (Vitest): xapi_listener.test.js con un describe nuevo de identidad de ventana (reenvía con origen 'null' si source === iframe; rechaza cualquier otra ventana aunque alegue el host; rechaza sin source; resolución perezosa cuando el elemento aparece después). scorm_bridge.test.js con un test de disableTracking (un track válido no hace fetch, ready sigue handshakeando, el beacon no envía nada). Total 114/114 (antes 109)."
-  - "Docs (inglés): docs/tracking-architecture.md (bloque 'Secure iframe (DEC-0065)') y docs/xapi-integration-plan.md (puerta de confianza dependiente del modo + nota de SCORM inerte por el relay). Índices research actualizados (adrs.yaml, diario.yaml)."
+  - "Docs (inglés): docs/tracking-architecture.md (bloque 'Secure iframe (DEC-0069)') y docs/xapi-integration-plan.md (puerta de confianza dependiente del modo + nota de SCORM inerte por el relay). Índices research actualizados (adrs.yaml, diario.yaml)."
 evidencia:
-  - "research/decisiones/adr/DEC-0065-xapi-bridge-seguro-identidad-ventana.md"
+  - "research/decisiones/adr/DEC-0069-xapi-bridge-seguro-identidad-ventana.md"
   - "js/xapi_listener.js (isTrusted/expectedSource, modo identidad de ventana)"
   - "js/scorm_bridge_relay.js (disableTracking suprime postTrack tras validar)"
   - "js/scorm_bridge_relay.js:27-28 ('an opaque origin has no useful event.origin' — precedente del ancla)"
@@ -35,7 +35,7 @@ pendientes:
   - "Si un futuro emisor upstream adopta nonce/handshake, endurecer la identidad de ventana a nonce como el bridge SCORM."
   - "Diferido (eco DEC-0064): handler core_xapi + eventos para analítica/LRS."
 relacionados:
-  - DEC-0065
+  - DEC-0069
   - DEC-0064
   - DEC-0059
   - DEC-0060

@@ -377,7 +377,7 @@ describe('exe_embed_shim collect() geometry report', () => {
     });
 });
 
-// DEC-0067 option 1: id-only provider channel. For recognized providers the shim sends
+// DEC-0071 option 1: id-only provider channel. For recognized providers the shim sends
 // {provider, objectId} (not the author URL) and the parent reconstructs the canonical URL
 // from a fixed template after re-checking the object id against a strict regex, so a
 // malicious id cannot inject a path/query and escape the canonical embed path. The

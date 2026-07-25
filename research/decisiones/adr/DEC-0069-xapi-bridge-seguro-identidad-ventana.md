@@ -1,5 +1,5 @@
 ---
-id: DEC-0065
+id: DEC-0069
 titulo: "xAPI sobre el bridge seguro: el listener confía por identidad de ventana en el iframe opaco (extiende DEC-0064 al modo seguro de DEC-0059)"
 estado: Aceptada
 fecha: 2026-06-19

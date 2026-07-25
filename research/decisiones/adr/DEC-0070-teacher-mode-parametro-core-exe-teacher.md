@@ -1,5 +1,5 @@
 ---
-id: DEC-0066
+id: DEC-0070
 titulo: "Teacher-mode por parámetro core `?exe-teacher` (sin inyección CSS): compatible con origen opaco; supersede el hider de DEC-0046"
 estado: Aceptada
 fecha: 2026-06-28
@@ -12,7 +12,7 @@ relacionados:
   - DEC-0046
   - DEC-0059
   - DEC-0045
-  - DEC-0067
+  - DEC-0071
 herramienta_ia:
   interfaz: claude-code
   modelo: claude-opus-4-8
@@ -71,7 +71,7 @@ injection"). Este ADR registra la decisión ya integrada.
   **histórica**. La parte de **SCORM-loader (#1)** de DEC-0046 no se ve afectada por esta entrada
   (su salida definitiva sigue siendo xAPI / [[DEC-0045]] según corresponda).
 - **Desbloquea el modo opaco**: el teacher-mode deja de ser un caso que sólo funcionaba en same-origin.
-  Con esto resuelto, se puede continuar el trabajo de medios externos en opaco ([[DEC-0067]]).
+  Con esto resuelto, se puede continuar el trabajo de medios externos en opaco ([[DEC-0071]]).
 - **Menos deuda/acoplamiento**: el plugin ya no reescribe ni manipula el documento del paquete para el
   teacher-mode; un cambio en cómo eXe pinta el conmutador ya no rompe al plugin.
 - **Dependencia de versión de eXe**: los `.elpx` exportados con versiones **anteriores** a

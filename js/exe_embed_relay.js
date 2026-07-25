@@ -169,7 +169,7 @@
         return true;
     }
 
-    // Provider templates for the id-only channel (DEC-0067): the parent rebuilds the canonical
+    // Provider templates for the id-only channel (DEC-0071): the parent rebuilds the canonical
     // embed URL from {provider, objectId} reported by the shim, re-checking the object id
     // against a strict per-provider regex so it cannot carry a path/query/fragment and escape
     // the template (e.g. '../../x' or 'a/b?c'). The reconstructed URL still runs through
@@ -439,7 +439,7 @@
                 if (!isFinite(embed.x) || !isFinite(embed.y) || !isFinite(embed.w) || !isFinite(embed.h)) {
                     return;
                 }
-                // id-only channel (DEC-0067): for recognised providers the shim reports
+                // id-only channel (DEC-0071): for recognised providers the shim reports
                 // {provider, objectId} and the parent rebuilds the canonical URL from a
                 // fixed template (the author URL never crosses for these). Unknown embeds
                 // keep the URL path. Either way validate() runs the structural invariant.
