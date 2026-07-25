@@ -104,12 +104,13 @@ completion conditions, groups, and so on).
 
 ## 3. Editing the resource in place with the embedded editor
 
-If your administrator has installed the embedded eXeLearning editor, teachers
-can edit the package without leaving Moodle.
+The embedded eXeLearning editor ships with the plugin, so on a standard install
+(from an official release ZIP) teachers can edit the package without leaving
+Moodle.
 
 1. Open the activity. You will see an **Edit with eXeLearning** button near the
    top (it appears only for users who can manage the activity, and only when the
-   embedded editor is installed).
+   bundled editor is available).
 2. Click it. The eXeLearning editor opens in a modal window loaded with your
    current package.
 3. Make your changes inside the editor.
@@ -220,35 +221,36 @@ Go to **Site administration > Plugins > Activity modules > eXeLearning resource*
 (`admin/settings.php?section=modsettingexelearning`). Everything is on a single
 page.
 
-### Installing or updating the embedded editor
+### The embedded editor comes with the plugin
 
 The embedded editor is what lets teachers edit packages in place (section 3).
-There are two possible sources, in this order of precedence:
+It ships **inside the plugin release ZIP** and that bundled copy is the only one
+the plugin uses — there is nothing to install, update or repair from Moodle, and
+the editor cannot be updated independently: **updating the editor means updating
+the plugin** to the next release, which always bundles the matching editor
+version.
 
-1. **Admin-installed** — downloaded from GitHub Releases through this page and
-   stored in moodledata. This always takes priority.
-2. **Bundled** — a copy shipped inside the plugin release ZIP.
+If your installation has no bundled editor (for example, the plugin was
+installed from a source checkout instead of an official release ZIP), the
+**Edit with eXeLearning** button will not appear for teachers and the editor
+pages report that the editor is not included. The fix is to install the plugin
+from an official release ZIP.
 
-On the **Editor management** card you can:
+> Sites upgrading from older plugin versions may still have an editor copy under
+> `moodledata/mod_exelearning/embedded_editor/` installed by the removed
+> management page. It is no longer used and can be deleted at any time.
 
-- **Install latest version** — downloads and installs the newest editor release
-  from GitHub. (Installing can take a minute.)
-- **Update editor** — appears when a newer version is available on GitHub.
-- **Repair** — reinstalls the current editor files.
-- **Remove** — uninstalls the admin-installed copy from moodledata (the bundled
-  copy, if any, then takes over).
+### Disabling in-place editing
 
-If neither an admin-installed nor a bundled editor is present, the embedded
-editor cannot be used and the **Edit with eXeLearning** button will not appear
-for teachers.
-
-> Tip: installing the plugin from an official release ZIP usually bundles a
-> working editor, so editing works out of the box. Use this page to move to a
-> newer editor version.
+If your site only plays packages authored elsewhere, tick **Disable the
+embedded editor** on the settings page. Teachers keep uploading and serving
+`.elpx` packages exactly as before, but the **Edit with eXeLearning** button
+disappears and the editor pages refuse requests. Untick it at any time to
+restore in-place editing — no data is affected either way.
 
 ### Managing styles
 
-Below the editor card you can manage the eXeLearning styles available to the
+On the settings page you can manage the eXeLearning styles available to the
 embedded editor:
 
 - **Style ZIP package** — upload an eXeLearning style package (`.zip`
@@ -263,19 +265,19 @@ embedded editor:
   `.elpx`. Authors may then only choose from the admin-approved list. Use this
   to keep a consistent, approved look across your site.
 
-A dedicated **Styles** management page is also reachable directly under
-*Site administration > Plugins > Activity modules*.
+All style management happens on this settings page (the per-row buttons
+confirm destructive actions before applying them).
 
 ---
 
 ## 8. FAQ and troubleshooting
 
 **The "Edit with eXeLearning" button does not appear.**
-Two common causes: (a) the embedded editor is not installed — ask your
-administrator to install it from the plugin settings (section 7); or (b) you are
+Two common causes: (a) the installation carries no bundled editor — the plugin
+was not installed from an official release ZIP (section 7); or (b) you are
 viewing as a student or without the capability to manage the activity. The button
-only appears for users who can manage the activity and only when the editor is
-installed.
+only appears for users who can manage the activity and only when the bundled
+editor is available.
 
 **"Gradable iDevices detected" shows nothing / no columns are created.**
 The package contains no gradable iDevices of the supported types. Only the

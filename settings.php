@@ -18,9 +18,9 @@
  * mod_exelearning admin settings.
  *
  * DEC-0009: embedded editor mode only. Integration with eXeLearning Online
- * was discarded to avoid external dependencies. Installing, updating, repairing,
- * and uninstalling the editor (by downloading a release from GitHub) and managing
- * defined styles are done entirely from this settings page, gated by the
+ * was discarded to avoid external dependencies. The editor itself ships inside
+ * the release package (DEC-0065) and has no runtime management; this page only
+ * manages defined styles, gated by the
  * `mod/exelearning:manageembeddededitor` capability.
  *
  * @package    mod_exelearning
@@ -30,14 +30,18 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-// Register the styles management external page so it can be linked from the
-// settings page and reached directly. Must be added before the $fulltree
-// guard so it is always registered in the admin tree.
+// Register the styles action endpoint. Hidden from the admin menu (DEC-0067):
+// styles are managed on this settings page; admin/styles.php only processes the
+// enable/disable/delete links (they cannot be forms nested inside the settings
+// form) and hosts the delete confirmation. The registration must stay — it is
+// what admin_externalpage_setup() resolves — and must be added before the
+// $fulltree guard so it is always present in the admin tree.
 $ADMIN->add('modsettings', new admin_externalpage(
     'mod_exelearning_styles',
     get_string('stylesmanager', 'mod_exelearning'),
     new moodle_url('/mod/exelearning/admin/styles.php'),
-    'mod/exelearning:manageembeddededitor'
+    'mod/exelearning:manageembeddededitor',
+    true
 ));
 
 // Register the site-wide migration tool only when a sibling plugin (mod_exeweb /
@@ -54,17 +58,24 @@ if (isset($exelearninginstalledmods['exeweb']) || isset($exelearninginstalledmod
 }
 
 if ($ADMIN->fulltree) {
-    // Embedded editor management (install / update / repair / uninstall).
+    // Embedded editor (DEC-0066): a single site-wide toggle. The editor itself
+    // ships inside the release package (DEC-0065) and has no runtime management;
+    // this switch lets a site use the plugin as a pure .elpx player — uploads
+    // keep working, only in-place editing is hidden and refused. The checkbox is
+    // negative (disable) on purpose: unset config and unticked box then agree,
+    // avoiding the "Default: Yes but unticked" confusion before upgradesettings
+    // materialises a positive default (same pattern as stylesblockimport).
     $settings->add(new admin_setting_heading(
-        'mod_exelearning/embeddededitorheading',
-        get_string('embeddededitorsettings', 'mod_exelearning'),
-        get_string('editormanagementhelp', 'mod_exelearning')
+        'mod_exelearning/editorsettingsheading',
+        get_string('editorsettings', 'mod_exelearning'),
+        ''
     ));
 
-    // Inline editor management card (AJAX install/update/repair/uninstall).
-    $settings->add(new \mod_exelearning\admin\admin_setting_embeddededitor(
-        get_string('embeddededitorstatus', 'mod_exelearning'),
-        get_string('editormanagementhelp', 'mod_exelearning')
+    $settings->add(new admin_setting_configcheckbox(
+        'exelearning/editordisabled',
+        get_string('editordisabled', 'mod_exelearning'),
+        get_string('editordisabled_desc', 'mod_exelearning'),
+        0
     ));
 
     // Defined styles management (upload / enable / disable / lockdown).

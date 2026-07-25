@@ -57,7 +57,7 @@
   - [ ] `tests/external_test.php`
   - [ ] `tests/events_test.php`
   - [ ] `tests/package_test.php`
-  - [ ] `tests/embedded_editor_installer_test.php`
+  - [ ] `tests/embedded_editor_source_resolver_test.php`
 
 ## 2. Backup / restore round-trip
 
@@ -157,6 +157,25 @@ mariadb10.11):
 
 - [ ] `README.md`, `DEVELOPMENT.md` and `docs/` reflect the shipped behavior.
 - [ ] ADR index in `AGENTS.md` updated; any newly accepted DEC referenced.
+- [ ] `CHANGELOG.md` carries a block for the version being released, with the
+      `Unreleased` heading replaced by `## vX.Y.Z – YYYY-MM-DD`. Draft it with the
+      `changelog` agent skill (`.agents/skills/changelog/SKILL.md`), which reads the
+      pull requests merged since the last published release, then review every
+      entry by hand — the skill produces a draft, not a finished changelog. The file
+      ships inside the release ZIP, so administrators read it.
+
+## 10b. Version metadata (DEC-0068)
+
+- [ ] A release-preparation PR commits the final `$plugin->version` (YYYYMMDDXX,
+      strictly above the latest published version and every `db/upgrade.php`
+      savepoint) and `$plugin->release = 'X.Y.Z'` — never `'dev'` — in
+      `version.php`. `make check-release-version RELEASE=X.Y.Z` passes.
+- [ ] The git tag `vX.Y.Z` is created on that exact merged commit; `version.php`
+      is never modified after the tag exists (rebuilding a tag must not change
+      it — packaging validates metadata but does not rewrite it).
+- [ ] After publishing, a follow-up PR returns `$plugin->release` to `'dev'` and
+      bumps `$plugin->version` to the next valid development value
+      (`make check-version` passes).
 
 ## 11. Exit criteria — conditions that must hold for a STABLE release
 

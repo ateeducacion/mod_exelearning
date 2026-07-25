@@ -151,7 +151,14 @@ instance.
 
 ## Packaging a release
 
-Build a distributable ZIP with:
+First update `CHANGELOG.md`: it ships inside the ZIP, so it is what an
+administrator reads when deciding whether to upgrade. The `changelog` agent skill
+(`.agents/skills/changelog/SKILL.md`) drafts the block from the pull requests
+merged since the last published release — run `/changelog` in Claude Code, pick
+mode B for a new version block or mode A to top up the existing draft, then review
+every entry by hand before committing.
+
+Then build a distributable ZIP with:
 
 ```bash
 make build-editor               # ensure the editor exists in dist/static/ (make up also builds it)
@@ -165,24 +172,60 @@ This produces `mod_exelearning-<RELEASE>.zip` with everything under a top-level
 Packaging (`scripts/package.sh`) uses **only `git`** &mdash; no `zip`, `rsync`,
 `python` or `php` &mdash; so it also works in Git Bash on Windows. It stages the
 working tree (including the built editor under `dist/static/`, which is
-`.gitignore`d) into a throwaway index, stamps `version.php` there (`version` =
-`YYYYMMDD00`, `release` = `<RELEASE>`; the working tree is never modified), and
-emits the ZIP via `git archive --format=zip`. Temporary git objects are written
-to a scratch store, so your real `.git` is left untouched.
+`.gitignore`d) into a throwaway index and emits the ZIP via
+`git archive --format=zip`. Temporary git objects are written to a scratch
+store, so your real `.git` is left untouched and the working tree is never
+modified. **`version.php` ships exactly as committed** — packaging validates the
+metadata (`make package` depends on `check-release-version`) but never rewrites
+it, so rebuilding the same tag on any day produces the same `version.php`.
 
-When the editor is bundled (`dist/static/` present), `thirdpartylibs.xml` in the
-ZIP is augmented the same way with a `dist/static` declaration (version taken
-from `.editor-version`), so the release artifact documents the embedded editor;
-the committed copy is left untouched and still declares only the pipwerks
-SCORM wrappers.
+The bundled editor is mandatory (DEC-0065): packaging **fails** — with a clear
+error and no partial ZIP — unless `dist/static/` holds a valid editor
+(`index.html` plus the expected asset directories) and `.editor-version` names a
+version. Run `make build-editor` first. The ZIP's `thirdpartylibs.xml` is then
+augmented with a `dist/static` declaration (version from `.editor-version`,
+licence AGPL-3.0-or-later); the committed copy is left untouched and still
+declares only the pipwerks SCORM wrappers. There is no runtime editor
+installer: the ZIP is the only supported way the editor reaches a site.
 
 Exclusions are driven by `.distignore` (a path is excluded when its top
 component or full relative path matches a pattern). `README.md` and
 `thirdpartylibs.xml` are shipped; dev/CI tooling (`Makefile`, `composer.*`,
-`docker*`, `blueprint.json`, `phpmd*`, `scripts/`, `research/`, hidden files,
-internal docs) is not.
+`docker*`, `blueprint.json`, `phpmd*`, `scripts/`, `research/`, `docs/`, hidden
+files, internal docs) is not — the README links to the docs on GitHub instead.
 
-> The committed `version.php` carries a sentinel (`9999999999` / `dev`,
-> [DEC-0030](./research/decisiones/adr/DEC-0030-version-sentinela-en-main.md)); the real
-> values are injected into the ZIP only. Releases are also built automatically by
-> `.github/workflows/release.yml` on a published GitHub release.
+## Versioning and releases
+
+Policy: [DEC-0068](./research/decisiones/adr/DEC-0068-version-real-monotona-en-main.md)
+(supersedes DEC-0030). `main` always carries a **real, monotonic Moodle
+version** and `$plugin->release = 'dev'`:
+
+- **No sentinels, in either direction.** `9999999999` bricks any site installed
+  from a checkout (every real release becomes a downgrade Moodle refuses, with
+  no in-product recovery); low values (`0`, `1`, `99999`) break the upgrade
+  protocol the other way, because `$plugin->version` must stay above every
+  `upgrade_mod_savepoint()` in `db/upgrade.php`. The development marker belongs
+  in `$plugin->release`, which is informational.
+- **When to bump `$plugin->version`** (format `YYYYMMDDXX`): whenever Moodle
+  must detect a change — `db/`, `classes/`, JavaScript source or builds,
+  settings, language strings, scheduled tasks, capabilities, external services,
+  or other cache-sensitive metadata. The new value must be strictly greater
+  than the latest published version and every savepoint / `$oldversion <` guard
+  in `db/upgrade.php`. `scripts/check-version.sh` (run by CI and by
+  `make check-version`) enforces the bounds.
+- **Release flow** (in this exact order):
+  1. Open a release-preparation PR committing the final version and semantic
+     release in `version.php` (e.g. `$plugin->version = 2026072500;`
+     `$plugin->release = '4.0.3';`).
+  2. Merge it.
+  3. Create the git tag (`vX.Y.Z`) **on that exact commit**. Never modify
+     `version.php` after the tag exists — rebuilding a tag must never change it.
+  4. Publish the GitHub release; `.github/workflows/release.yml` verifies the
+     checked-out commit is the tagged one, validates the metadata
+     (`check-version.sh --release`), builds the editor and packages the ZIP
+     without touching `version.php`. Workflows never commit or push.
+  5. Open a follow-up PR switching `$plugin->release` back to `'dev'` and
+     bumping `$plugin->version` to the next valid development value.
+
+`make check-version` validates the committed state at any time;
+`make check-release-version RELEASE=X.Y.Z` validates release metadata.

@@ -107,7 +107,7 @@ function xmldb_exelearning_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026052801, 'exelearning');
     }
 
-    // Stage 3 (2026052802): attempts (DEC-0007) — exelearning_attempt table +
+    // Stage 3 (2026052802): attempts — exelearning_attempt table +
     // grademethod field (attempt aggregation) on the instance.
     if ($oldversion < 2026052802) {
         $instance = new xmldb_table('exelearning');
@@ -156,8 +156,7 @@ function xmldb_exelearning_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026052802, 'exelearning');
     }
 
-    // Stage 4 (2026052803): grademodel (DEC-0008) + maxattempt/reviewmode
-    // (DEC-0007 fase 2) en la instancia.
+    // Stage 4 (2026052803): grademodel + maxattempt/reviewmode on the instance.
     if ($oldversion < 2026052803) {
         $instance = new xmldb_table('exelearning');
 
@@ -204,7 +203,7 @@ function xmldb_exelearning_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026052803, 'exelearning');
     }
 
-    // Stage 5 (2026052804): ensure the gradepass field exists (DEC-0010). It is
+    // Stage 5 (2026052804): ensure the gradepass field exists. It is
     // already in install.xml for fresh installs; this savepoint covers sites that
     // upgraded through 2026052802/03 before gradepass was added to that phase.
     if ($oldversion < 2026052804) {
@@ -245,7 +244,7 @@ function xmldb_exelearning_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026052806, 'exelearning');
     }
 
-    // Stage 7 (2026052900): DEC-0008 rev. — the "both" gradebook columns model
+    // Stage 7 (2026052900): the "both" gradebook columns model
     // (grademodel=2) was removed. Collapse existing rows to per-iDevice (1),
     // which preserves the per-iDevice columns teachers were already seeing under
     // "both", and lower the field default from 2 to 1.
@@ -327,7 +326,7 @@ function xmldb_exelearning_upgrade($oldversion) {
     // Stage 10 (2026060102): per-iDevice contenthash on exelearning_grade_item.
     // Stores a sha1 of each iDevice's content block in content.xml so a re-sync
     // can detect an in-place options edit (same objectid, changed scoring) and
-    // warn the teacher that existing grades/attempts are now stale (DEC-0021).
+    // warn the teacher that existing grades/attempts are now stale.
     if ($oldversion < 2026060102) {
         $gradeitem = new xmldb_table('exelearning_grade_item');
         $field = new xmldb_field(
@@ -346,7 +345,7 @@ function xmldb_exelearning_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026060102, 'exelearning');
     }
 
-    // Stage 11 (2026060400): per-activity "graded" master switch (DEC-0029). When
+    // Stage 11 (2026060400): per-activity "graded" master switch. When
     // off, the activity creates no grade items / reports and behaves like a plain
     // resource. Default 1 preserves the current (always-graded) behaviour.
     if ($oldversion < 2026060400) {
@@ -367,8 +366,8 @@ function xmldb_exelearning_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026060400, 'exelearning');
     }
 
-    // Stage 12 (2026060401): grade category column (DEC-0034) + back-fill the
-    // per-iDevice visibility fix (DEC-0035).
+    // Stage 12 (2026060401): grade category column + back-fill the
+    // per-iDevice visibility fix.
     if ($oldversion < 2026060401) {
         global $CFG;
 
@@ -390,9 +389,9 @@ function xmldb_exelearning_upgrade($oldversion) {
             $dbman->add_field($instance, $field);
         }
 
-        // 2) Data back-fill (DEC-0035): existing per-iDevice activities (grademodel=1)
-        // keep a hidden overall grade item (itemnumber=0) for completionpassgrade
-        // (DEC-0010). Because a hidden item that still aggregates makes Moodle blank
+        // 2) Data back-fill: existing per-iDevice activities (grademodel=1)
+        // keep a hidden overall grade item (itemnumber=0) for completionpassgrade.
+        // Because a hidden item that still aggregates makes Moodle blank
         // the student total (grade_report_user_showtotalsifcontainhidden defaults to
         // GRADE_REPORT_HIDE_TOTAL_IF_CONTAINS_HIDDEN), exclude those overall grades
         // from aggregation. set_excluded() leaves finalgrade/gradepass intact, so
@@ -428,7 +427,7 @@ function xmldb_exelearning_upgrade($oldversion) {
     }
 
     // Stage 14 (2026060800): drop the hidden overall grade item in per-iDevice
-    // mode (DEC-0038, supersedes the DEC-0035 exclusion above). The hidden overall
+    // mode (supersedes the exclusion above). The hidden overall
     // (itemnumber=0) still showed as a greyed "extra grade" column to teachers
     // (moodle/grade:viewhidden) and was reported as confusing. PERITEM now shows
     // only the per-iDevice columns; completion-by-grade targets a per-iDevice item
@@ -458,7 +457,7 @@ function xmldb_exelearning_upgrade($oldversion) {
     }
 
     // Stage 15 (2026061200): migration audit/idempotency table for the sibling
-    // migration tool (issue #13 #3, DEC-0026). Maps each migrated source course
+    // migration tool. Maps each migrated source course
     // module to the eXeLearning activity created from it, so re-running the tool
     // skips already-migrated activities. Numbered above every prior stage so it
     // also runs on sites already upgraded past 2026060800 (otherwise the table
@@ -478,7 +477,7 @@ function xmldb_exelearning_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026061200, 'exelearning');
     }
 
-    // Stage 16 (2026061201): audit columns for the migration map (DEC-0050). Records
+    // Stage 16 (2026061201): audit columns for the migration map. Records
     // the admin who ran the tool and a timemodified for future re-run bookkeeping.
     // Pre-upgrade rows are backfilled (userid 0, timemodified = timecreated).
     if ($oldversion < 2026061201) {
@@ -499,7 +498,7 @@ function xmldb_exelearning_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026061201, 'exelearning');
     }
 
-    // Stage 17 (2026061202): custom completion rule storage (DEC-0052). Adds the
+    // Stage 17 (2026061202): custom completion rule storage. Adds the
     // nullable completionstatusrequired column to the instance so the activity can
     // be marked complete when the user's attempt reaches a required status (passed
     // or completed). NULL keeps the rule disabled, preserving current behaviour.
@@ -536,10 +535,10 @@ function xmldb_exelearning_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026061700, 'exelearning');
     }
 
-    // Stage 19 (2026061800): xAPI ingestion audit/idempotency table (DEC-0032/DEC-0064).
+    // Stage 19 (2026061800): xAPI ingestion audit/idempotency table.
     // One row per processed xAPI statement.id so a repeated statement is not re-applied
-    // (LRS idempotency, DEC-0063). The grade/UI never depend on this table — the flat
-    // exelearning_attempt table (DEC-0007) does; it is audit/dedup only.
+    // (LRS idempotency). The grade/UI never depend on this table — the flat
+    // exelearning_attempt table does; it is audit/dedup only.
     if ($oldversion < 2026061800) {
         $table = new xmldb_table('exelearning_tracking_events');
         if (!$dbman->table_exists($table)) {
@@ -563,6 +562,19 @@ function xmldb_exelearning_upgrade($oldversion) {
             $dbman->create_table($table);
         }
         upgrade_mod_savepoint(true, 2026061800, 'exelearning');
+    }
+
+    // Stage 20 (2026072400): the runtime editor installer is removed —
+    // the editor is a release artifact bundled under dist/static/. Drop the three
+    // configs the installer maintained. A leftover
+    // moodledata/mod_exelearning/embedded_editor directory is deliberately NOT
+    // deleted: nothing reads it any more and removing admin data automatically is
+    // riskier than leaving an inert directory behind.
+    if ($oldversion < 2026072400) {
+        unset_config('embedded_editor_version', 'exelearning');
+        unset_config('embedded_editor_installed_at', 'exelearning');
+        unset_config('embedded_editor_installing', 'exelearning');
+        upgrade_mod_savepoint(true, 2026072400, 'exelearning');
     }
 
     return true;

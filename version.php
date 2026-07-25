@@ -24,8 +24,18 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 9999999999;       // Dev sentinel replaced with YYYYMMDDXX by `make package` (DEC-0030).
-$plugin->release   = 'dev';            // Replaced with the git tag (semver) at package time.
+// Real, monotonic Moodle version (YYYYMMDDXX). Never a sentinel: this value is
+// part of Moodle's install/upgrade protocol and ships exactly as committed —
+// packaging validates it but never rewrites it. Increment it whenever Moodle
+// must detect a change (db/, classes/, JS source or builds, settings, language
+// strings, tasks, capabilities, external services, other cache-sensitive
+// metadata), and keep it strictly greater than the latest published version and
+// every upgrade_mod_savepoint() in db/upgrade.php. The development marker lives
+// in $plugin->release ('dev'); a release-preparation PR commits the final
+// version + semver release BEFORE the tag is created (see DEVELOPMENT.md,
+// "Versioning and releases").
+$plugin->version   = 2026072401;
+$plugin->release   = 'dev';
 $plugin->requires  = 2024100700;       // Moodle 4.5 LTS+.
 $plugin->supported = [405, 502];       // Moodle 4.5 LTS through Moodle 5.2.
 $plugin->component = 'mod_exelearning';

@@ -35,7 +35,7 @@ require_once($CFG->dirroot . '/mod/exelearning/lib.php');
  * @covers     ::exelearning_grade_item_view_url
  * @covers     ::exelearning_grade_analysis_url
  * @covers     ::exelearning_embedded_editor_enabled
- * @covers     ::exelearning_embedded_editor_uses_local_assets
+ * @covers     ::exelearning_require_embedded_editor_enabled
  * @covers     ::exelearning_get_embedded_editor_index_source
  * @covers     ::exelearning_get_embedded_editor_local_static_dir
  * @covers     ::exelearning_xapi_primary_enabled
@@ -150,24 +150,44 @@ final class lib_helpers_test extends advanced_testcase {
     }
 
     /**
-     * The embedded-editor lib wrappers reflect an admin-installed editor
-     * (moodledata source).
+     * The embedded-editor lib wrappers reflect the bundled editor (DEC-0065).
      */
-    public function test_embedded_editor_wrappers_reflect_install(): void {
+    public function test_embedded_editor_wrappers_reflect_bundle(): void {
+        global $CFG;
         $this->resetAfterTest();
 
-        $src = make_temp_directory('mod_exelearning/lw-' . random_string(6));
-        make_writable_directory($src . '/app');
-        file_put_contents($src . '/index.html', 'x');
-        $installer = new local\embedded_editor_installer();
-        $installer->safe_install($src);
+        $dir = make_temp_directory('mod_exelearning/lw-' . random_string(6)) . '/static';
+        make_writable_directory($dir . '/app');
+        file_put_contents($dir . '/index.html', 'x');
+        $CFG->mod_exelearning_bundled_editor_dir = $dir;
 
-        $dir = local\embedded_editor_source_resolver::get_moodledata_dir();
         $this->assertTrue(exelearning_embedded_editor_enabled());
-        $this->assertTrue(exelearning_embedded_editor_uses_local_assets());
         $this->assertSame($dir . '/index.html', exelearning_get_embedded_editor_index_source());
         $this->assertSame($dir, exelearning_get_embedded_editor_local_static_dir());
 
-        remove_dir($dir);
+        // With no editordisabled config at all (fresh site), editing stays on and
+        // the endpoint guard passes.
+        exelearning_require_embedded_editor_enabled();
+    }
+
+    /**
+     * The site-wide editordisabled toggle switches embedded editing off even when
+     * a valid bundle is present (DEC-0066): the button helper reports false and
+     * the editor endpoints' guard throws.
+     */
+    public function test_admin_toggle_disables_embedded_editing(): void {
+        global $CFG;
+        $this->resetAfterTest();
+
+        $dir = make_temp_directory('mod_exelearning/lw-' . random_string(6)) . '/static';
+        make_writable_directory($dir . '/app');
+        file_put_contents($dir . '/index.html', 'x');
+        $CFG->mod_exelearning_bundled_editor_dir = $dir;
+
+        set_config('editordisabled', 1, 'exelearning');
+
+        $this->assertFalse(exelearning_embedded_editor_enabled());
+        $this->expectException(\moodle_exception::class);
+        exelearning_require_embedded_editor_enabled();
     }
 }
