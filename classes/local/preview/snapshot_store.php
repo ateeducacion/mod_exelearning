@@ -155,7 +155,7 @@ final class snapshot_store {
      * @param int         $owneruserid Authoring user.
      * @param int         $cmid        Course module id.
      * @param string|null $previewid   Existing capability when replacing.
-     * @return true|string True, or an error code.
+     * @return bool|string True, or an error code.
      */
     private static function authorize(string $id, int $owneruserid, int $cmid, ?string $previewid) {
         if (!preg_match(serving::UUID_RE, $id)) {
@@ -211,7 +211,7 @@ final class snapshot_store {
      *
      * @param string $staging Staging directory pathname.
      * @param string $target  Final snapshot directory pathname.
-     * @return true|string True, or an error code.
+     * @return bool|string True, or an error code.
      */
     private static function publish(string $staging, string $target) {
         $backup = $target . '.old-' . bin2hex(random_bytes(6));
@@ -237,7 +237,7 @@ final class snapshot_store {
      *
      * @param string $zippath Uploaded ZIP pathname.
      * @param string $target  Destination directory.
-     * @return true|string True, or an error code.
+     * @return bool|string True, or an error code.
      */
     private static function extract(string $zippath, string $target) {
         $zip = new ZipArchive();

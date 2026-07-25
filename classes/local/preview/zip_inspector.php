@@ -41,7 +41,7 @@ final class zip_inspector {
      *
      * @param ZipArchive $zip    Open archive.
      * @param array{maxfiles:int,maxbytes:int} $limits Active limits.
-     * @return true|string True when safe to extract, otherwise an error code.
+     * @return bool|string True when safe to extract, otherwise an error code.
      */
     public static function inspect(ZipArchive $zip, array $limits) {
         if ($zip->numFiles > $limits['maxfiles']) {
