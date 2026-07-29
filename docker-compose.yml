@@ -49,6 +49,7 @@ services:
         echo 'Seeding demo course + students + activity...'
         php mod/exelearning/scripts/setup_demo.php || echo 'setup_demo.php finished with non-zero exit (ignoring)'
       client_max_body_size: 1G
+      upload_max_filesize: 1G
       post_max_size: 1G
     ports:
       - 80:8080

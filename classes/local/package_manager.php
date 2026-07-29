@@ -254,9 +254,15 @@ final class package_manager {
             ['SCOFunctions.js', __DIR__ . '/../../assets/scorm/SCOFunctions.js', false],
             ['scorm_tracker.js', __DIR__ . '/../../js/scorm_tracker.js', true],
             ['exe_scorm_bridge.js', __DIR__ . '/../../js/scorm_bridge_shim.js', true],
-            // External-embed shim: promotes whitelisted/PDF iframes to the parent in
-            // secure mode (dormant otherwise). Plugin-owned, refreshed on every extract.
-            ['exe_embed_shim.js', __DIR__ . '/../../js/exe_embed_shim.js', true],
+            // External-media CHILD bundle, vendored from eXeLearning core and verified
+            // against its manifest (eXe ADR-0021). Promotes whitelisted/PDF iframes to the
+            // parent in secure mode and carries the media bridge the interactive-video
+            // iDevice drives; dormant until the parent host answers its handshake, so a
+            // package served without one is left exactly as authored (eXe ADR-0017).
+            // Plugin-owned, refreshed on every extract, so a re-vendor reaches existing
+            // packages. Keeps the historical filename: the injected <script> tag lives in
+            // packages that were extracted before this change.
+            ['exe_embed_shim.js', __DIR__ . '/../../js/exe_external_media/exe-external-media-child.min.js', true],
         ];
         foreach ($clientassets as $asset) {
             [$destname, $assetpath, $refresh] = $asset;

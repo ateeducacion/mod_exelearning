@@ -120,6 +120,81 @@ final class lib_extract_test extends advanced_testcase {
     }
 
     /**
+     * The in-package client runtime is the CANONICAL external-media bundle vendored from
+     * eXeLearning core, not the superseded shim it replaced.
+     *
+     * Asserted on the extracted BYTES rather than on the source path, because the path is
+     * what a refactor changes and the bytes are what a learner runs. The destination
+     * filename deliberately stays `exe_embed_shim.js`: packages extracted before the
+     * migration carry that name in their own HTML, and renaming it would strand them.
+     * That is exactly why the name cannot be the thing this test trusts.
+     */
+    public function test_extract_ships_the_canonical_external_media_child(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $course = $this->getDataGenerator()->create_course();
+        $instance = $this->getDataGenerator()->get_plugin_generator('mod_exelearning')
+            ->create_instance(['course' => $course->id]);
+        $cm = get_coursemodule_from_instance('exelearning', $instance->id);
+        $context = \context_module::instance($cm->id);
+        $revision = (int) $DB->get_field('exelearning', 'revision', ['id' => $instance->id]);
+
+        $file = get_file_storage()->get_file(
+            $context->id, 'mod_exelearning', 'content', $revision, '/libs/', 'exe_embed_shim.js'
+        );
+        $this->assertInstanceOf(\stored_file::class, $file, 'the client runtime was not shipped');
+
+        $source = $file->get_content();
+        // A symbol only the canonical bundle defines.
+        $this->assertStringContainsString('exeExternalMediaChild', $source);
+        // And it must carry the dual-licence grant into the package (eXe ADR-0018): these
+        // bytes are redistributed to every learner who downloads the course.
+        $this->assertStringContainsString('AGPL-3.0-or-later OR GPL-3.0-or-later', $source);
+    }
+
+    /**
+     * The vendored copy is byte-identical to what eXeLearning core published.
+     *
+     * This plugin holds the BYTES and verifies them, rather than a copy of the logic that
+     * could drift (eXe ADR-0021). CI runs the same check with a build hash pinned in the
+     * workflow -- out of band, because a hash read from the copy under test cannot vouch
+     * for that copy. This test is the fast local half.
+     */
+    public function test_vendored_external_media_matches_its_manifest(): void {
+        $dir = __DIR__ . '/../js/exe_external_media/';
+        $manifest = json_decode((string) file_get_contents($dir . 'exe-external-media.manifest.json'), true);
+
+        $this->assertIsArray($manifest['files'] ?? null, 'the manifest has no file list');
+
+        foreach ($manifest['files'] as $half => $record) {
+            $this->assertFileExists($dir . $record['path'], "{$half} is missing");
+            $this->assertSame(
+                $record['sha256'],
+                hash('sha256', (string) file_get_contents($dir . $record['path'])),
+                "{$half} does not match the digest core published"
+            );
+        }
+
+        // Editing a file and its digest together is the obvious way around a per-file
+        // check, so the build hash covers the digest list itself.
+        $keys = array_keys($manifest['files']);
+        sort($keys);
+        $lines = array_map(static fn($k) => $k . ':' . $manifest['files'][$k]['sha256'], $keys);
+        $this->assertSame($manifest['buildHash'], hash('sha256', implode("\n", $lines)));
+    }
+
+    /** Control is raw postMessage: no provider SDK may be inside the host bundle. */
+    public function test_host_bundle_carries_no_provider_sdk(): void {
+        $host = (string) file_get_contents(__DIR__ . '/../js/exe_external_media/exe-external-media-host.min.js');
+
+        $this->assertStringNotContainsString('YT.Player', $host);
+        $this->assertStringNotContainsString('Vimeo.Player', $host);
+        $this->assertStringContainsString('enablejsapi', $host);
+    }
+
+    /**
      * exelearning_get_stored_package() returns the stored ELPX regardless of the
      * itemid it was saved under, and exelearning_package_has_content_xml() detects
      * the eXeLearning content manifest inside it.

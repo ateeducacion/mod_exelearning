@@ -27,7 +27,15 @@
  * video iDevice already speaks this contract (window.exeMediaBridge.openMedia → controller).
  * Canonical upstream: exelearning/public/app/common/exe_media_bridge/.
  *
- * @license AGPL-3.0
+ * Copyright (C) 2026 eXeLearning Team
+ *
+ * Dual-licensed so this ONE file can ship inside eXeLearning (AGPL-3.0-or-later)
+ * and inside the GPL-3.0-or-later host plugins (mod_exelearning) without either
+ * project relicensing it. GPLv3 s13 and AGPLv3 s13 already permit COMBINING the
+ * two, but combining never relicenses a file: only the copyright holder can offer
+ * it under both, which is what this grant does. Keep this notice in every mirror.
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later OR GPL-3.0-or-later
  */
 (function (root) {
     'use strict';

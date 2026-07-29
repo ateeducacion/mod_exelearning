@@ -22,20 +22,35 @@ import { fileURLToPath } from 'node:url';
 
 const MOD_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-/** Parse --wp / --omeka flags, falling back to env vars. */
+/**
+ * Every repository this tool compares, in report order. `mod` is this repo and is always
+ * present; the rest are passed in.
+ *
+ * Kept as ONE list because adding the fourth mirror meant editing the same set of names in
+ * four places — the resolver, the roots map, the iteration order and the usage note — with
+ * nothing to catch a spot that was missed.
+ */
+const REPOS = ['core', 'mod', 'wp', 'omeka', 'procomun', 'nextcloud'];
+const MIRRORS = REPOS.filter((repo) => repo !== 'mod');
+
+/** The flag and environment variable a mirror is passed with. */
+const flagFor = (repo) => `--${repo}`;
+const envFor = (repo) => `${repo.toUpperCase()}_EXE_DIR`;
+
+/** Parse --wp / --omeka / … flags, falling back to env vars. */
 function resolveMirrors() {
     const args = process.argv.slice(2);
     const get = (flag) => {
         const i = args.indexOf(flag);
         return i !== -1 && args[i + 1] ? args[i + 1] : null;
     };
-    return {
-        wp: get('--wp') || process.env.WP_EXE_DIR || null,
-        omeka: get('--omeka') || process.env.OMEKA_EXE_DIR || null,
-        procomun: get('--procomun') || process.env.PROCOMUN_EXE_DIR || null,
-        core: get('--core') || process.env.CORE_EXE_DIR || null,
-    };
+    return Object.fromEntries(
+        MIRRORS.map((repo) => [repo, get(flagFor(repo)) || process.env[envFor(repo)] || null]),
+    );
 }
+
+/** The dual grant: the ONE thing letting a GPLv3 plugin ship this AGPL file. */
+const DUAL_LICENCE_INVARIANT = 'SPDX-License-Identifier: AGPL-3.0-or-later OR GPL-3.0-or-later';
 
 // Logic invariants every RELAY copy must contain (normalised: whitespace + quote style
 // are ignored, so tabs-vs-spaces and the IIFE wrapper do not count as drift).
@@ -50,6 +65,8 @@ const RELAY_INVARIANTS = [
     'Math.min(embed.w, rect.width)',      // overlay clamp (clickjacking defence)
     'youtube-nocookie.com/embed/',        // strict-mode per-provider reconstruction
     'reconstructProvider',                // id-only provider channel (DEC-0067)
+    "action: 'welcome'",                  // answers the shim's hello: without it no copy ever promotes
+    DUAL_LICENCE_INVARIANT,
 ];
 
 // Logic invariants every SHIM copy must contain.
@@ -59,6 +76,9 @@ const SHIM_INVARIANTS = [
     'data-exe-embed-url',
     '.pdf$',                              // the PDF detector (promote PDFs too)
     'extractProvider',                    // id-only provider channel (DEC-0067)
+    "action: 'hello'",                    // announces itself instead of promoting on its own authority
+    'activated',                          // the gate: no promotion until a host welcomes this document
+    DUAL_LICENCE_INVARIANT,
 ];
 
 // Host + token + setting invariants every sandbox PHP must contain.
@@ -77,6 +97,7 @@ const MEDIA_POLICY_INVARIANTS = [
     'youtube-nocookie.com/embed/',        // canonical YouTube template
     'player.vimeo.com/video/',            // canonical Vimeo template
     'exelearningBridge',                  // per-view nonce field
+    DUAL_LICENCE_INVARIANT,
 ];
 
 // Invariants every MODAL-bridge host copy must contain (exe_media_host.js raw-postMessage
@@ -87,11 +108,12 @@ const MEDIA_HOST_INVARIANTS = [
     'exelearningBridge',                  // nonce gate
     'destroyAdapter',                     // adapter/poll-timer teardown
     'exe-media-modal',                    // the accessible <dialog> class
+    DUAL_LICENCE_INVARIANT,
 ];
 
 const FILES = {
-    relay: { mod: 'js/exe_embed_relay.js', wp: 'assets/js/exe-embed-relay.js', omeka: 'asset/js/exe-embed-relay.js', procomun: 'apps/frontend/public/elpx/exe_embed_relay.js', invariants: RELAY_INVARIANTS },
-    shim: { mod: 'js/exe_embed_shim.js', wp: 'assets/js/exe-embed-shim.js', omeka: 'asset/js/exe-embed-shim.js', procomun: 'apps/api/static/elpx/embed-shim.js', invariants: SHIM_INVARIANTS },
+    relay: { core: 'public/app/common/exe_embed_bridge/exe_embed_relay.js', mod: 'js/exe_embed_relay.js', wp: 'assets/js/exe-embed-relay.js', omeka: 'asset/js/exe-embed-relay.js', procomun: 'apps/frontend/public/elpx/exe_embed_relay.js', nextcloud: 'src/embed/exe_embed_relay.js', invariants: RELAY_INVARIANTS },
+    shim: { core: 'public/app/common/exe_embed_bridge/exe_embed_shim.js', mod: 'js/exe_embed_shim.js', wp: 'assets/js/exe-embed-shim.js', omeka: 'asset/js/exe-embed-shim.js', procomun: 'apps/api/static/elpx/embed-shim.js', nextcloud: 'src/embed/exe_embed_shim.js', invariants: SHIM_INVARIANTS },
     php: { mod: 'classes/local/ui/player_iframe.php', wp: 'includes/class-iframe-sandbox.php', omeka: 'src/Service/IframeSandbox.php', invariants: PHP_INVARIANTS },
     mediapolicy: { core: 'public/app/common/exe_media_bridge/exe_media_policy.js', mod: 'js/exe_media_policy.js', wp: 'assets/js/exe-media-policy.js', omeka: 'asset/js/exe-media-policy.js', procomun: 'apps/frontend/public/elpx/exe_media_policy.js', invariants: MEDIA_POLICY_INVARIANTS },
     mediahost: { mod: 'js/exe_media_host.js', wp: 'assets/js/exe-media-host.js', omeka: 'asset/js/exe-media-host.js', procomun: 'apps/frontend/public/elpx/exe_media_host.js', invariants: MEDIA_HOST_INVARIANTS },
@@ -110,11 +132,11 @@ function check(label, absPath, invariants) {
 
 function main() {
     const mirrors = resolveMirrors();
-    const roots = { core: mirrors.core, mod: MOD_ROOT, wp: mirrors.wp, omeka: mirrors.omeka, procomun: mirrors.procomun };
+    const roots = { ...mirrors, mod: MOD_ROOT };
     const results = [];
 
     for (const [kind, spec] of Object.entries(FILES)) {
-        for (const repo of ['core', 'mod', 'wp', 'omeka', 'procomun']) {
+        for (const repo of REPOS) {
             if (!roots[repo] || !spec[repo]) { continue; }
             results.push(check(`${repo}:${kind}`, path.join(roots[repo], spec[repo]), spec.invariants));
         }
@@ -131,9 +153,9 @@ function main() {
         }
     }
 
-    if (!mirrors.wp || !mirrors.omeka || !mirrors.procomun || !mirrors.core) {
-        console.log('\nNote: pass --core <dir> --wp <dir> --omeka <dir> --procomun <dir> (or set');
-        console.log('CORE_EXE_DIR / WP_EXE_DIR / OMEKA_EXE_DIR / PROCOMUN_EXE_DIR) to check all mirrors.');
+    if (MIRRORS.some((repo) => !mirrors[repo])) {
+        console.log(`\nNote: pass ${MIRRORS.map((repo) => `${flagFor(repo)} <dir>`).join(' ')}`);
+        console.log(`(or set ${MIRRORS.map(envFor).join(' / ')}) to check all mirrors.`);
     }
     if (drift) {
         console.error(`\n${drift} file(s) drifted from the canonical embedder logic.`);

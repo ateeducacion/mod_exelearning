@@ -42,6 +42,16 @@
  * MIRROR of the canonical eXeLearning embedder source in eXe core
  * (public/app/common/exe_embed_bridge/exe_embed_relay.js). Keep in sync with core;
  * changes flow from core outward. Verified by core scripts/check-embed-sync.mjs.
+ *
+ * Copyright (C) 2026 eXeLearning Team
+ *
+ * Dual-licensed so this ONE file can ship inside eXeLearning (AGPL-3.0-or-later)
+ * and inside the GPL-3.0-or-later host plugins (mod_exelearning) without either
+ * project relicensing it. GPLv3 s13 and AGPLv3 s13 already permit COMBINING the
+ * two, but combining never relicenses a file: only the copyright holder can offer
+ * it under both, which is what this grant does. Keep this notice in every mirror.
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later OR GPL-3.0-or-later
  */
 (function () {
     'use strict';
@@ -492,7 +502,27 @@
 
         function onMessage(event) {
             var data = event.data;
-            if (!data || data.type !== 'exe-embed' || data.action !== 'sync' || !Array.isArray(data.embeds)) {
+            if (!data || data.type !== 'exe-embed') {
+                return;
+            }
+            // The shim never promotes an embed until a host proves it is listening,
+            // otherwise unhosted content (file://, a third-party LMS, an ePub reader)
+            // is left holding placeholders nobody will ever fill. This 'welcome' is
+            // that proof, and it is ADDRESSED: only a resolved CONTENT frame is
+            // answered, never a promoted player and never a window we do not host.
+            // (pingAll's 'request' is a broadcast and deliberately cannot unlock.)
+            if (data.action === 'hello') {
+                if (!frameForSource(event.source)) {
+                    return;
+                }
+                try {
+                    event.source.postMessage({ type: 'exe-embed', action: 'welcome' }, '*');
+                } catch (e) {
+                    // A frame that went away between the hello and this reply.
+                }
+                return;
+            }
+            if (data.action !== 'sync' || !Array.isArray(data.embeds)) {
                 return;
             }
             var iframe = frameForSource(event.source);

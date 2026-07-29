@@ -532,43 +532,59 @@ if (!$mainfile) {
         );
     }
 
-    // Parent-side external-embed relay (js/exe_embed_relay.js). Independent of SCORM:
-    // in secure mode every package is opaque, so whitelisted video iframes and PDFs are
-    // promoted to this page and overlaid inline as real players (the baked shim reports
-    // their geometry). Inlined like the SCORM relay so its listener is installed before
-    // the iframe loads. No-op in legacy mode (same-origin: external players already work
-    // inline and the in-iframe shim stays dormant).
+    // Parent-side external-media host: ONE vendored artifact
+    // (js/exe_external_media/exe-external-media-host.min.js), built and published by
+    // eXeLearning core, replacing the three files this used to inline separately -- the
+    // embed relay, the media policy and the media host.
+    //
+    // eXeLearning core is canonical (eXe ADR-0021). This plugin holds the BYTES and
+    // verifies them against the shipped manifest rather than holding a copy of the logic
+    // that could drift. Do NOT patch it here: a local edit is invisible upstream, is
+    // overwritten on the next re-vendor, and fails `node js/exe_external_media/verify.mjs`
+    // in CI in the meantime. Fix it in eXeLearning core and re-vendor.
+    //
+    // In secure mode every package is opaque, so whitelisted video iframes and PDFs are
+    // promoted to this page and overlaid inline as real players (the child runtime baked
+    // into the package reports their geometry), and the interactive-video iDevice drives
+    // playback through the media half of the same bundle (DEC-0071) -- which controls the
+    // provider by RAW postMessage, so this trusted page still never loads the YouTube
+    // IFrame API or the Vimeo SDK. Inlined like the SCORM relay so both listeners are
+    // installed before the iframe loads. No-op in legacy mode (same-origin: external
+    // players already work inline and the in-iframe child stays dormant).
     if ($securemode) {
-        // The relay only consults the host whitelist in 'strict' mode; in the default
-        // 'open' mode any cross-origin https iframe is promoted, so don't build/ship it.
+        // The host only consults the whitelist in 'strict' mode; in the default 'open'
+        // mode any cross-origin https iframe is promoted, so don't build/ship it.
         $embedmode = \mod_exelearning\local\ui\player_iframe::embed_mode();
         $embedstrict = ($embedmode === \mod_exelearning\local\ui\player_iframe::EMBED_STRICT);
-        $emitinlinemodule('exe_embed_relay.js', [
+        $externalmedia = file_get_contents(__DIR__ . '/js/exe_external_media/exe-external-media-host.min.js');
+        $embedcfg = json_encode([
             'mode' => $embedmode,
             'whitelist' => $embedstrict ? \mod_exelearning\local\ui\player_iframe::embed_whitelist() : [],
-        ], 'window.exeEmbedRelay.init(%s);');
-
-        // Parent-side media host for the interactive-video iDevice (DEC-0071). When the
-        // package is opaque, eXeLearning's interactive-video iDevice cannot run a nested
-        // YouTube/Vimeo player, so it drives playback through window.exeMediaBridge (the
-        // child runtime baked into the package by eXeLearning). This host completes that
-        // capability handshake (window identity + per-view nonce + a transferred
-        // MessageChannel port) and plays the real provider video in an accessible modal,
-        // controlling it by RAW postMessage (enablejsapi=1 / api=1) so this trusted page
-        // never loads the YouTube IFrame API or the Vimeo SDK. Separate message namespace
-        // (type:'exe-media') from the SCORM bridge ('scorm') and the embed relay
-        // ('exe-embed'), so the three coexist. Policy must load before the host (the host
-        // reads window.exeMediaPolicy at evaluation). No-op for packages exported without
-        // the child runtime (no hello is ever sent) and in legacy mode (same-origin).
-        $mediapolicy = file_get_contents(__DIR__ . '/js/exe_media_policy.js');
-        $mediahost = file_get_contents(__DIR__ . '/js/exe_media_host.js');
+        ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
         echo html_writer::tag(
             'script',
-            $mediapolicy . "\n" . $mediahost . "\n(function () {\n" .
-            "    var f = document.getElementById('exelearningobject');\n" .
-            "    if (f && window.exeMediaHost) { window.exeMediaHost.attach(f, {}); }\n" .
+            $externalmedia . "\n(function () {\n" .
+            "    window.exeEmbedRelay.init(" . $embedcfg . ");\n" .
+            // This script is emitted BEFORE the player iframe so the relay's listeners are
+            // installed in time, which means the element does not exist yet: looking it up
+            // here found null, the guard below swallowed it, and the media host was never
+            // attached on any page. The symptom was silent and a long way from the cause —
+            // an interactive-video iDevice inside the sandbox asked for a video, no host
+            // answered, and the learner got a blank panel. So the lookup waits for the DOM
+            // while the relay above still does not.
+            "    var attachmedia = function () {\n" .
+            "        var f = document.getElementById('exelearningobject');\n" .
+            "        if (f && window.exeMediaHost) { window.exeMediaHost.attach(f, {}); }\n" .
+            "    };\n" .
+            "    if (document.readyState === 'loading') {\n" .
+            "        document.addEventListener('DOMContentLoaded', attachmedia);\n" .
+            "    } else {\n" .
+            "        attachmedia();\n" .
+            "    }\n" .
             "})();"
         );
+
+        // (The media host above is the same bundle; it no longer needs its own injection.)
     }
 
     // The xAPI listener (DEC-0064; secure mode added by DEC-0069): for an xAPI-capable
