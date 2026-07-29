@@ -142,7 +142,12 @@ final class lib_extract_test extends advanced_testcase {
         $revision = (int) $DB->get_field('exelearning', 'revision', ['id' => $instance->id]);
 
         $file = get_file_storage()->get_file(
-            $context->id, 'mod_exelearning', 'content', $revision, '/libs/', 'exe_embed_shim.js'
+            $context->id,
+            'mod_exelearning',
+            'content',
+            $revision,
+            '/libs/',
+            'exe_embed_shim.js'
         );
         $this->assertInstanceOf(\stored_file::class, $file, 'the client runtime was not shipped');
 
@@ -185,7 +190,9 @@ final class lib_extract_test extends advanced_testcase {
         $this->assertSame($manifest['buildHash'], hash('sha256', implode("\n", $lines)));
     }
 
-    /** Control is raw postMessage: no provider SDK may be inside the host bundle. */
+    /**
+     * Control is raw postMessage: no provider SDK may be inside the host bundle.
+     */
     public function test_host_bundle_carries_no_provider_sdk(): void {
         $host = (string) file_get_contents(__DIR__ . '/../js/exe_external_media/exe-external-media-host.min.js');
 
