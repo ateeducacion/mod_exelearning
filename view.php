@@ -584,7 +584,7 @@ if (!$mainfile) {
             "})();"
         );
 
-        // (The media host above is the same bundle; it no longer needs its own injection.)
+        // The media host above is the same bundle; it no longer needs its own injection.
     }
 
     // The xAPI listener (DEC-0064; secure mode added by DEC-0069): for an xAPI-capable
