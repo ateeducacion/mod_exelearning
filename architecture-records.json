@@ -8,7 +8,6 @@
   "legacy_allowlist": [
     "research/decisiones/mapa-migracion-ids.md",
     "research/decisiones/README.md",
-    "research/tools/architecture_records_test.py",
     "research/tareas/diario/2026-06-17-adr-validacion-xapi-y-2.0.yaml"
   ]
 }

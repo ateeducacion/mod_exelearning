@@ -124,7 +124,7 @@ ningún issue, y `gh api repos/.../commits/<sha>/pulls` devuelve vacío para tod
 
 **No se ha inventado un número para ellos y no se ha abierto ningún issue.** Sus
 identificadores siguen siendo válidos y resolubles: son los ficheros que existen. La
-lista está congelada en `research/tools/architecture_records.py`; un archivo `DEC-NNNN-*.md`
+lista está congelada en `research/tools/architecture-records.mts`; un archivo `DEC-NNNN-*.md`
 **nuevo** hace fallar la validación, así que la deuda no puede crecer.
 
 Para cerrarla hace falta una decisión de mantenimiento entre estas opciones:
@@ -153,7 +153,7 @@ La validación permite identificadores retirados en:
 | `research/decisiones/mapa-migracion-ids.md` | esta página |
 | `research/decisiones/README.md` | enumera los registros no migrados |
 | `research/schemas/decision.schema.yaml` | documenta el patrón retirado |
-| `research/tools/architecture_records.py` y su test | la lista congelada y sus fixtures |
+| `research/tools/architecture-records.mts` y su test | la lista congelada y sus fixtures |
 | `research/tareas/diario/2026-06-17-adr-validacion-xapi-y-2.0.yaml` | registro histórico de la colisión `DEC-0059`/`DEC-0-18` que motivó retirar el contador |
 | cualquier línea `legacy_id:` | el campo existe precisamente para eso |
 
