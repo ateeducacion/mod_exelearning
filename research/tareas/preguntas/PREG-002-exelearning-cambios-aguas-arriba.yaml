@@ -8,7 +8,7 @@ fecha_resolucion: 2026-05-29
 # ("fix(ids): unify and harden the four stable-identifier PRs", merged
 # 2026-05-19) preserva odeIdeviceId/odePageId/odeBlockId verbatim al importar y
 # sólo reasigna en colisión real; garantiza round-trip sin cambios = content.xml
-# idéntico. Eso elimina RIE-006 (ver DEC-0012). No hace falta abrir issue: la
+# idéntico. Eso elimina RIE-006 (ver DEC-0-12). No hace falta abrir issue: la
 # propuesta que íbamos a hacer ya está implementada y mergeada upstream.
 contexto: |
   Si la publicación actual no expone identificadores estables ni statements xAPI,
@@ -27,4 +27,4 @@ relacionados:
   - FTE-003
   - FTE-008
   - PREG-001
-  - DEC-0003
+  - DEC-0-03

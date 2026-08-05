@@ -10,7 +10,7 @@
 # Usage: bash scripts/package.sh <RELEASE> [<PLUGIN_NAME>]
 #
 # RELEASE only names the output ZIP. version.php ships EXACTLY as committed
-# (DEC-0068): the packager validates nothing and rewrites nothing there — a
+# (DEC-111-01): the packager validates nothing and rewrites nothing there — a
 # release-preparation PR commits the final version/release before tagging, and
 # `make package` runs scripts/check-version.sh first. Rebuilding the same tag on
 # any day therefore produces the same version.php. The produced ZIP places
@@ -39,12 +39,12 @@ cd "$ROOT"
 
 OUTPUT="$ROOT/$PLUGIN_NAME-$RELEASE.zip"
 
-# The bundled editor is a release requirement (DEC-0065): the ZIP is the only
+# The bundled editor is a release requirement (DEC-106-01): the ZIP is the only
 # supported distribution mechanism for it, so a package without a valid editor
 # must never be produced. Validate before creating anything and fail loudly.
 editor_fail() {
     echo "Error: $1" >&2
-    echo "The release ZIP must bundle the editor (DEC-0065). Run 'make build-editor' first." >&2
+    echo "The release ZIP must bundle the editor (DEC-106-01). Run 'make build-editor' first." >&2
     exit 1
 }
 
@@ -98,7 +98,7 @@ done < <(git ls-files -z -c -o) | git update-index -z --add --stdin
 # Stamp thirdpartylibs.xml in the index only: the committed file must not list
 # dist/static (the path is absent in a plain checkout and would break
 # moodle-plugin-ci install), but the release ZIP always bundles the editor
-# (validated above, DEC-0065) and must declare it with its version and AGPL
+# (validated above, DEC-106-01) and must declare it with its version and AGPL
 # licence. The version comes from .editor-version, which is .distignore'd, so it
 # is read from the working tree here.
 tpl_sha="$(

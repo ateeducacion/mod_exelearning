@@ -226,7 +226,7 @@ final class external_test extends advanced_testcase {
             ],
         ]);
         // The server-side overall recompute (mean 60) diverges from the client 0,
-        // which is logged (DEC-0018).
+        // which is logged (DEC-6-01).
         $this->assertDebuggingCalled();
         $result = external_api::clean_returnvalue(save_track::execute_returns(), $result);
 
@@ -271,7 +271,7 @@ final class external_test extends advanced_testcase {
         // A status-only commit (scoreraw omitted): the student opened and closed the
         // activity without answering. It must be a no-op, not a recorded 0-score
         // attempt that drags the grade down and burns a maxattempt slot (B6,
-        // DEC-0044). The web track.php path no-ops the same payload.
+        // DEC-34-01). The web track.php path no-ops the same payload.
         $result = save_track::execute($this->instance->id, [
             'session' => 'mobileEmpty',
             'status'  => 'incomplete',
@@ -363,7 +363,7 @@ final class external_test extends advanced_testcase {
                 ['objectid' => $this->objectid_for(2), 'scorepct' => $s2, 'weighted' => 100.0],
             ],
         ]);
-        // This fixture helper grades via save_track; absorb the DEC-0018 divergence log.
+        // This fixture helper grades via save_track; absorb the DEC-6-01 divergence log.
         $this->assertDebuggingCalled();
     }
 

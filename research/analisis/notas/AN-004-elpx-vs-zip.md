@@ -8,8 +8,8 @@ fuentes:
   - REPO-005
   - FTE-008
 relacionados:
-  - DEC-0003
-  - DEC-0005
+  - DEC-0-03
+  - DEC-0-05
 herramienta_ia:
   interfaz: claude-code
   modelo: claude-opus-4-7
@@ -57,6 +57,6 @@ las ramas `iteexe`/`iteexe_online` **quedan fuera del alcance**.
 
 ## [PENDIENTE]
 
-- DEC-0005 (futuro): formalizar política de formatos de entrada en v1/v2.
+- DEC-0-05 (futuro): formalizar política de formatos de entrada en v1/v2.
 - Documentar en `mod_form.php` el mensaje de error si el usuario intenta subir un
   `.elp` legacy o un `.zip` arbitrario.

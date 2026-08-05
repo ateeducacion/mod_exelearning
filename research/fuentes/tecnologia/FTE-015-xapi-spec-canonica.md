@@ -88,7 +88,7 @@ a nivel de Statement, eleva recomendaciones de 1.0 a requisitos).
 Indirecto: xAPI no define grading (valida sintaxis, no semántica). Aporta los **rangos válidos**
 (`scaled ∈ [-1,1]`, `raw ∈ [min,max]`) y la semántica de `registration` (UUID de intento). El mapeo
 `object.id → ideviceId → exelearning_grade_item.objectid → itemnumber → track::apply_item_scores()` es
-responsabilidad del **endpoint** del plugin (mismo pipeline que SCORM, DEC-0017/DEC-0018).
+responsabilidad del **endpoint** del plugin (mismo pipeline que SCORM, DEC-5-01/DEC-6-01).
 
 ## Soporte para navegación/sidebar
 

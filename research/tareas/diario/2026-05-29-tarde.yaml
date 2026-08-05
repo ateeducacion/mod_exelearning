@@ -10,13 +10,13 @@ resumen: >-
   Todo en main con CI verde (18/18) y verificado end-to-end en el Playground.
 
 acciones:
-  - "DEC-0008 (rev.): ELIMINADO el modo grademodel 'both'. Selector ahora peritem|overall excluyentes, default peritem (decisión erseco). Quitada la constante EXELEARNING_GRADEMODEL_BOTH y exelearning_exclude_overall_from_total(). install.xml default 2->1 + upgrade 2026052900 (migra filas 2->1 + change_field_default). Tests grademodel_test reescritos; lib_test ajustado (asumía default both). grademethod default confirmado highest."
+  - "DEC-0-08 (rev.): ELIMINADO el modo grademodel 'both'. Selector ahora peritem|overall excluyentes, default peritem (decisión erseco). Quitada la constante EXELEARNING_GRADEMODEL_BOTH y exelearning_exclude_overall_from_total(). install.xml default 2->1 + upgrade 2026052900 (migra filas 2->1 + change_field_default). Tests grademodel_test reescritos; lib_test ajustado (asumía default both). grademethod default confirmado highest."
   - "report.php: refleja el grademodel (peritem oculta fila Overall; overall oculta per-iDevice). 'Delete attempt' movido a la primera fila visible de cada intento (antes solo en Overall) + fallback de deletabilidad para intentos sin filas del modo. Verificado con datos reales (31 intentos -> 31 botones)."
   - "Blueprint Playground arreglado (4 bugs encadenados): (1) runPhpCode es PHP CLI CRUDO sin Moodle (php.run) -> $CFG null -> bootstrap con require config.php (probando /www/moodle, cwd, /var/www/html); (2) SCORM/H5P apuntaban a filearea packagefile/itemid 1 -> corregido a package/0 (los módulos leen de ahí); (3) el insert directo del Playground deja scorm.reference='' -> scorm_parse no halla el zip -> 0 scoes -> array_keys(null) en scorm_get_toc; el runPhpCode repointa reference al fichero almacenado antes de parsear; (4) h5pactivity.timecreated es NOT NULL sin default y el insert directo no lo pone -> 'Error writing to database'; se pasa timecreated en el step. + runPhpCode de exelearning (extract+sync) para crear iDevices sin abrir la actividad."
-  - "teachermodevisible: cambia de semántica. Ya NO controla el banner 'Try as a student' (preview/grading DEC-0006, ahora siempre visible para profes). Ahora hace lo de mod_exeweb: inyecta CSS (exelearning_require_teacher_mode_hider) para ocultar #teacher-mode-toggler-wrapper dentro del iframe del paquete. Default 0 (oculto). upgrade 2026052901 (migra filas a 0 + change_field_default). Verificado en navegador autenticado."
+  - "teachermodevisible: cambia de semántica. Ya NO controla el banner 'Try as a student' (preview/grading DEC-0-06, ahora siempre visible para profes). Ahora hace lo de mod_exeweb: inyecta CSS (exelearning_require_teacher_mode_hider) para ocultar #teacher-mode-toggler-wrapper dentro del iframe del paquete. Default 0 (oculto). upgrade 2026052901 (migra filas a 0 + change_field_default). Verificado en navegador autenticado."
   - "i18n: traducidos ~90 comentarios de código de español a inglés (lib.php, view.php, track.php, mod_form.php, settings.php, package.php, gradeitems.php, db/upgrade.php, setup_demo.php, report.php). research/** y libs SCORM vendoradas se mantienen en español/intactas. phpcs --standard=moodle limpio."
-  - "Cierre de ADRs confirmados por erseco: DEC-0003 Aceptada (SCORM 1.2 vigente y suficiente), DEC-0004 Aceptada (matriz 4.5/5.0/5.1), DEC-0014 Aceptada A+C (SCORM 1.2 + xAPI solo hoja de ruta, sin empuje upstream; analítica LRS no prioritaria)."
-  - "Saneamiento de estado: DEC-0005 -> Superseded (reemplazada por DEC-0009; era la versión con editor Online). DEC-0011 -> Aceptada (participation_summary + report.php implementados y verificados). TAREA-003/004/006 -> Done. TAREA-005 parcial (DEC-0003 ya aceptada; solo queda la cuantificación 0-5 opcional). Índices regenerados con build_indexes.py."
+  - "Cierre de ADRs confirmados por erseco: DEC-0-03 Aceptada (SCORM 1.2 vigente y suficiente), DEC-0-04 Aceptada (matriz 4.5/5.0/5.1), DEC-0-14 Aceptada A+C (SCORM 1.2 + xAPI solo hoja de ruta, sin empuje upstream; analítica LRS no prioritaria)."
+  - "Saneamiento de estado: DEC-0-05 -> Superseded (reemplazada por DEC-0-09; era la versión con editor Online). DEC-0-11 -> Aceptada (participation_summary + report.php implementados y verificados). TAREA-003/004/006 -> Done. TAREA-005 parcial (DEC-0-03 ya aceptada; solo queda la cuantificación 0-5 opcional). Índices regenerados con build_indexes.py."
 
 hallazgos:
   - "moodle-playground runPhpCode = php.run('<?php '+code) en proceso PHP nuevo SIN bootstrap de Moodle (handleRunPhpCode en src/blueprint/steps/request.js). Hay que require config.php para tener $CFG/$DB/APIs. El crash temprano abortaba el blueprint (faltaban SCORM+H5P)."
@@ -26,19 +26,19 @@ hallazgos:
 
 pendientes:
   - "TAREA-002 (Context7): rellenar fichas FTE-001..FTE-008 con documentación citable. Es el único research realmente pendiente (no bloquea)."
-  - "TAREA-005 (opcional/doc): cuantificar a 0-5 la matriz de DEC-0003."
+  - "TAREA-005 (opcional/doc): cuantificar a 0-5 la matriz de DEC-0-03."
   - "Verificación e2e del flujo borrar-iDevice -> Save (lógica verificada por simulación)."
   - "Bump de actions/checkout@v4 a versión con Node 24 antes del 2026-06-02 (deprecation de Node 20 en GitHub Actions)."
 
 relacionados:
-  - DEC-0003
-  - DEC-0004
-  - DEC-0005
-  - DEC-0006
-  - DEC-0008
-  - DEC-0009
-  - DEC-0011
-  - DEC-0014
+  - DEC-0-03
+  - DEC-0-04
+  - DEC-0-05
+  - DEC-0-06
+  - DEC-0-08
+  - DEC-0-09
+  - DEC-0-11
+  - DEC-0-14
   - PREG-001
   - TAREA-002
   - TAREA-005

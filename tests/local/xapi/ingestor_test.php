@@ -23,7 +23,7 @@ require_once($CFG->dirroot . '/mod/exelearning/lib.php');
 require_once($CFG->libdir . '/gradelib.php');
 
 /**
- * Integration tests for the xAPI ingestor (DEC-0064): statements feed the existing
+ * Integration tests for the xAPI ingestor (DEC-85-01): statements feed the existing
  * grade pipeline, the client is never trusted, and ingestion is idempotent.
  *
  * @package    mod_exelearning
@@ -275,7 +275,7 @@ final class ingestor_test extends \advanced_testcase {
     }
 
     public function test_answered_only_attempt_has_no_overall_row(): void {
-        // DEC-0064 edge: the authoritative overall (itemnumber=0) comes from the package
+        // DEC-85-01 edge: the authoritative overall (itemnumber=0) comes from the package
         // passed/failed/completed statement, emitted right after the answered ones. An
         // answered-only flow (the terminal package statement never arrives — e.g. the tab
         // closes first) writes per-iDevice rows but NO overall row, so the participation

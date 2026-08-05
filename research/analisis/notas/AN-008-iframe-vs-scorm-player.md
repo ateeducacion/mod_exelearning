@@ -6,8 +6,8 @@ fuentes:
   - REPO-002
   - REPO-004
 relacionados:
-  - DEC-0003
-  - DEC-0004
+  - DEC-0-03
+  - DEC-0-04
   - AN-001
   - EXP-002
 herramienta_ia:
@@ -138,16 +138,16 @@ subdominio dedicado.
   cuando exista el endpoint cliente↔servidor.
 - Considerar modo popup como ajuste del profesor en `mod_form.php` (v2).
 
-## Revisión 2026-06-02 — HIPÓTESIS del subdominio cerrada (DEC-0019)
+## Revisión 2026-06-02 — HIPÓTESIS del subdominio cerrada (DEC-0-16)
 
-La investigación de TAREA-012 (DEC-0019) verifica la HIPÓTESIS de arriba: Moodle core
+La investigación de TAREA-012 (DEC-0-16) verifica la HIPÓTESIS de arriba: Moodle core
 **NO** ofrece servir pluginfile desde un origen separado (`$CFG->wwwroot` único;
 `url.php` lo hardcodea), así que el subdominio dedicado requiere **infraestructura
 fuera de core**. Además confirma que el bridge SCORM es **100% same-origin** (el padre
-lee `iframe.contentDocument` para el `objectid` de DEC-0017, el hijo recorre
+lee `iframe.contentDocument` para el `objectid` de DEC-5-01, el hijo recorre
 `window.parent.API`, el teacher-mode hider inyecta CSS en el `contentDocument`), por lo
 que quitar `allow-same-origin` u optar por origen opaco **rompe el tracking** salvo que
 antes se reescriba el bridge a `postMessage` (patrón H5P). Comparativa y roadmap de
 hardening (Tier 1: Permissions-Policy + CSP estricto-con-toggle + quitar
 `allow-popups-to-escape-sandbox`; Tier 2: `postMessage` → origen opaco/subdominio; y
-TAREA-013: sandboxing JS in-frame) en **DEC-0019**.
+TAREA-013: sandboxing JS in-frame) en **DEC-0-16**.

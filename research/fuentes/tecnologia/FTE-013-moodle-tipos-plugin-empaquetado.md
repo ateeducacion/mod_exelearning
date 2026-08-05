@@ -12,7 +12,7 @@ enlaces_oficiales:
   - https://moodledev.io/general/community/plugincontribution
   - https://docs.moodle.org/dev/Git_repositories_for_contrib_modules
 fecha_consulta: 2026-06-08
-relevancia_para_mod_exelearning: "Base normativa de la decisión de empaquetado mod vs contenttype (DEC-0036): por qué fusionar es inviable y cómo cooperan plugins de tipos distintos."
+relevancia_para_mod_exelearning: "Base normativa de la decisión de empaquetado mod vs contenttype (DEC-0-17): por qué fusionar es inviable y cómo cooperan plugins de tipos distintos."
 herramienta_ia:
   interfaz: claude-code
   modelo: claude-opus-4-8

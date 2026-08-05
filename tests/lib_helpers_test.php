@@ -150,7 +150,7 @@ final class lib_helpers_test extends advanced_testcase {
     }
 
     /**
-     * The embedded-editor lib wrappers reflect the bundled editor (DEC-0065).
+     * The embedded-editor lib wrappers reflect the bundled editor (DEC-106-01).
      */
     public function test_embedded_editor_wrappers_reflect_bundle(): void {
         global $CFG;
@@ -172,7 +172,7 @@ final class lib_helpers_test extends advanced_testcase {
 
     /**
      * The site-wide editordisabled toggle switches embedded editing off even when
-     * a valid bundle is present (DEC-0066): the button helper reports false and
+     * a valid bundle is present (DEC-108-01): the button helper reports false and
      * the editor endpoints' guard throws.
      */
     public function test_admin_toggle_disables_embedded_editing(): void {

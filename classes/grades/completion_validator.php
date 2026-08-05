@@ -17,10 +17,10 @@
 /**
  * Completion-by-grade form validation relaxation for mod_exelearning.
  *
- * Extracted verbatim from lib.php (DEC-0054). The relaxation rule is unchanged;
+ * Extracted verbatim from lib.php (DEC-71-01). The relaxation rule is unchanged;
  * mod_form.php delegates through the thin lib.php wrapper. Kept as a pure
  * function (no moodleform_mod coupling) so it stays unit-testable, as the
- * original PHPDoc (B7, DEC-0044) describes.
+ * original PHPDoc (B7, DEC-34-01) describes.
  *
  * @package    mod_exelearning
  * @copyright  2026 ATE (Área de Tecnología Educativa)
@@ -35,14 +35,14 @@ namespace mod_exelearning\grades;
 final class completion_validator {
     /**
      * Relaxes core's "completion grade item has no grade field" validation error for a
-     * registered gradable item (B7, DEC-0044).
+     * registered gradable item (B7, DEC-34-01).
      *
      * Core's moodleform_mod::validation() rejects every completiongradeitemnumber with a
      * badcompletiongradeitemnumber error (key 'completionpassgrade') because
      * mod_exelearning maps 101 itemnumbers (gradeitems::MAX_ITEMNUMBER) but stores each
      * grade in its own table instead of exposing per-itemnumber grade_ideviceN form
      * fields — so core's "this item has no grade field" check always fails, making the
-     * DEC-0038 completion-by-grade feature impossible to save from the form. This
+     * DEC-25-01 completion-by-grade feature impossible to save from the form. This
      * stopgap clears that specific error when "require passing grade" is OFF and the
      * chosen item is a real gradebook column (a per-iDevice item in PERITEM, or the
      * overall in OVERALL): it does carry a grade, just not via a core form field.
@@ -73,7 +73,7 @@ final class completion_validator {
         $grademodel = (int) ($data['grademodel'] ?? EXELEARNING_GRADEMODEL_PERITEM);
         // A real gradebook column exists for the overall (0) only in OVERALL mode, and
         // for a per-iDevice item only in PERITEM mode — OVERALL deletes the per-iDevice
-        // Moodle columns (DEC-0038), so completion must not target one there even though
+        // Moodle columns (DEC-25-01), so completion must not target one there even though
         // its exelearning_grade_item row is kept for the report.
         $registered = ($itemnumber === 0)
             ? ($grademodel === EXELEARNING_GRADEMODEL_OVERALL)

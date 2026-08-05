@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Attempts report for mod_exelearning (DEC-0007).
+ * Attempts report for mod_exelearning (DEC-0-07).
  *
  * Teacher-facing table of users × attempts × items, modelled on the
  * mod_h5pactivity report.
@@ -56,7 +56,7 @@ if ($groupmode != NOGROUPS) {
 }
 
 // Optional userid: the gradebook "grade analysis" link (grade.php) forwards the
-// graded user so the teacher lands on that student's attempts (DEC-0028).
+// graded user so the teacher lands on that student's attempts (DEC-13-06).
 $userid = optional_param('userid', 0, PARAM_INT);
 $baseurlparams = ['id' => $cm->id];
 if ($userid > 0) {
@@ -67,7 +67,7 @@ $PAGE->set_title(format_string($exelearning->name) . ': ' . get_string('attempts
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($context);
 
-// Delete attempt (DEC-0007 phase 2): removes every row of a (userid, attempt)
+// Delete attempt (DEC-0-07 phase 2): removes every row of a (userid, attempt)
 // pair and recalculates the student's grade from the remaining history.
 $deleteuser = optional_param('deleteuser', 0, PARAM_INT);
 $deleteattempt = optional_param('deleteattempt', 0, PARAM_INT);
@@ -126,14 +126,14 @@ if (
 
 $candelete = has_capability('mod/exelearning:deleteattempt', $context);
 
-// The report reflects the grademodel (DEC-0008): in "per iDevice only" the
+// The report reflects the grademodel (DEC-0-08): in "per iDevice only" the
 // Overall row (itemnumber=0) is hidden; in "overall only" the per-iDevice rows
 // are hidden. The internal history (exelearning_attempt) keeps recording both,
 // so this only affects presentation, not the data nor the grade recalculation.
 $grademodel = (int) ($exelearning->grademodel ?? EXELEARNING_GRADEMODEL_PERITEM);
 
 // Map itemnumber -> human-readable name (overall + iDevices). Hoisted above the
-// header so the download branch (DEC-0007) and the on-screen table share a
+// header so the download branch (DEC-0-07) and the on-screen table share a
 // single dataset/filter definition (move, don't duplicate).
 $itemnames = [0 => get_string('report_overall', 'mod_exelearning')];
 $gradeitems = $DB->get_records(
@@ -178,7 +178,7 @@ foreach ($attempts as $a) {
 }
 $users = $userids ? $DB->get_records_list('user', 'id', array_keys($userids)) : [];
 
-// Whether a row matches the active model (DEC-0008: peritem shows
+// Whether a row matches the active model (DEC-0-08: peritem shows
 // itemnumber>0; overall shows itemnumber=0).
 $matchesmode = function (int $itemnumber) use ($grademodel): bool {
     return ($grademodel === EXELEARNING_GRADEMODEL_OVERALL)
@@ -196,7 +196,7 @@ foreach ($attempts as $a) {
     $grouphasmatch[$key] = ($grouphasmatch[$key] ?? false) || $matchesmode((int) $a->itemnumber);
 }
 
-// Download branch (DEC-0007): stream the same dataset/filters as the on-screen
+// Download branch (DEC-0-07): stream the same dataset/filters as the on-screen
 // table through core's dataformat API (CSV/Excel/ODS/JSON). It must run before
 // any output, and intentionally before the report_viewed event below: a download
 // is not a report *view*, so it does not log one (a dedicated report_downloaded
@@ -262,7 +262,7 @@ if ($userid > 0 && ($restrictusers === null || in_array($userid, $restrictusers,
         // Escape the name: $OUTPUT->heading() does not HTML-escape its content, and a
         // display name set via LDAP/SAML/WS/CSV upload is not guaranteed tag-stripped,
         // so an unescaped name would run as stored XSS in the grader's session (B8,
-        // DEC-0044). The attempts table below already escapes the same value with s().
+        // DEC-34-01). The attempts table below already escapes the same value with s().
         echo $OUTPUT->heading(s(fullname($filtereduser)), 4);
     }
 }
@@ -345,7 +345,7 @@ foreach ($attempts as $a) {
 
 echo html_writer::table($table);
 
-// Download selector (DEC-0007): reaches the download branch above with the same
+// Download selector (DEC-0-07): reaches the download branch above with the same
 // filters (id, optional userid) so the export reflects the on-screen dataset. It
 // only renders here, after a non-empty table, so the empty-state page shows none.
 echo $OUTPUT->download_dataformat_selector(

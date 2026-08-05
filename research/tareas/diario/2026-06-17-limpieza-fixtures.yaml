@@ -7,12 +7,12 @@ resumen: >-
   tests/scripts/blueprint, a petición del usuario. fixtures/ pasa de 31M a 19M (research/ de
   ~33M a 22M). Verificado antes de borrar: md5 del ZIP duplicado idéntico, los árboles
   extraídos solo aparecen en un comentario (package_manager.php:282), y los 6 .elpx tienen 0
-  refs en tests/scripts/blueprint. La prosa que los describía (conteos DEC-0037, análisis SCO
+  refs en tests/scripts/blueprint. La prosa que los describía (conteos DEC-13-10, análisis SCO
   AN-005) se conserva como evidencia; el README de fixtures ya trae los comandos de
   regeneración upstream.
 acciones:
   - "Borrados (git rm, ~13 MB): scorm-export/actividad-evaluable_scorm12.zip (607K, md5 9f850207 idéntico a scorm/actividad-evaluable_scorm.zip → duplicado puro); scorm-export/really-simple_scorm12/ (~3M, árbol extraído, 0 refs código); web-export/really-simple_web/ (~2.8M, árbol extraído, 0 refs código — el hit en package_manager.php:282 es un comentario); elpx/contenido-prueba-estilos-cata.elpx (2.1M); elpx/really-simple-test-project.elpx (1.2M); elpx/actividad-evaluable_3.elpx (953K); elpx/actividad-evaluable4.elpx (722K); elpx/actividad-evaluable_2.elpx (632K); elpx/arrows.elpx (455K)."
-  - "Conservadas (en uso real): elpx/actividad-evaluable.elpx (tests ×9 + blueprint + generador); elpx/multipage-gradable.elpx (lib_test/track_test); elpx/superelpx.elpx (16M, lib_test.php:616, fixture exhaustivo DEC-0037); scorm/actividad-evaluable_scorm.zip (blueprint); h5p/question-set-demo.h5p (blueprint)."
+  - "Conservadas (en uso real): elpx/actividad-evaluable.elpx (tests ×9 + blueprint + generador); elpx/multipage-gradable.elpx (lib_test/track_test); elpx/superelpx.elpx (16M, lib_test.php:616, fixture exhaustivo DEC-13-10); scorm/actividad-evaluable_scorm.zip (blueprint); h5p/question-set-demo.h5p (blueprint)."
   - "fixtures/README.md: nota [RETIRADA 2026-06-17] con lista de eliminados + razón (0 refs / md5-dup / regenerable) + qué se conserva. La sección 'Cómo regenerar las fixtures' (ya existente) cubre la obtención upstream de los retirados; la prosa de evidencia (conteos esperados, análisis imsmanifest SCO-por-página) se mantiene intacta."
 evidencia:
   - "md5 9f850207e0dedb2d3b35acecd846a63a en ambos ZIP scorm; package_manager.php:282 (comentario, no uso)"
@@ -22,5 +22,5 @@ pendientes:
   - "REFERENCE-INSTEAD pendiente sólo conceptual: si se quisiera, las fixtures retiradas citadas en FTE-008/AN-004/EXP-001 se regeneran con el bloque del README; la cita en prosa sigue siendo válida sin el binario."
   - "Tier 5 restante NO ejecutado: EXP-002/003 screenshots (experimentos/) se dejan; endurecer test_schema_validation.py (enum estado); rol decisiones_bloqueantes vs adrs.yaml."
 relacionados:
-  - DEC-0002
-  - DEC-0037
+  - DEC-0-02
+  - DEC-13-10

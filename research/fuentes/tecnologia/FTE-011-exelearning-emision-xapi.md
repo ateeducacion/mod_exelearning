@@ -13,7 +13,7 @@ context7:
   fecha: 2026-06-04
   version_devuelta: "adlnet/xapi-spec (xAPI-Data.md / xAPI-About.md) — High. Confirma answered + cmi.interaction + result.success, result.score {scaled,raw,min,max}, completed/failed, context.registration, contextActivities.parent y actor con account.name='anonymous'."
 fecha_consulta: 2026-06-04
-relevancia_para_mod_exelearning: "Desbloquea DEC-0014: los paquetes publicados ya emiten statements xAPI por postMessage; mod_exelearning puede consumirlos reusando el mapa objectid→itemnumber (DEC-0017) y la tubería de intentos (DEC-0007)."
+relevancia_para_mod_exelearning: "Desbloquea DEC-0-14: los paquetes publicados ya emiten statements xAPI por postMessage; mod_exelearning puede consumirlos reusando el mapa objectid→itemnumber (DEC-5-01) y la tubería de intentos (DEC-0-07)."
 herramienta_ia:
   interfaz: claude-code
   modelo: claude-opus-4-8
@@ -30,7 +30,7 @@ herramienta_ia:
 > U+2028/U+2029) en la inyección `window.exeXapi={…}` (`serializeForScript`). Confirmado
 > además: el `answered` por iDevice **no lleva peso** (vive en `_state`, plegado en el
 > `finalScore` del statement de paquete) y el export web sirve `odeId` vacío (routear por
-> el `idevice-id` extension). Esto desbloquea **TAREA-015** e informa **DEC-0064**.
+> el `idevice-id` extension). Esto desbloquea **TAREA-015** e informa **DEC-85-01**.
 
 `exe_xapi.js` es el **emisor xAPI siempre-activo** que el PR upstream
 [`exelearning/exelearning#1867`](https://github.com/exelearning/exelearning/pull/1867)
@@ -41,7 +41,7 @@ rama `feature/add-xapi-support`) añade a **todos** los formatos de exportación
 que cualquier paquete publicado es "xAPI-compatible out of the box", **sin opción de
 exportación**.
 
-Esto **invalida el hecho de partida de DEC-0014** ("eXeLearning upstream NO emite xAPI
+Esto **invalida el hecho de partida de DEC-0-14** ("eXeLearning upstream NO emite xAPI
 hoy", verificado 2026-05-29) y **reactiva** su hoja de ruta (opción C: SCORM 1.2 vigente
 + xAPI cuando upstream lo emita).
 
@@ -65,7 +65,7 @@ hoy", verificado 2026-05-29) y **reactiva** su hoja de ruta (opción C: SCORM 1.
   `registration` y `actor`.
 - **Identidad de actividad estable.** `object.id` por iDevice =
   `{baseIri}/idevice/{ideviceId}`, donde `ideviceId` es el `<odeIdeviceId>` estable
-  (PR upstream #1791, ver DEC-0012/DEC-0017) — el **mismo** valor que
+  (PR upstream #1791, ver DEC-0-12/DEC-5-01) — el **mismo** valor que
   `exelearning_grade_item.objectid`.
 
 ## Contrato observado (código, `exe_xapi.js` @ 59b9b9b)
@@ -133,9 +133,9 @@ con `account.name = 'anonymous'`. [HIPOTESIS] No se observan desviaciones del es
 
 ## Soporte para multi-grade-items
 **Excelente y directo.** Un `answered` por iDevice calificable con `object.id` estable →
-se mapea 1:1 a `exelearning_grade_item.objectid → itemnumber` (DEC-0017). El statement de
+se mapea 1:1 a `exelearning_grade_item.objectid → itemnumber` (DEC-5-01). El statement de
 paquete (`passed`/`failed`) entrega además el **overall** ya ponderado, evitando el
-recálculo servidor que el camino SCORM necesita (DEC-0018).
+recálculo servidor que el camino SCORM necesita (DEC-6-01).
 
 ## Soporte para navegación/sidebar
 Ortogonal: xAPI no define UI. La sidebar la sigue sirviendo el paquete nativo (intacto).
@@ -164,4 +164,4 @@ Ortogonal: xAPI no define UI. La sidebar la sigue sirviendo el paquete nativo (i
 - ¿Congelará el PR #1867 el contrato (`{type, statement}` + `parentOrigin`) antes del
   merge? → seguimiento en PREG-002 / TAREA-015.
 - ¿Conviene que mod_exelearning ingiera vía `core_xapi_statement_post` (FTE-007) o vía un
-  endpoint propio que ignore el actor? → analizado en AN-012, se decide en DEC-0032.
+  endpoint propio que ignore el actor? → analizado en AN-012, se decide en DEC-17-01.

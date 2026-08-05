@@ -8,17 +8,17 @@ resumen: >-
   pestaña Informes, toggle teachermodevisible, y puesta en verde de la CI.
 
 acciones:
-  - "DEC-0007 (Aceptada): intentos. Tabla plana exelearning_attempt + agregación grademethod (highest/average/first/last/lowest) agrupada por sessiontoken (1 intento por carga de página). report.php (Usuario×Intento×Ítem×Nota×Estado×Fecha), privacy provider, backup/restore moodle2. Fase 2: maxattempt (enforce en track.php), reviewmode (none/always/aftercompletion, resumen al alumno en view.php), borrar intento en report.php con cap mod/exelearning:deleteattempt + exelearning_recalculate_user_grades."
-  - "DEC-0008 (Aceptada): selector grademodel overall/peritem/both (default both, overall excluido del total del curso vía weightoverride+aggregationcoef2). Verificado overall→1 col, peritem→2, both→3 con overall a peso 0. Borrar un iDevice quita su columna del libro (grade_update deleted) — antes quedaba fantasma."
-  - "DEC-0010 (Aceptada): finalización estilo SCORM = gradepass + core completionpassgrade; track.php refuerza completion->update_state."
-  - "DEC-0011 (Aceptada): resumen de participación al profesor estilo Tarea (participation_summary en attempts.php, respeta grupos separados) + línea método/nota al alumno. NO se clona la tabla SCORM (portada inline, como H5P)."
-  - "DEC-0012 (Aceptada): editor/save.php re-extrae paquete + re-sincroniza libro tras guardar; borrar/añadir iDevice editando actualiza columnas. editor_modal.js recarga view.php tras guardar para refrescar el banner server-rendered."
+  - "DEC-0-07 (Aceptada): intentos. Tabla plana exelearning_attempt + agregación grademethod (highest/average/first/last/lowest) agrupada por sessiontoken (1 intento por carga de página). report.php (Usuario×Intento×Ítem×Nota×Estado×Fecha), privacy provider, backup/restore moodle2. Fase 2: maxattempt (enforce en track.php), reviewmode (none/always/aftercompletion, resumen al alumno en view.php), borrar intento en report.php con cap mod/exelearning:deleteattempt + exelearning_recalculate_user_grades."
+  - "DEC-0-08 (Aceptada): selector grademodel overall/peritem/both (default both, overall excluido del total del curso vía weightoverride+aggregationcoef2). Verificado overall→1 col, peritem→2, both→3 con overall a peso 0. Borrar un iDevice quita su columna del libro (grade_update deleted) — antes quedaba fantasma."
+  - "DEC-0-10 (Aceptada): finalización estilo SCORM = gradepass + core completionpassgrade; track.php refuerza completion->update_state."
+  - "DEC-0-11 (Aceptada): resumen de participación al profesor estilo Tarea (participation_summary en attempts.php, respeta grupos separados) + línea método/nota al alumno. NO se clona la tabla SCORM (portada inline, como H5P)."
+  - "DEC-0-12 (Aceptada): editor/save.php re-extrae paquete + re-sincroniza libro tras guardar; borrar/añadir iDevice editando actualiza columnas. editor_modal.js recarga view.php tras guardar para refrescar el banner server-rendered."
   - "Editor embebido FUNCIONAL: portadas las clases que faltaban (embedded_editor_source_resolver, styles_service eran fatal latente), settings inline, botón 'Edit with eXeLearning' en view.php, AMD compilado a amd/build/, styles.css del overlay, helpers static (exelearning_embedded_editor_uses_local_assets / _local_static_dir) que faltaban y causaban 404 de TODOS los assets. Verificado: el editor abre a pantalla completa y carga bundle.json/app.bundle.js."
   - "teachermodevisible (paridad mod_exeweb): checkbox por actividad para ocultar el toggle de modo docente. Verificado 0/1 en navegador."
   - "Pestaña 'Informes' en la navegación de la actividad (exelearning_extend_settings_navigation), como mod_scorm."
   - "Demo multi-módulo: setup_demo.php + blueprint.json crean usuarios (admin matriculado incluido) + 3 actividades evaluables (exelearning + mod_scorm + mod_h5pactivity) con pass-to-complete. Fixtures en research/fixtures/{scorm,h5p}."
-  - "CI en verde (DEC-0004): ci.yml moodle-plugin-ci v4, matriz 18 (Moodle 4.5/5.0/5.1 × PHP 8.1-8.4 × pgsql/mariadb). phpcs estándar moodle a 0/0 (884 auto + resto a mano), phpdoc completo, eslint AMD con JSDoc."
-  - "DEC-0003 (Aceptada con estado real): multi-grade-items + tracking SCORM 1.2 vigente; xAPI nativo a futuro."
+  - "CI en verde (DEC-0-04): ci.yml moodle-plugin-ci v4, matriz 18 (Moodle 4.5/5.0/5.1 × PHP 8.1-8.4 × pgsql/mariadb). phpcs estándar moodle a 0/0 (884 auto + resto a mano), phpdoc completo, eslint AMD con JSDoc."
+  - "DEC-0-03 (Aceptada con estado real): multi-grade-items + tracking SCORM 1.2 vigente; xAPI nativo a futuro."
 
 hallazgos:
   - "Toda vía de escritura del paquete que NO sea el formulario (addModule del Playground, editor/save.php) debe disparar extract+sync explícitos; si no, contenido y columnas quedan obsoletos. exelearning_get_stored_package() localiza el paquete en CUALQUIER itemid (form=0, Playground=1, editor=revision)."
@@ -35,18 +35,18 @@ preguntas:
 pendientes:
   - "Verificación e2e 100% por navegador del flujo borrar-iDevice → Save to Moodle (TAREA-034); la lógica está verificada por simulación."
   - "RIE-006: emparejamiento de respaldo (pageid+tipo+orden) si se confirma reasignación de ids; pendiente de upstream."
-  - "xAPI nativo (core_xapi) como evolución de DEC-0003."
+  - "xAPI nativo (core_xapi) como evolución de DEC-0-03."
 
 relacionados:
-  - DEC-0003
-  - DEC-0004
-  - DEC-0006
-  - DEC-0007
-  - DEC-0008
-  - DEC-0009
-  - DEC-0010
-  - DEC-0011
-  - DEC-0012
+  - DEC-0-03
+  - DEC-0-04
+  - DEC-0-06
+  - DEC-0-07
+  - DEC-0-08
+  - DEC-0-09
+  - DEC-0-10
+  - DEC-0-11
+  - DEC-0-12
   - PREG-001
   - PREG-002
   - PREG-003

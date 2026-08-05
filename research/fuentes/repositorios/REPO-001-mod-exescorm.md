@@ -73,7 +73,7 @@ herramienta_ia:
     eXeLearning y rebuilda el editor estático.
   - `pr-playground-preview.yml` — preview deploy en PR.
 - **No tiene `ci.yml`** con matriz Moodle/PHP (AN-006). Hueco a llenar en
-  `mod_exelearning` vía DEC-0004 + TAREA-006.
+  `mod_exelearning` vía DEC-0-04 + TAREA-006.
 
 ## Riesgos / Limitaciones
 

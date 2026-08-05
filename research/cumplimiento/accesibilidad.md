@@ -2,7 +2,7 @@
 
 Objetivo: cumplir **WCAG 2.2 AA** en la actividad rendida por el plugin.
 
-> **[ACTUALIZACION 2026-06-17]** El plugin alcanzó `MATURITY_STABLE` (DEC-0057) **sin** una pasada formal de
+> **[ACTUALIZACION 2026-06-17]** El plugin alcanzó `MATURITY_STABLE` (DEC-77-01) **sin** una pasada formal de
 > `axe-core`. Esta auditoría sigue siendo el principal pendiente de cumplimiento (ver `research/TODO.md` →
 > "Auditorías de cumplimiento pendientes"). Las `[HIPOTESIS]`/`[PENDIENTE]` de abajo siguen vigentes; no
 > bloquea STABLE, pero conviene cerrarlo: pasar `axe-core` sobre la superficie propia (cabecera, toolbar,

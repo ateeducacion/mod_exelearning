@@ -25,7 +25,7 @@
 namespace mod_exelearning\event;
 
 /**
- * Fired when one sibling activity is successfully migrated into eXeLearning (DEC-0050).
+ * Fired when one sibling activity is successfully migrated into eXeLearning (DEC-13-12).
  *
  * Logged at the created module's context, with the new exelearning instance as the
  * object and the source component/cmid in `other`. Logged at LEVEL_OTHER (a one-off

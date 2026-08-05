@@ -1,7 +1,7 @@
 # External services (web service API)
 
 The external API surface of `mod_exelearning`: 6 functions over 6 classes, all wired in `db/services.php`. No orphans.
-(The two admin AJAX functions that managed the runtime editor installer were removed in DEC-0065 together with the installer.)
+(The two admin AJAX functions that managed the runtime editor installer were removed in DEC-106-01 together with the installer.)
 
 ## Surface
 
@@ -19,8 +19,8 @@ Every external class extends `\core_external\external_api` and defines the canon
 | `save_track` | `classes/external/save_track.php:43` | 1 function |
 
 The earlier comparative report's claim of "zombie classes" is **stale and wrong**: every declared function
-maps to an existing class — zero orphans. This was settled in **DEC-0040**
-(`research/decisiones/adr/DEC-0040-mobile-external-api.md`), which added the six mobile/external functions.
+maps to an existing class — zero orphans. This was settled in **DEC-26-02**
+(`research/decisiones/adr/DEC-26-02-mobile-external-api.md`), which added the six mobile/external functions.
 
 ## Master table
 
@@ -70,12 +70,12 @@ target user (`get_user_attempts.php:75-76`, `get_user_grades.php:77-78`).
 expects (`save_track.php:109-137`) and hands it off (`:137`), so the server-side safeguards are **identical** to the
 web `track.php` path:
 
-- Per-iDevice scores are routed by stable `objectid` (DEC-0017); an objectid the package does not expose is ignored.
-- The overall is recomputed server-side from those scores (DEC-0018) — the client's overall is never trusted.
+- Per-iDevice scores are routed by stable `objectid` (DEC-5-01); an objectid the package does not expose is ignored.
+- The overall is recomputed server-side from those scores (DEC-6-01) — the client's overall is never trusted.
 - Scores are clamped to the instance grade range and the `maxattempt` cap is enforced.
 - A **status-only commit** (no `scoreraw`) hits `track::ingest()`'s no-op guard instead of being persisted as a
   spurious 0-score attempt — the `scoreraw` param is nullable on purpose (`save_track.php:60-66,126-129`; B6,
-  DEC-0044).
+  DEC-34-01).
 
 `track::ingest()` itself is the single shared entry point documented at `classes/local/track.php:36-58`; the future
 xAPI source would be a third caller of the same pipeline (see `docs/tracking-architecture.md`).
@@ -84,7 +84,7 @@ xAPI source would be a third caller of the same pipeline (see `docs/tracking-arc
 
 `classes/external/` and `db/services.php` are **fully coherent**: every class is declared, every declared function
 maps to an existing class/method, and the read/write types match each method's behaviour. The comparative report's
-priority-#1 gap ("undeclared / zombie external classes") is **resolved** by DEC-0040 and verifiable directly from
+priority-#1 gap ("undeclared / zombie external classes") is **resolved** by DEC-26-02 and verifiable directly from
 `db/services.php:27-96`.
 
 ## Tests
@@ -100,4 +100,4 @@ priority-#1 gap ("undeclared / zombie external classes") is **resolved** by DEC-
 
 - `docs/tracking-architecture.md` — how scores flow into `track::ingest()` and the shared pipeline.
 - `docs/GRADEBOOK.md` — what `get_user_grades` / `get_user_attempts` read (grade models, itemnumber semantics).
-- `research/decisiones/adr/DEC-0040-mobile-external-api.md` — the decision that defined this surface.
+- `research/decisiones/adr/DEC-26-02-mobile-external-api.md` — the decision that defined this surface.

@@ -20,7 +20,7 @@ use advanced_testcase;
 use mod_exelearning\local\embedded_editor_source_resolver as resolver;
 
 /**
- * Tests for the bundled-only embedded editor source resolver (DEC-0065).
+ * Tests for the bundled-only embedded editor source resolver (DEC-106-01).
  *
  * @package    mod_exelearning
  * @category   test
@@ -129,7 +129,7 @@ final class embedded_editor_source_resolver_test extends advanced_testcase {
     }
 
     /**
-     * A leftover admin-installed editor in moodledata is never considered (DEC-0065).
+     * A leftover admin-installed editor in moodledata is never considered (DEC-106-01).
      *
      * Sites upgrading from the runtime-installer era may still carry
      * moodledata/mod_exelearning/embedded_editor; it must be ignored even when the

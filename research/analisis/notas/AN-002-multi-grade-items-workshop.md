@@ -6,7 +6,7 @@ fuentes:
   - REPO-004
   - FTE-006
 relacionados:
-  - DEC-0003
+  - DEC-0-03
 herramienta_ia:
   interfaz: claude-code
   modelo: claude-opus-4-7
@@ -58,4 +58,4 @@ truco.
 
 - EXP-002 (TAREA-004): POC en Moodle local que registre 2 grade items desde una
   actividad de prueba mínima — verificar que aparecen en el libro de calificaciones.
-- DEC-0004 (futuro): esquema de tablas definitivo.
+- DEC-0-04 (futuro): esquema de tablas definitivo.

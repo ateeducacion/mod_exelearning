@@ -30,7 +30,7 @@ namespace mod_exelearning\local;
  * errors on malformed packages. The `libxml`/`dom`/`xmlreader` extensions are
  * mandatory in every supported Moodle (4.5–5.2, admin/environment.xml), so this
  * is always available — which is why the previous "avoid libxml in backports"
- * note no longer applies (DEC-0039). A malformed package still degrades to a
+ * note no longer applies (DEC-26-01). A malformed package still degrades to a
  * best-effort regex token scan so an odd export keeps working.
  *
  * @package    mod_exelearning
@@ -42,7 +42,7 @@ class package {
      * Known gradable iDevice types — INFORMATIONAL ONLY (no longer the detection gate).
      *
      * Detection is now driven by the author's per-iDevice `isScorm` flag
-     * (see {@see self::region_reports_score()} and DEC-0022 / issue #13 #2,#5),
+     * (see {@see self::region_reports_score()} and DEC-13-01 / issue #13 #2,#5),
      * because eXeLearning v4 gates all SCORM score reporting on that flag, not on
      * the iDevice type. This catalogue is kept as documentation of which types can
      * be configured to report a grade — it includes both the originally supported
@@ -300,12 +300,12 @@ class package {
     /**
      * Decides whether an iDevice was marked for assessment, from its decoded parts.
      *
-     * Same three-source rule as the legacy scan (DEC-0022 / DEC-0037), but reading
+     * Same three-source rule as the legacy scan (DEC-13-01 / DEC-13-10), but reading
      * the already-decoded jsonProperties/htmlView text the DOM gives us:
      *   1. `jsonProperties` plain JSON (trueorfalse, form, map, …);
      *   2. `htmlView` plain (interactive-video, dragdrop, …; flag may be nested);
      *   3. `htmlView` encrypted `*-DataGame` div (the exe-game family).
-     *   4. `geogebra-activity`'s `auto-geogebra-scorm` class (issue #29; DEC-0043).
+     *   4. `geogebra-activity`'s `auto-geogebra-scorm` class (issue #29; DEC-29-01).
      * The maximum flag wins so a plain `0` never shadows an encrypted `1`.
      *
      * @param string $type eXeLearning iDevice type.
@@ -350,7 +350,7 @@ class package {
      * `auto-geogebra-scorm` class as the author opt-in, then creates runtime
      * options with `isScorm: 2`, adds the save-score button, and registers the
      * activity. The parser mirrors only that explicit author marker so unscored
-     * GeoGebra activities stay out of the gradebook (issue #29; DEC-0043).
+     * GeoGebra activities stay out of the gradebook (issue #29; DEC-29-01).
      *
      * @param string $type eXeLearning iDevice type.
      * @param string $html Decoded htmlView text.
@@ -374,7 +374,7 @@ class package {
      * reverses it with eXeLearning's `decrypt()` (`libs/common.js`): `unescape()`
      * then XOR with the fixed key 146 (0x92). We replicate that so these iDevices
      * register a grade item like the plain-text family (issue #13 "only 12 of 30
-     * detected"; DEC-0037). A block may hold several DataGame divs; the maximum
+     * detected"; DEC-13-10). A block may hold several DataGame divs; the maximum
      * flag wins.
      *
      * @param string $html Decoded htmlView text.

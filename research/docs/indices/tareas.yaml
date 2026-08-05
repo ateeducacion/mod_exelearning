@@ -4,7 +4,7 @@ items:
   - ruta: 'tareas/backlog/TAREA-002-context7-estandares.yaml', id: 'TAREA-002', titulo: 'Consultas Context7 para rellenar FTE-001..FTE-008', estado: 'Done', fecha: '2026-05-28'
   - ruta: 'tareas/backlog/TAREA-003-exp-paquete-publicado.yaml', id: 'TAREA-003', titulo: 'EXP-001: estructura del paquete publicado por eXeLearning', estado: 'Done', fecha: '2026-05-28'
   - ruta: 'tareas/backlog/TAREA-004-exp-multi-grade-items.yaml', id: 'TAREA-004', titulo: 'EXP-002: POC de multi-grade-items en Moodle 4.x', estado: 'Done', fecha: '2026-05-28'
-  - ruta: 'tareas/backlog/TAREA-005-cerrar-dec-0003.yaml', id: 'TAREA-005', titulo: 'Cerrar DEC-0003 con matriz cuantificada', estado: 'Done', fecha: '2026-05-28'
+  - ruta: 'tareas/backlog/TAREA-005-cerrar-dec-0003.yaml', id: 'TAREA-005', titulo: 'Cerrar DEC-0-03 con matriz cuantificada', estado: 'Done', fecha: '2026-05-28'
   - ruta: 'tareas/backlog/TAREA-006-ci-matriz-moodle-php.yaml', id: 'TAREA-006', titulo: 'Redactar ci.yml con matriz moodle-plugin-ci (Moodle 4.5/5.0/5.1/5.2 × PHP 8.1-8.4 × pgsql/mariadb)', estado: 'Done', fecha: '2026-05-28'
   - ruta: 'tareas/backlog/TAREA-007-adr-justificacion-multicalificacion.yaml', id: 'TAREA-007', titulo: 'ADR de justificación de la multicalificación + informe PDF ejecutivo', estado: 'Done', fecha: '2026-05-29'
   - ruta: 'tareas/backlog/TAREA-008-rie-010-postmessage-guard.yaml', id: 'TAREA-008', titulo: 'RIE-010: aplicar guard de origen al puente legacy postMessage', estado: 'Done', fecha: '2026-06-01'

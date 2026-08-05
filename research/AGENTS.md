@@ -9,11 +9,11 @@ cumpla debe rechazarse o corregirse antes de integrarse.
 1. **Evidencia antes que preferencia.** Toda afirmación técnica cita una fuente
    verificable: `repo + ruta + commit`, doc oficial (con URL, versión y fecha de
    consulta), o un experimento reproducible. Sin fuente no hay afirmación.
-2. **Estándar de tracking (DEC-0003 `Aceptada`, 2026-05-29).** El motor vigente es el
-   **bridge SCORM 1.2** + multi-grade-items por `objectid` (DEC-0003/DEC-0017), respaldado
+2. **Estándar de tracking (DEC-0-03 `Aceptada`, 2026-05-29).** El motor vigente es el
+   **bridge SCORM 1.2** + multi-grade-items por `objectid` (DEC-0-03/DEC-5-01), respaldado
    por la matriz `analisis/matrices/matriz-estandar-tracking.yaml`. **xAPI** es la hoja de
-   ruta aceptada como ingesta adicional sobre la **misma** tubería (DEC-0014/DEC-0032 +
-   reglas de validación y versión en DEC-0063), gated al contrato upstream `exelearning#1867`;
+   ruta aceptada como ingesta adicional sobre la **misma** tubería (DEC-0-14/DEC-17-01 +
+   reglas de validación y versión en DEC-0-18), gated al contrato upstream `exelearning#1867`;
    **cmi5 y LTI 1.3 AGS quedan fuera de alcance**. (La "neutralidad de estándar" del bootstrap
    ya se resolvió; toda afirmación nueva sigue citando evidencia.)
 3. **Separación de capas.** Hechos en `fuentes/`, interpretaciones en `analisis/`,
@@ -22,14 +22,20 @@ cumpla debe rechazarse o corregirse antes de integrarse.
    evidencias (FTE/REPO/AN/EXP). Cada `EXP` registra comando, commit, entorno, métricas,
    limitaciones.
 5. **Append-only.** `status.yaml`, ADRs y diario nunca se reescriben. Para invalidar un
-   ADR se publica otro que lo supersede (`supersede: DEC-NNNN`).
-6. **IDs estables y map-keyed.** `REPO-NNN`, `FTE-NNN`, `AN-NNN`, `DEC-NNNN`, `EXP-NNN`,
-   `TAREA-NNN`, `PREG-NNN`, `RIE-NNN`. Numeración monotónica, no se reutilizan.
+   ADR se publica otro que lo supersede (`supersede: DEC-<nº>-<NN>`, y el antiguo pasa a
+   `estado: Superseded` con `reemplazada_por:`).
+6. **IDs estables.** `REPO-NNN`, `FTE-NNN`, `AN-NNN`, `EXP-NNN`, `TAREA-NNN`, `PREG-NNN`,
+   `RIE-NNN` usan numeración monotónica y no se reutilizan. Las decisiones **no** llevan
+   contador global: se identifican por el número de seguimiento de GitHub del cambio
+   (issue, o PR si no hay issue) más una secuencia local de dos dígitos,
+   `DEC-<nº-seguimiento>-<NN>`. Nunca se abre un issue sólo para obtener un número. Ver
+   [`decisiones/README.md`](./decisiones/README.md) y
+   [`decisiones/mapa-migracion-ids.md`](./decisiones/mapa-migracion-ids.md).
 7. **Política de clones externos.** No se vendoran repositorios. Se enlazan por ruta
-   local absoluta (zona de clones de referencia documentada en `DEC-0002`) y por URL +
+   local absoluta (zona de clones de referencia documentada en `DEC-0-02`) y por URL +
    commit upstream. Carpeta convencional para clones: `../_repos/` (no se crea
    automáticamente; cada agente la gestiona).
-8. **Idioma.** Español. Excepciones literales: IDs (`DEC-0003`), nombres de funciones y
+8. **Idioma.** Español. Excepciones literales: IDs (`DEC-0-03`), nombres de funciones y
    APIs (`grade_update`, `core_xapi`), nombres propios (Moodle, eXeLearning), fragmentos
    de código y rutas. Los términos técnicos sin traducción aceptada (gradebook,
    line-item) se mantienen en inglés.

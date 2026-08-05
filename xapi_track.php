@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * mod_exelearning xAPI tracking endpoint (DEC-0064).
+ * mod_exelearning xAPI tracking endpoint (DEC-85-01).
  *
  * The xAPI counterpart of `track.php`. The `js/xapi_listener.js` listener in `view.php`
  * receives `exe-xapi-statement` postMessages from the package iframe, validates the
@@ -23,7 +23,7 @@
  * sesskey + capability authentication and the JSON response — and hands the statement
  * to the shared, unit-tested {@see \mod_exelearning\local\xapi\ingestor::ingest()},
  * which ignores the statement actor (grading is attributed to $USER), validates the
- * statement (DEC-0063) and routes it through the existing grade pipeline (DEC-0032).
+ * statement (DEC-0-18) and routes it through the existing grade pipeline (DEC-17-01).
  *
  * Endpoint: POST `{ id: <cmid>, sesskey: "<key>", statement: {...}, registration: "<token>" }`.
  * The session key is part of the JSON body, never a query-string parameter (SEC-04);
@@ -59,7 +59,7 @@ $exelearning = $DB->get_record('exelearning', ['id' => $cm->instance], '*', MUST
 require_login($course, false, $cm);
 $context = context_module::instance($cm->id);
 
-// Preview mode (DEC-0006): only when the caller has management capability. A regular
+// Preview mode (DEC-0-06): only when the caller has management capability. A regular
 // student who changes ?mode=preview falls back to grading silently, like track.php.
 $ispreview = ($mode === 'preview')
         && has_capability('moodle/course:manageactivities', $context);
@@ -67,7 +67,7 @@ if (!$ispreview) {
     require_capability('mod/exelearning:savetrack', $context);
 }
 
-// Master switch (DEC-0064): when xAPI-primary grading is off site-wide, accept and ignore.
+// Master switch (DEC-85-01): when xAPI-primary grading is off site-wide, accept and ignore.
 // The eXeLearning emitter is always-on in the export, so a statement can still reach here
 // (a stale page or a crafted POST); it must not grade — the package is graded via SCORM.
 if (!exelearning_xapi_primary_enabled()) {
@@ -93,7 +93,7 @@ if (!is_array($statement)) {
 $registration = (isset($payload['registration']) && is_string($payload['registration']))
         ? substr(clean_param($payload['registration'], PARAM_ALPHANUMEXT), 0, 40) : '';
 
-// All validation (DEC-0063), normalisation, objectid routing, idempotency, attempt
+// All validation (DEC-0-18), normalisation, objectid routing, idempotency, attempt
 // recording, grading and completion live in the shared, unit-tested ingestor.
 $result = \mod_exelearning\local\xapi\ingestor::ingest(
     $exelearning,

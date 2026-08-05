@@ -181,7 +181,7 @@ function makeControllableXhrFactory() {
     return factory;
 }
 
-describe('xapi_listener createListener() bounded resend (DEC-0064)', () => {
+describe('xapi_listener createListener() bounded resend (DEC-85-01)', () => {
     let factory;
     let timers;
     let listener;

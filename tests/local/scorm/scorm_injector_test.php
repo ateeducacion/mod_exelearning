@@ -19,7 +19,7 @@ namespace mod_exelearning\local\scorm;
 use advanced_testcase;
 
 /**
- * Unit tests for the SCORM loader injector extracted from lib.php (DEC-0054).
+ * Unit tests for the SCORM loader injector extracted from lib.php (DEC-71-01).
  *
  * @package    mod_exelearning
  * @category   test

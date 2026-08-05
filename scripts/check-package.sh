@@ -34,7 +34,7 @@ WORK_EDITOR_VERSION_BACKUP="$WORK/editor-version.backup"
 fail=0
 report() { echo "FAIL: $1"; fail=1; }
 
-# 0) A package without a valid bundled editor must never be produced (DEC-0065).
+# 0) A package without a valid bundled editor must never be produced (DEC-106-01).
 #    The guard runs on plain CI checkouts where dist/static/ is absent, which is
 #    itself the first failure case; a minimal editor is fabricated afterwards so
 #    the success path can be asserted too. A real dist/static/ (local dev) is
@@ -82,7 +82,7 @@ PKG="$WORK/exelearning"
 #    the ZIP is called.
 [ -d "$PKG" ] || report "the ZIP must place everything under exelearning/"
 
-# 2) version.php ships EXACTLY as committed (DEC-0068): the packager must not
+# 2) version.php ships EXACTLY as committed (DEC-111-01): the packager must not
 #    rewrite it, so the packaged copy is byte-identical to the working tree's.
 if [ -f "$PKG/version.php" ]; then
     diff -q version.php "$PKG/version.php" > /dev/null \
@@ -131,7 +131,7 @@ for required in README.md LICENSE thirdpartylibs.xml lib.php view.php lang/en/ex
     [ -e "$PKG/$required" ] || report "$required is missing from the release ZIP"
 done
 
-# 5b) The bundled editor ships and is declared (DEC-0065): dist/static/ with its
+# 5b) The bundled editor ships and is declared (DEC-106-01): dist/static/ with its
 #     index.html inside the ZIP, and a thirdpartylibs.xml entry carrying the
 #     .editor-version version and the AGPL licence.
 [ -f "$PKG/dist/static/index.html" ] \

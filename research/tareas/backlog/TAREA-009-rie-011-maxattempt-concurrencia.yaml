@@ -14,10 +14,10 @@ pasos:
   - "Añadir test de concurrencia o, si no es viable, test unitario del guard."
 relacionados:
   - RIE-011
-  - DEC-0007
-  - DEC-0018
+  - DEC-0-07
+  - DEC-6-01
 criterios_aceptacion:
   - "Dos page-loads concurrentes no crean más intentos que `maxattempt`."
   - "El comportamiento de revisión de intentos existentes no cambia."
-  - "La solución queda documentada en código con referencia a DEC-0018/RIE-011."
-notas: "Riesgo bajo-medio; prioridad media en TODO.md. RIE-010 y TAREA-011 ya están cerradas. CERRADA (Done): TOCTOU de maxattempt aceptado por paridad con core (ni mod_scorm ni mod_h5pactivity lo protegen; el índice UNIQUE ya está); lock \\core\\lock confinado a !sessionknown queda como mitigación futura opcional. Ver DEC-0018 (revisión 2026-06-01) y TODO.md (Cerrado)."
+  - "La solución queda documentada en código con referencia a DEC-6-01/RIE-011."
+notas: "Riesgo bajo-medio; prioridad media en TODO.md. RIE-010 y TAREA-011 ya están cerradas. CERRADA (Done): TOCTOU de maxattempt aceptado por paridad con core (ni mod_scorm ni mod_h5pactivity lo protegen; el índice UNIQUE ya está); lock \\core\\lock confinado a !sessionknown queda como mitigación futura opcional. Ver DEC-6-01 (revisión 2026-06-01) y TODO.md (Cerrado)."

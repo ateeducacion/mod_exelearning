@@ -11,16 +11,16 @@ resumen: >-
   síncrono, y se añade un job jsunit separado con flag/componente javascript en Codecov.
   19/19 tests verde, 99,2 % de líneas del módulo; php -l y phpcs en verde.
 acciones:
-  - "Extracción (DEC-0056): la lógica del HEREDOC de view.php pasa a js/scorm_tracker.js como funciones puras (parseSuspend, resolveObjectMap(doc), captureItemScores(newParsed, prevParsed, domMap), buildPayload) + fábrica createScormApi(config) con inyección de dependencias (xhrFactory, setTimeout/clearTimeout, getScoringDocument, bindUnload). Expuesto por module.exports (Vitest) y window.exeScormTracker (navegador) desde un único cuerpo."
+  - "Extracción (DEC-74-01): la lógica del HEREDOC de view.php pasa a js/scorm_tracker.js como funciones puras (parseSuspend, resolveObjectMap(doc), captureItemScores(newParsed, prevParsed, domMap), buildPayload) + fábrica createScormApi(config) con inyección de dependencias (xhrFactory, setTimeout/clearTimeout, getScoringDocument, bindUnload). Expuesto por module.exports (Vitest) y window.exeScormTracker (navegador) desde un único cuerpo."
   - "view.php: se sustituye el shim heredoc + str_replace(%CMID%/%TRACKURL%/%SESSION%) + addslashes por file_get_contents(js/scorm_tracker.js) + bootstrap inline que asigna window.API = createScormApi(cfg).api. Config pasada como JSON (json_encode con JSON_HEX_*). window.API queda síncrono antes del iframe (no AMD async → no race con pipwerks findAPI). php -l limpio, phpcs --standard=moodle exit 0."
-  - "tests/js/scorm_tracker.test.js (19 verde): coma decimal 60,5%, clamp 0–100, split .\\t multilínea, líneas mal formadas ignoradas; resolveObjectMap con happy-dom (mapa N→objectid, nodos sin id, doc nulo); captureItemScores ruteo por objectid y descarte de entradas rancias cross-página (DEC-0017); máquina de estados: autocommit en claves de score/status, dirty RETENIDO tras POST fallido (no perder notas), LMSFinish síncrono, flush en beforeunload + destroy(), payload {id,session,cmi,itemscores}."
+  - "tests/js/scorm_tracker.test.js (19 verde): coma decimal 60,5%, clamp 0–100, split .\\t multilínea, líneas mal formadas ignoradas; resolveObjectMap con happy-dom (mapa N→objectid, nodos sin id, doc nulo); captureItemScores ruteo por objectid y descarte de entradas rancias cross-página (DEC-5-01); máquina de estados: autocommit en claves de score/status, dirty RETENIDO tras POST fallido (no perder notas), LMSFinish síncrono, flush en beforeunload + destroy(), payload {id,session,cmi,itemscores}."
   - "Tooling: package.json (devDeps vitest/happy-dom/@vitest/coverage-v8), vitest.config.mjs (environment happy-dom, include tests/js/**, coverage v8 include js/**, reporters text+lcovonly+cobertura). Cobertura local 99,2 % líneas de js/scorm_tracker.js."
   - "CI: job jsunit separado en .github/workflows/ci.yml (Node 22, npm ci, vitest run --coverage + reporter junit), fuera de la matriz PHP de 22 jobs (es Node puro). Sube lcov.info y junit-js.xml a Codecov con flag javascript."
-  - "Codecov: flag javascript (paths js/, carryforward) + component_management con componente javascript (project auto + patch 80 %) para no diluir el trinquete PHP de DEC-0048. Comentario aclarado: el flag JS no necesita el fixes: del upload PHP (checkout en raíz)."
-  - "DX/docs: Makefile target test-js; .gitignore añade coverage/ y junit-js.xml; ADR DEC-0056."
+  - "Codecov: flag javascript (paths js/, carryforward) + component_management con componente javascript (project auto + patch 80 %) para no diluir el trinquete PHP de DEC-66-01. Comentario aclarado: el flag JS no necesita el fixes: del upload PHP (checkout en raíz)."
+  - "DX/docs: Makefile target test-js; .gitignore añade coverage/ y junit-js.xml; ADR DEC-74-01."
   - "Alcance documentado en el ADR (tabla): se evaluó testear pipwerks (assets/scorm/*) y amd/src/*; se descartan todos. pipwerks es third-party que corre dentro del iframe del paquete (no en el plugin) y su contrato ya lo cubre Behat; amd/src es UI/glue sin impacto en notas. editor_modal.js es el único con lógica pura extraíble pero ROI bajo: lo barato de testear es bajo riesgo (cache-busting) y lo de riesgo (handshake postMessage/upload) es e2e; además tocarlo obliga a regenerar amd/build. Criterio: impacto en notas × probabilidad de regresión vs coste de mock/build."
 evidencia:
-  - "research/decisiones/adr/DEC-0056-tests-js-tracker-scorm-vitest.md"
+  - "research/decisiones/adr/DEC-74-01-tests-js-tracker-scorm-vitest.md"
   - "js/scorm_tracker.js"
   - "view.php (inyección inline del tracker)"
   - "tests/js/scorm_tracker.test.js"
@@ -32,10 +32,10 @@ pendientes:
   - "Confirmar en CI: job jsunit verde y Codecov pintando el componente javascript; si el número default se diluye, flaggear también el upload PHP."
   - "Opcional: fixtures compartidos PHP↔JS para asegurar paridad parseSuspend ↔ parse_suspend_data (evitar drift entre espejos)."
 relacionados:
-  - DEC-0056
-  - DEC-0048
-  - DEC-0017
-  - DEC-0018
-  - DEC-0032
+  - DEC-74-01
+  - DEC-66-01
+  - DEC-5-01
+  - DEC-6-01
+  - DEC-17-01
   - REPO-001
   - REPO-004

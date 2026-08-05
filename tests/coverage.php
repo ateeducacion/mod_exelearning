@@ -56,7 +56,7 @@ return new class extends phpunit_coverage_info {
 
     /**
      * @var array Files excluded from coverage. Nothing is excluded by file
-     * (DEC-0048: testable code must stay in scope).
+     * (DEC-66-01: testable code must stay in scope).
      */
     protected $excludelistfiles = [];
 };

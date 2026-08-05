@@ -27,7 +27,7 @@ global $CFG;
 require_once($CFG->dirroot . '/mod/exelearning/lib.php');
 
 /**
- * Unit tests for the shared content-based package probe (issue #13 #3, DEC-0050).
+ * Unit tests for the shared content-based package probe (issue #13 #3, DEC-13-12).
  *
  * The probe is the single source of truth for what is migratable: a package with a
  * root content.xml (a native .elpx, a content.xml zip or an IMS export) or one

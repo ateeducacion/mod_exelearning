@@ -51,7 +51,7 @@ class save_track extends external_api {
             'exelearningid' => new external_value(PARAM_INT, 'exelearning instance id'),
             'track' => new external_single_structure([
                 'session'  => new external_value(PARAM_ALPHANUMEXT, 'Page-load session token', VALUE_DEFAULT, ''),
-                // Nullable on purpose (B6, DEC-0044): omitting scoreraw means a
+                // Nullable on purpose (B6, DEC-34-01): omitting scoreraw means a
                 // status-only / empty commit, which must NOT be recorded as a real
                 // 0-score attempt. A default of 0 silently turned every score-less
                 // commit into a genuine 0 that dragged GRADE_LAST/AVERAGE down and
@@ -121,7 +121,7 @@ class save_track extends external_api {
         // Only a real score submission carries cmi.core.score.raw. When scoreraw is
         // omitted (null) the commit is status-only and must hit track::ingest()'s
         // no-op guard instead of being persisted as a spurious 0-score attempt
-        // (B6, DEC-0044).
+        // (B6, DEC-34-01).
         $cmi = ['cmi.core.lesson_status' => $t['status']];
         if ($t['scoreraw'] !== null) {
             $cmi['cmi.core.score.raw'] = $t['scoreraw'];

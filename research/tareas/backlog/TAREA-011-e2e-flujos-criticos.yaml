@@ -15,10 +15,10 @@ pasos:
   - "Comprobar maxattempt desde varias sesiones/cargas."
   - "Comprobar reviewmode para el alumno."
 relacionados:
-  - DEC-0007
-  - DEC-0008
-  - DEC-0010
-  - DEC-0011
+  - DEC-0-07
+  - DEC-0-08
+  - DEC-0-10
+  - DEC-0-11
 criterios_aceptacion:
   - "Checklist e2e documentado con capturas o logs de navegador."
   - "Cualquier discrepancia queda como bug reproducible o ADR de seguimiento."

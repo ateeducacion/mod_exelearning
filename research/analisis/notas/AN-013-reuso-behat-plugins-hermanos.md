@@ -7,10 +7,10 @@ fuentes:
   - REPO-002
   - REPO-004
 relacionados:
-  - DEC-0056
-  - DEC-0008
-  - DEC-0007
-  - DEC-0017
+  - DEC-74-01
+  - DEC-0-08
+  - DEC-0-07
+  - DEC-5-01
   - AN-008
   - AN-009
 herramienta_ia:
@@ -63,7 +63,7 @@ Infra ya disponible en `mod_exelearning` (no requiere cambios):
   borrado, separate-groups y selector de descarga).
 - El camino de notas cruza al gradebook: `track::apply_item_scores()`
   (`classes/local/track.php:470`) → `apply_one()` → `grade_update()`
-  (`classes/local/track.php:661`) en modelo per-item (DEC-0008). Existe
+  (`classes/local/track.php:661`) en modelo per-item (DEC-0-08). Existe
   `backup/moodle2/` (la duplicación de actividad es válida).
 
 ## [INTERPRETACION]
@@ -76,7 +76,7 @@ SCORM/xAPI):
 |---|---|---|---|
 | h5pactivity | `duplicate_delete_h5pactivity` | **Adaptar (implementado)** | Duplicar/borrar es UI genérica de Moodle; prueba backup/restore + ciclo de vida de grade items. Sin `@javascript`. |
 | h5pactivity | `h5pactivity_grade_settings` (aserción user-grades) | **Adaptar (implementado)** | Verifica que la nota llega al grader report; se mapea al pipeline propio (per-item, `grade_update`). |
-| h5pactivity | `h5pactivity_grade_settings` (form) | **Adaptar (implementado, reducido)** | El generador no persiste ajustes; round-trip en el form con `id_maxattempt` (campo propio DEC-0007) por id, independiente del texto de etiqueta. |
+| h5pactivity | `h5pactivity_grade_settings` (form) | **Adaptar (implementado, reducido)** | El generador no persiste ajustes; round-trip en el form con `id_maxattempt` (campo propio DEC-0-07) por id, independiente del texto de etiqueta. |
 | scorm/exescorm | `*_no_calendar_capabilities` | **Aplazar** | Solo cobra sentido con un campo que genere eventos de calendario; el análogo aquí sería `completionexpected`, valor bajo. |
 | core | `*_availability` (restrict access) | **Aplazar** | La disponibilidad por restricción de acceso es core, no del módulo; requiere `@javascript` (Add restriction). |
 | exescorm | `add_exescorm` (alta por UI + upload) | **Descartar** | Exige `@javascript` + filemanager + `I switch to "..._object" iframe`; el plugin evita `@javascript` porque el iframe del paquete + el shim SCORM dejan XHR pendientes que cuelgan el driver JS (documentado en `mod_exelearning.feature` y en AN-008). El alta se cubre por generador. |
@@ -107,5 +107,5 @@ los escenarios nuevos usan exclusivamente fixtures propias.
   escenarios en `moodle-plugin-ci behat --profile chrome` y corregir desajustes
   de texto/pasos allí. Puntos de mayor riesgo: que el duplicado conserve el
   paquete y que el grader report renderice "80.00".
-- Si en el futuro se implementa xAPI (DEC-0032), revisar `sending_attempt.feature`
+- Si en el futuro se implementa xAPI (DEC-17-01), revisar `sending_attempt.feature`
   / `save_content_state.feature` de h5pactivity como candidatos a adaptar.
