@@ -81,11 +81,19 @@ def index_md(dir_: Path, root: Path, sort_key=None) -> list[dict]:
     out = []
     for p in list_md(dir_):
         fm = parse_frontmatter(p.read_text(encoding="utf-8"))
+
+        def field(english: str, spanish: str, default=None):
+            """Los ADRs migraron su frontmatter a claves inglesas; las notas y las
+            fuentes siguen en castellano. Se leen ambas para que un mismo generador
+            sirva a los dos esquemas: sin esto los 71 ADRs se indexaban sin título,
+            estado ni fecha."""
+            return fm.get(english, fm.get(spanish, default))
+
         out.append({
             "id": fm.get("id", p.stem),
-            "titulo": fm.get("titulo", p.stem),
-            "estado": fm.get("estado"),
-            "fecha": fm.get("fecha"),
+            "titulo": field("title", "titulo", p.stem),
+            "estado": field("status", "estado"),
+            "fecha": field("date", "fecha"),
             "ruta": str(p.relative_to(root)),
         })
     if sort_key is not None:
