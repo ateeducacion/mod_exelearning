@@ -323,3 +323,13 @@ jobs:
 
       - name: Validate release packaging
         run: bash scripts/check-package.sh
+
+      # Decision records: the identifier is the GitHub tracking number of the
+      # change (its issue, or its PR when there is none). This validates the
+      # filename grammar, the frontmatter, the supersession graph and that no
+      # retired identifier survives anywhere in the tree. The checker's own unit
+      # tests run first, so a broken checker cannot pass everything silently.
+      - name: Validate decision records
+        run: |
+          python3 research/tools/test_check_decisions.py
+          python3 research/tools/check_decisions.py check

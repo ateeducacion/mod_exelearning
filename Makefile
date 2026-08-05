@@ -207,6 +207,22 @@ clean-editor:
 	rm -rf $(EDITOR_DIST_PATH)
 
 # -------------------------------------------------------
+# Architecture decision records
+# -------------------------------------------------------
+
+# Print the decision index, derived from the records' own frontmatter. The index
+# is generated on demand, never hand-maintained.
+architecture-records:
+	python3 research/tools/check_decisions.py list
+
+# Validate decision identifiers, metadata and cross-references, and reject any
+# reference to a retired identifier. Also runs the checker's own unit tests, so
+# a broken checker cannot silently pass everything.
+architecture-check:
+	python3 research/tools/check_decisions.py check
+	python3 research/tools/test_check_decisions.py
+
+# -------------------------------------------------------
 # Packaging
 # -------------------------------------------------------
 
@@ -265,6 +281,8 @@ help:
 	@echo "  build-editor-no-update - Alias of build-editor"
 	@echo "  clean-editor           - Remove editor build artifacts"
 	@echo "  fetch-editor-source    - Download editor source from configured repo/ref"
+	@echo "  architecture-records   - Print the generated decision index"
+	@echo "  architecture-check     - Validate decision identifiers, metadata and references"
 	@echo "  package                - Create distributable ZIP (RELEASE=X.Y.Z required)"
 	@echo "  help                   - Display this help with available commands"
 
