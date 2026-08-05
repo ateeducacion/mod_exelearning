@@ -14,6 +14,8 @@ herramienta_ia:
   modelo: claude-opus-4-7
 ---
 
+# DEC-0001: Metodología de evidencia y ADRs para mod_exelearning
+
 ## Contexto
 
 `mod_exelearning` es un plugin Moodle nuevo cuyo diseño cruza tres dominios: la API

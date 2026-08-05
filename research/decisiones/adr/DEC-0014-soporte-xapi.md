@@ -19,6 +19,8 @@ relacionados:
   - DEC-0007
 ---
 
+# DEC-0014: Soporte xAPI: qué haría falta en eXeLearning y en mod_exelearning, y si compensa
+
 ## Contexto
 
 El tracking vigente de `mod_exelearning` es un **bridge SCORM 1.2** (DEC-0003):

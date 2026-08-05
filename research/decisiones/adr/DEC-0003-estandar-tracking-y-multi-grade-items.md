@@ -25,6 +25,8 @@ herramienta_ia:
   modelo: claude-opus-4-7
 ---
 
+# DEC-0003: Estándar de tracking y registro de múltiples grade items
+
 ## Contexto
 
 `mod_exelearning` debe satisfacer dos requisitos funcionales duros: **preservar la

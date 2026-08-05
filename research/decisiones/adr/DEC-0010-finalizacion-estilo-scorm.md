@@ -18,6 +18,8 @@ relacionados:
   - DEC-0008
 ---
 
+# DEC-0010: Condiciones de finalización estilo SCORM (aprobar para completar)
+
 ## Contexto
 
 El usuario pide que la **finalización de la actividad** `mod_exelearning` se

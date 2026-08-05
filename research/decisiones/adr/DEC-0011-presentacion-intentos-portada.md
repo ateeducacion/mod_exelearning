@@ -18,6 +18,8 @@ herramienta_ia:
   modelo: claude-opus-4-8
 ---
 
+# DEC-0011: Presentación de intentos en la portada de la actividad: resumen SCORM, resumen-profesor estilo Tarea, o valor estilo H5P
+
 ## Contexto
 
 Tras implementar intentos (DEC-0007), `mod_exelearning` ya tiene:

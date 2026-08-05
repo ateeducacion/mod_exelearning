@@ -14,6 +14,8 @@ herramienta_ia:
   modelo: claude-opus-4-7
 ---
 
+# DEC-0006: Modos de visualización: preview (test) y grading (calificar)
+
 ## Contexto
 
 Las actividades calificables de Moodle distinguen entre modo "vista normal"

@@ -16,6 +16,8 @@ herramienta_ia:
   modelo: claude-opus-4-7
 ---
 
+# DEC-0008: Agregación de grade items: por iDevice (default) o nota global (modo 'ambas' eliminado, rev. 2026-05-29)
+
 ## Contexto
 
 Tras EXP-002 y el bridge SCORM funcionando, el libro de calificaciones del

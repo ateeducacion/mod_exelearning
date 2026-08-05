@@ -16,6 +16,8 @@ herramienta_ia:
   modelo: claude-opus-4-7
 ---
 
+# DEC-0004: Build, empaquetado y CI: Makefile heredado + moodle-plugin-ci con matriz Moodle/PHP/DB
+
 ## Contexto
 
 El usuario establece como **requisito duro**: `mod_exelearning` debe disponer
@@ -204,7 +206,7 @@ Decisión: **divergir** de los hermanos y empaquetar usando **sólo `git`** (sin
   (match por componente top o ruta completa, misma semántica que el `package.py`
   de los hermanos);
 - estampa `version.php` **en ese índice** (la copia de trabajo no se toca; sigue
-  con el sentinela de DEC-0030);
+  con el sentinela de DEC-13-08);
 - emite el ZIP con `git archive --format=zip --prefix=exelearning/`;
 - escribe los objetos en un store temporal, dejando el `.git` real intacto.
 

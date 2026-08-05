@@ -17,6 +17,8 @@ herramienta_ia:
   modelo: claude-opus-4-8
 ---
 
+# DEC-0012: Re-escaneo de iDevices y re-sincronización del libro tras guardar en el editor embebido
+
 ## Contexto
 
 El editor embebido de eXeLearning (DEC-0009) permite al profesor editar el

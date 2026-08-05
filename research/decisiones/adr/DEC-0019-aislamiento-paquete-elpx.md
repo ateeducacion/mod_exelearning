@@ -14,12 +14,14 @@ relacionados:
   - RIE-001
   - AN-008
   - DEC-0003
-  - DEC-0016
-  - DEC-0017
+  - DEC-4-01
+  - DEC-5-01
 herramienta_ia:
   interfaz: claude-code
   modelo: claude-opus-4-8
 ---
+
+# DEC-0019: Aislamiento del paquete .elpx (RIE-001): análisis, paridad con core y roadmap
 
 ## Contexto
 
@@ -58,7 +60,7 @@ sesión/CSRF si una organización admite paquetes de autores no confiables.
 | `core_h5p` (`mod_h5pactivity`) | Tampoco usa `sandbox`; inyecta el contenido en un iframe `about:blank` vía `contentDocument.write` y comunica por `postMessage` **con validación de origen y contexto**. Pero su contenido son **librerías curadas e instaladas por el admin**, no HTML arbitrario de autor → **otro modelo de amenaza**, no transferible al `.elpx`. | `public/h5p/templates/h5piframe.mustache`; `public/h5p/js/embed.js:38-46` |
 | `mod_exelearning` (hoy) | **Sandbox parcial**: bloquea `allow-top-navigation` y `allow-modals`; omite `allow-pointer-lock`/`presentation`/`orientation-lock`. **El más fuerte de los tres.** | `view.php:511-531` |
 
-**Veredicto de paridad:** igual que con RIE-011 (`maxattempt`, DEC-0018), **core no
+**Veredicto de paridad:** igual que con RIE-011 (`maxattempt`, DEC-6-01), **core no
 resuelve esto**. `mod_scorm` corre HTML no confiable sin ningún sandbox; `core_h5p`
 solo se permite no aislar porque su contenido está curado. mod_exelearning, que sí
 corre HTML arbitrario, ya es el **mejor aislado de los tres** — pero ninguno logra
@@ -74,7 +76,7 @@ aislamiento real por origen, porque core fuerza el servido en un único `wwwroot
    proxy / vhost dedicado), no es un flag ni un cambio en el plugin.
 2. **El bridge SCORM es 100% same-origin** (confirmado; tres dependencias duras):
    - el **padre** lee `iframe.contentDocument` para mapear el `objectid` de cada
-     iDevice (DEC-0017): `resolveObjectMap()` en `view.php:402-415`, alimentando
+     iDevice (DEC-5-01): `resolveObjectMap()` en `view.php:402-415`, alimentando
      `itemscores` en el POST a `track.php` (`view.php:437`);
    - el **hijo** (pipwerks) recorre `window.parent` buscando `window.API`:
      `assets/scorm/SCORM_API_wrapper.js:71-77,130-141` → shim inyectado en el padre

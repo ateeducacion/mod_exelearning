@@ -17,6 +17,8 @@ herramienta_ia:
   modelo: claude-opus-4-8
 ---
 
+# DEC-0036: Mantener contenttype_exelearning como plugin separado de mod_exelearning (no fusionar)
+
 ## Contexto
 
 ATE desarrolla en paralelo dos plugins Moodle del ecosistema eXeLearning:

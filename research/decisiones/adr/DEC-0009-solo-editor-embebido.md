@@ -16,6 +16,8 @@ herramienta_ia:
 supersede: DEC-0005
 ---
 
+# DEC-0009: Sólo modo editor embebido. Sin integración eXeLearning Online
+
 ## Contexto
 
 `DEC-0005` (Aceptada) heredaba la maquinaria del editor de `mod_exeweb` con

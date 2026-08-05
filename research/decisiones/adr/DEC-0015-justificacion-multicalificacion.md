@@ -28,6 +28,8 @@ herramienta_ia:
   modelo: claude-opus-4-8
 ---
 
+# DEC-0015: ¿Merece la pena la multicalificación (N grade items por iDevice)? Justificación, DAFO y comparativa
+
 ## Contexto y motivación
 
 `mod_exelearning` nace para cubrir un hueco entre dos plugins existentes de ATE:

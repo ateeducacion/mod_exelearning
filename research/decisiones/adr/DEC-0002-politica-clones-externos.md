@@ -18,6 +18,8 @@ herramienta_ia:
   modelo: claude-opus-4-7
 ---
 
+# DEC-0002: Política de clones externos y compatibilidad de licencias
+
 ## Contexto
 
 El proyecto referencia constantemente código de cinco repositorios externos

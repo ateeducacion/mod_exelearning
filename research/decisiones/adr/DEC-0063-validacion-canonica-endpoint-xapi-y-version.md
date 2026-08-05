@@ -20,12 +20,14 @@ herramienta_ia:
   modelo: claude-opus-4-8
 ---
 
+# DEC-0063: Reglas de validación canónica del endpoint xAPI y política de versión (1.0.3 con tolerancia a 2.0)
+
 ## Contexto
 
-`DEC-0032` (Propuesta) fijó la **arquitectura** de ingesta dual SCORM 1.2 + xAPI: un normalizador fino
+`DEC-17-01` (Propuesta) fijó la **arquitectura** de ingesta dual SCORM 1.2 + xAPI: un normalizador fino
 convierte cada statement a la estructura `itemscores` y reutiliza la tubería única
 (`track::apply_item_scores()` → `grade_update()`), con el endpoint custom `submit_xapi_statement` ignorando
-`actor` → `$USER`. Lo que `DEC-0032` y `docs/xapi-integration-plan.md` **no** fijaron son las **reglas
+`actor` → `$USER`. Lo que `DEC-17-01` y `docs/xapi-integration-plan.md` **no** fijaron son las **reglas
 concretas de validación** que ese endpoint debe imponer al statement que ingiere, ni **qué versión** de xAPI
 consumir/validar. Hoy la spec se cita de forma indirecta (FTE-009 comparativa; FTE-011 emisor), no contra la
 normativa.
@@ -34,7 +36,7 @@ La investigación AN-014 (cruce con el ecosistema ADL/xAPI: REPO-008 `mod_cmi5la
 `Moodle-PHP-Libs`, FTE-015 xAPI 1.0.3 canónica, FTE-016 `@xapi/xapi`) y FTE-017 (xAPI 2.0 / IEEE
 9274.1.1-2023) aportan ahora la base normativa para cerrar ese hueco. Este ADR **acepta como diseño
 vinculante** (para PR2 / TAREA-015) las reglas de validación canónica (AN-014 M1/M2/M3/M4/M5/M6) y la política
-de versión. **Complementa** `DEC-0032` y `DEC-0014`; no los supersede. Es documental: la implementación va en
+de versión. **Complementa** `DEC-17-01` y `DEC-0014`; no los supersede. Es documental: la implementación va en
 TAREA-015, condicionada a que el contrato upstream `exelearning#1867` (FTE-011) se congele.
 
 ## Problema
@@ -101,7 +103,7 @@ impondrá, **antes** de normalizar a `itemscores`:
 3. **Lista blanca de verbos:** `answered`/`completed`/`passed`/`failed`/`initialized`/`terminated`; cualquier
    otro → ignorar (no error).
 4. **Object/identidad de actividad:** `object.id` debe ser IRI absoluta resoluble a un `ideviceId →
-   exelearning_grade_item.objectid → itemnumber` **de esta instancia** (DEC-0017); desconocido → **rechazo**.
+   exelearning_grade_item.objectid → itemnumber` **de esta instancia** (DEC-5-01); desconocido → **rechazo**.
 5. **Validación sintáctica** (FTE-015 §4.4): rechazar `null` fuera de `extensions` y tipos/IRI mal formados.
 6. **Confianza cero en el cliente** (FTE-015 §4.1.9/4.1.10, ancla normativa de AN-012): **ignorar** `actor`,
    `authority`, `stored` y `timestamp` del cliente → atribuir a `$USER` (capability `mod/exelearning:savetrack`),
@@ -116,7 +118,7 @@ impondrá, **antes** de normalizar a `itemscores`:
    `2.0`/`2.0.0`; **nunca** rechazar por header de versión ni por `statement.version`. No migrar a «solo 2.0» ni
    implementar un LRS. El header HTTP `X-Experience-API-Version` solo aplica a la rama `POST {endpoint}statements`;
    en la vía `postMessage` (transporte principal) validar `statement.version` solo si está presente.
-9. **Descartes de alcance explícitos** (eco de DEC-0032 §6, ahora con respaldo normativo): **fuera de alcance**
+9. **Descartes de alcance explícitos** (eco de DEC-17-01 §6, ahora con respaldo normativo): **fuera de alcance**
    State API/Document Resources, Agent/Activity Profile, Signed Statements (JWS), cmi5 y LRS externo. Su valor
    está en un LRS completo / catálogos lanzables, no en un recurso embebido same-origin (FTE-015, FTE-017, FTE-016
    `@xapi/cmi5` aparte).
@@ -127,7 +129,7 @@ impondrá, **antes** de normalizar a `itemscores`:
   **forward-compatible con xAPI 2.0 a coste cero** (campos consumidos idénticos); idempotencia alineada con la
   semántica canónica del LRS; «highest score wins» elimina ambigüedad ante `answered` repetidos.
 - **Negativas / coste:** consume un contrato upstream **draft** (RIE-013, churn posible); las reglas añaden
-  código de validación en PR2; el «modelo neutro» sigue implícito en `itemscores` (DEC-0007/DEC-0032).
+  código de validación en PR2; el «modelo neutro» sigue implícito en `itemscores` (DEC-0007/DEC-17-01).
 - **Cambios que dispara:** alimenta `docs/xapi-integration-plan.md` (§4 validación, §5 escala, §6 idempotencia,
   §7 fuera de alcance) y `docs/tracking-architecture.md` (trust boundary) cuando se implemente; `thirdpartylibs.xml`
   **no** cambia (REPO-009 descartado; solo `pipwerks`). Refuerza la postura «cmi5 fuera de alcance» de DEC-0014.
@@ -167,7 +169,7 @@ Resueltas las preguntas abiertas que el ADR/AN-014 dejaban al maintainer. El nú
    malformado o de origen no-eXe → rechazo ruidoso + log. (Se mantiene también el rechazo de `scaled∉[-1,1]`
    de la spec; el dominio efectivo aceptado es `[0,1]`.)
 2. **Overall (`itemnumber=0`) = RECÁLCULO server-side desde los `answered`**, con paridad total con el camino
-   SCORM (`recompute_overall_pct`, DEC-0018). El statement de paquete (`passed`/`failed`) se usa solo como
+   SCORM (`recompute_overall_pct`, DEC-6-01). El statement de paquete (`passed`/`failed`) se usa solo como
    señal de `status`/`success`, **no** como fuente del agregado; el servidor nunca confía el overall del cliente.
 3. **`registration` ↔ `sessiontoken`: CONVIVEN.** SCORM mantiene `sessiontoken` (`random_string(20)`); xAPI usa
    `registration` (UUID generado/controlado server-side) como su llave de intento sobre la **misma** tabla

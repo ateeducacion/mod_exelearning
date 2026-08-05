@@ -21,6 +21,8 @@ relacionados:
 revisa: DEC-0009
 ---
 
+# DEC-0013: ¿Integrar el editor eXeLearning Online o quedarnos solo con el embebido?
+
 ## Contexto
 
 `DEC-0009` (Aceptada) decidió **solo editor embebido**, descartando la

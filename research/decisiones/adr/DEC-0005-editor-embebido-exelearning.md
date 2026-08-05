@@ -17,6 +17,8 @@ herramienta_ia:
   modelo: claude-opus-4-7
 ---
 
+# DEC-0005: Editor eXeLearning embebido: heredar la maquinaria de mod_exeweb
+
 > **Superseded por [DEC-0009](DEC-0009-solo-editor-embebido.md) (2026-05-29).**
 > Esta versión contemplaba además el modo eXeLearning Online (hmac, editormode,
 > exeonlinebaseuri). DEC-0009 la reemplaza: **sólo editor embebido**, sin

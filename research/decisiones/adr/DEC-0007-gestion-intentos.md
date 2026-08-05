@@ -18,6 +18,8 @@ herramienta_ia:
   modelo: claude-opus-4-7
 ---
 
+# DEC-0007: Gestión de intentos: tabla propia + modelo h5pactivity (no SCORM)
+
 ## Contexto
 
 Las actividades calificables de Moodle permiten al alumno **realizar varios
