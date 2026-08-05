@@ -9,5 +9,7 @@
     "research/decisiones/mapa-migracion-ids.md",
     "research/decisiones/README.md",
     "research/tareas/diario/2026-06-17-adr-validacion-xapi-y-2.0.yaml"
-  ]
+  ],
+  "issues_url": "https://github.com/exelearning/moodle-mod_exelearning/issues",
+  "repository_label": "`exelearning/moodle-mod_exelearning`"
 }
