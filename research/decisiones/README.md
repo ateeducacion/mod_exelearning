@@ -65,7 +65,7 @@ identificador actual.
 Dieciocho registros del arranque del repositorio (`DEC-0-01`…`DEC-0-15`, `DEC-0-16`,
 `DEC-0-17`, `DEC-0-18`) conservan la numeración retirada porque se subieron directamente
 a `main` sin issue ni pull request y no tienen número de seguimiento verificable. Están
-enumerados de forma explícita en `../tools/check_decisions.py`; cualquier archivo
+enumerados de forma explícita en `../tools/architecture-records.mts`; cualquier archivo
 `DEC-NNNN-*.md` **nuevo** hace fallar la validación.
 
 ## Campos del frontmatter
