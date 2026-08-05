@@ -7,7 +7,7 @@ url_upstream: "https://github.com/ateeducacion/moodle-contenttype_exelearning"
 commit_consultado: "[PENDIENTE: registrar sha; consultado vía web 2026-06-08]"
 fecha_consulta: 2026-06-08
 licencia: "GPL-3.0-or-later"
-rol_para_mod_exelearning: "Plugin hermano de ATE (mismo ecosistema eXeLearning) que cubre el caso de uso visor/almacén en el banco de contenidos; referencia para la decisión de empaquetado (DEC-0036) y para una posible librería .elpx común."
+rol_para_mod_exelearning: "Plugin hermano de ATE (mismo ecosistema eXeLearning) que cubre el caso de uso visor/almacén en el banco de contenidos; referencia para la decisión de empaquetado (DEC-0-17) y para una posible librería .elpx común."
 herramienta_ia:
   interfaz: claude-code
   modelo: claude-opus-4-8
@@ -56,7 +56,7 @@ herramienta_ia:
   allow-popups-to-escape-sandbox`). El propio `packager.php` documenta que "el sandbox
   replica el de mod_exelearning".
 - No hay `use mod_exelearning\*` ni jerarquía de clases compartida: cada plugin implementa su
-  manejo de paquete por separado. Candidato a librería común futura (ver DEC-0036 / RIE-013).
+  manejo de paquete por separado. Candidato a librería común futura (ver DEC-0-17 / RIE-013).
 
 ## Riesgos / Limitaciones
 
@@ -66,4 +66,4 @@ herramienta_ia:
 ## Preguntas abiertas
 
 - ¿Conviene extraer una librería común de manejo `.elpx` (parser/extracción/sandbox) que
-  ambos plugins consuman? (seguimiento de DEC-0036).
+  ambos plugins consuman? (seguimiento de DEC-0-17).

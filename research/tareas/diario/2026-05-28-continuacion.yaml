@@ -1,18 +1,18 @@
 fecha: 2026-05-28
 sesion: continuacion
 agente: claude-code
-resumen: "Continuación de bootstrap: Context7 sobre Moodle/xAPI, EXP-001 con paquetes reales, descubrimiento de SCO-per-página, fixtures, DEC-0004 sobre build/CI."
+resumen: "Continuación de bootstrap: Context7 sobre Moodle/xAPI, EXP-001 con paquetes reales, descubrimiento de SCO-per-página, fixtures, DEC-0-04 sobre build/CI."
 
 acciones:
   - "TAREA-002 parcial: 3 consultas Context7 ejecutadas (/websites/moodledev_io_5_2 × 2 y /adlnet/xapi-spec). FTE-003, FTE-006 y FTE-007 actualizadas con citas verificables, ejemplos canónicos y endpoints REST (core_xapi_statement_post)."
   - "EXP-001 completado: descomprimidos paquetes ELPX, Web export y SCORM 1.2 export del sample 'really-simple' upstream + Manual de eXeLearning. Métricas registradas."
-  - "Hallazgo crítico (AN-005): el export SCORM 1.2 de eXeLearning v4 emite 1 <resource adlcp:scormtype='sco'/> por página del árbol → multi-grade-items por página viable SIN cambios upstream. Redibuja DEC-0003 con un Plan B."
+  - "Hallazgo crítico (AN-005): el export SCORM 1.2 de eXeLearning v4 emite 1 <resource adlcp:scormtype='sco'/> por página del árbol → multi-grade-items por página viable SIN cambios upstream. Redibuja DEC-0-03 con un Plan B."
   - "Fixtures: research/fixtures/{elpx,scorm-export,web-export} pobladas con archivos copiados del upstream v4 (arrows.elpx, really-simple-test-project.elpx, really-simple_scorm12, really-simple_web). README de fixtures con política de actualización."
   - "Corrección de scope tras input del usuario: mod_exelearning trabaja ÚNICAMENTE con .elpx v4. Eliminados .elp legacy de fixtures. REPO-005 y FTE-008 actualizados. AN-004 reescrita."
   - "Nueva nota AN-006: análisis de la infraestructura de build/CI de mod_exescorm y mod_exeweb. Identifica el hueco: no hay ci.yml con matriz Moodle/PHP."
-  - "DEC-0004 (Propuesta): build & CI con Makefile heredado + 3 workflows existentes + nuevo ci.yml con moodle-plugin-ci matriz (Moodle 4.1 LTS / 4.3 / 4.5 LTS / main × PHP 8.1-8.4 × pgsql/mariadb)."
+  - "DEC-0-04 (Propuesta): build & CI con Makefile heredado + 3 workflows existentes + nuevo ci.yml con moodle-plugin-ci matriz (Moodle 4.1 LTS / 4.3 / 4.5 LTS / main × PHP 8.1-8.4 × pgsql/mariadb)."
   - "TAREA-006 abierta: redactar ci.yml concreto."
-  - "status.yaml actualizado append-only: DEC-0004, TAREA-006, TAREA-002b y TAREA-003b (subdivisiones cerradas), nota sobre Plan B en DEC-0003."
+  - "status.yaml actualizado append-only: DEC-0-04, TAREA-006, TAREA-002b y TAREA-003b (subdivisiones cerradas), nota sobre Plan B en DEC-0-03."
   - "Nueva fixture añadida por el usuario: `contenido-prueba-estilos-cata.elpx` (2.1 MB, 56 páginas, 7 tipos iDevice incluyendo `scrambled-list`). Revela novedades v4: `libs/elpx-manifest.js` con `window.__ELPX_MANIFEST__`, `libs/exe_elpx_download/` + `libs/fflate/` para re-zip desde la web publicada (download-original). FTE-008 ampliada con `pp_addMathJax`, `pp_globalFont`, `pp_exelearning_version`, flags por iDevice (`teacherOnly`, `visibility`)."
 
 fuentes_consultadas:
@@ -33,5 +33,5 @@ proximos_pasos:
   - "TAREA-002 (parte restante): Context7 sobre SCORM 1.2/2004/cmi5/LTI AGS (estas suelen no tener cobertura en context7; documentar fuentes ADL/IMS oficiales)."
   - "EXP-001 ampliado: inspeccionar export SCORM 2004 (`scorm2004-exporter`) y verificar si también es SCO-per-página o agregado; inspeccionar Manual de eXeLearning para captar iDevices calificables."
   - "TAREA-004 (EXP-002): POC multi-grade-items en Moodle 4.5 local."
-  - "TAREA-005: cerrar DEC-0003 con matriz cuantificada (Plan B vs xAPI vs cmi5)."
+  - "TAREA-005: cerrar DEC-0-03 con matriz cuantificada (Plan B vs xAPI vs cmi5)."
   - "TAREA-006: empezar a redactar ci.yml en cuanto se decida la versión mínima de Moodle."

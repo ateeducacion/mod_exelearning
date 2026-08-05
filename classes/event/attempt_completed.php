@@ -30,9 +30,9 @@ namespace mod_exelearning\event;
  * Emitted by {@see \mod_exelearning\local\track::ingest()} only on the commit that
  * transitions the attempt's overall status into a terminal value, NOT on every
  * tracking commit — the shim autocommits roughly every 500 ms, so a per-commit event
- * would flood the logstore (the reason DEC-0041 rejected one). Together with
+ * would flood the logstore (the reason DEC-26-03 rejected one). Together with
  * {@see attempt_started} this gives a once-per-attempt lifecycle (begin → outcome)
- * without that noise (DEC-0051, extending DEC-0041). The server-recomputed overall
+ * without that noise (DEC-68-01, extending DEC-26-03). The server-recomputed overall
  * grade and the terminal status travel in `other` (`score`, `status`). Logged at
  * LEVEL_PARTICIPATING.
  *

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Validate the plugin version metadata (DEC-0068: real, monotonic versions).
+# Validate the plugin version metadata (DEC-111-01: real, monotonic versions).
 #
 # version.php ships exactly as committed — packaging never rewrites it — so this
 # guard is what keeps the value sane:
@@ -58,7 +58,7 @@ RELEASE="$(sed -n "s/^\$plugin->release[[:space:]]*=[[:space:]]*'\([^']*\)';.*/\
 #    protocol against existing savepoints.
 case "$VERSION" in
     9999999999|99999|0|1|000000|000001)
-        fail "\$plugin->version = $VERSION is a sentinel; use a real YYYYMMDDXX version (DEC-0068)." ;;
+        fail "\$plugin->version = $VERSION is a sentinel; use a real YYYYMMDDXX version (DEC-111-01)." ;;
 esac
 
 # 2) Exactly ten digits, plausible YYYYMMDDXX (year 20xx, month 01-12, day 01-31).

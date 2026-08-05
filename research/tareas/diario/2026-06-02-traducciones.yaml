@@ -13,7 +13,7 @@ acciones:
   - "Reutilizadas ~119 cadenas humanas de mod_exeweb/mod_exescorm (editor embebido, guardado, attempt/attempts/reports y, en es, el bloque de estilos) sin prefijo."
   - "Traducidas automáticamente las ~190 cadenas restantes por idioma, prefijadas con «~» (visible en UI a propósito)."
   - "Verificado: php -l limpio, paridad exacta de claves contra lang/en (309/309), placeholders {$a} intactos."
-  - "Documentada la decisión y la convención «~» en DEC-0020."
+  - "Documentada la decisión y la convención «~» en DEC-11-01."
   - "PR ateeducacion/mod_exelearning#11 (rama feature/lang-es-ca-eu-gl); el único fallo de CI fue un docker pull transitorio del runner, no del cambio."
 
 evidencia:
@@ -21,12 +21,12 @@ evidencia:
   - "lang/ca/exelearning.php"
   - "lang/eu/exelearning.php"
   - "lang/gl/exelearning.php"
-  - "research/decisiones/adr/DEC-0020-traducciones-marca-tilde.md"
+  - "research/decisiones/adr/DEC-11-01-traducciones-marca-tilde.md"
 
 pendientes:
   - "Revisión humana de las cadenas «~» por idioma y retirada del prefijo cuando se validen."
 
 relacionados:
-  - DEC-0020
-  - DEC-0005
-  - DEC-0009
+  - DEC-11-01
+  - DEC-0-05
+  - DEC-0-09

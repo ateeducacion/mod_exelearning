@@ -207,12 +207,28 @@ clean-editor:
 	rm -rf $(EDITOR_DIST_PATH)
 
 # -------------------------------------------------------
+# Architecture decision records
+# -------------------------------------------------------
+
+# Print the decision index, derived from the records' own frontmatter. The index
+# is generated on demand, never hand-maintained.
+architecture-records:
+	node research/tools/architecture-records.mts list
+
+# Validate decision identifiers, metadata and cross-references, and reject any
+# reference to a retired identifier. Also runs the checker's own unit tests, so
+# a broken checker cannot silently pass everything.
+architecture-check:
+	node research/tools/architecture-records.mts check
+	node research/tools/architecture-records.mts list >/dev/null
+
+# -------------------------------------------------------
 # Packaging
 # -------------------------------------------------------
 
 PLUGIN_NAME = mod_exelearning
 
-# Validate the committed version metadata (DEC-0068): real, monotonic
+# Validate the committed version metadata (DEC-111-01): real, monotonic
 # YYYYMMDDXX version, release = 'dev' on the development branch, strictly above
 # every db/upgrade.php savepoint.
 check-version:
@@ -231,7 +247,7 @@ check-release-version:
 # Create a distributable ZIP package
 # Usage: make package RELEASE=4.0.3
 # The Moodle version is NOT generated here: version.php ships exactly as
-# committed (DEC-0068); check-release-version validates it first. Delegates to
+# committed (DEC-111-01); check-release-version validates it first. Delegates to
 # scripts/package.sh, which uses only git ("git archive") so it needs no
 # zip/rsync/python/php and works in Git Bash on Windows. The working tree is
 # never modified and the ZIP is rooted at the Moodle install folder
@@ -265,6 +281,8 @@ help:
 	@echo "  build-editor-no-update - Alias of build-editor"
 	@echo "  clean-editor           - Remove editor build artifacts"
 	@echo "  fetch-editor-source    - Download editor source from configured repo/ref"
+	@echo "  architecture-records   - Print the generated decision index"
+	@echo "  architecture-check     - Validate decision identifiers, metadata and references"
 	@echo "  package                - Create distributable ZIP (RELEASE=X.Y.Z required)"
 	@echo "  help                   - Display this help with available commands"
 

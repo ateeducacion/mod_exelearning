@@ -35,7 +35,7 @@ require_once($CFG->dirroot . '/mod/exelearning/lib.php');
  */
 final class supports_test extends advanced_testcase {
     /**
-     * DEC-0047: the module is an assessment-archetype activity. The classification
+     * DEC-37-01: the module is an assessment-archetype activity. The classification
      * is fixed per module type and must not silently change.
      */
     public function test_supports_reports_assessment_classification(): void {
@@ -47,7 +47,7 @@ final class supports_test extends advanced_testcase {
         $this->assertTrue(exelearning_supports(FEATURE_COMPLETION_TRACKS_VIEWS));
         $this->assertTrue(exelearning_supports(FEATURE_SHOW_DESCRIPTION));
         $this->assertFalse(exelearning_supports(FEATURE_GRADE_OUTCOMES));
-        // DEC-0052: custom completion rule completionstatusrequired is now offered.
+        // DEC-69-01: custom completion rule completionstatusrequired is now offered.
         $this->assertTrue(exelearning_supports(FEATURE_COMPLETION_HAS_RULES));
         $this->assertNull(exelearning_supports('a_feature_that_does_not_exist'));
     }

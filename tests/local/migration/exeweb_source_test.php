@@ -26,7 +26,7 @@ global $CFG;
 require_once($CFG->dirroot . '/mod/exelearning/lib.php');
 
 /**
- * Unit tests for the mod_exeweb migration source handler (issue #13 #3, DEC-0050).
+ * Unit tests for the mod_exeweb migration source handler (issue #13 #3, DEC-13-12).
  *
  * mod_exeweb is not installed in CI, so these tests drive the handler against a
  * simulated `package` filearea. The point is the itemid: mod_exeweb stores the

@@ -49,7 +49,7 @@ Feature: View a mod_exelearning activity and its attempts report
 
   # Multi-page detection (server-rendered, no @javascript): a package whose two
   # gradable iDevices live on different pages registers them as two distinct
-  # columns. This is the parser/sync half of the RIE-007 / DEC-0017 fix.
+  # columns. This is the parser/sync half of the RIE-007 / DEC-5-01 fix.
   Scenario: A multi-page package registers one column per gradable iDevice across pages
     Given the following "activities" exist:
       | activity    | name            | course | idnumber | packagefilepath                                |
@@ -59,7 +59,7 @@ Feature: View a mod_exelearning activity and its attempts report
     And I should see "#1 trueorfalse"
     And I should see "#2 guess"
 
-  # Browser-level bridge coverage for DEC-0017 belongs in manual/Playwright e2e:
+  # Browser-level bridge coverage for DEC-5-01 belongs in manual/Playwright e2e:
   # under moodle-plugin-ci the JS driver can enter the scenario with Moodle core JS
   # still pending before the first Background step. This deterministic Behat case
   # keeps the report contract covered while PHPUnit covers the objectid collision.
@@ -78,7 +78,7 @@ Feature: View a mod_exelearning activity and its attempts report
     And I should see "90.00 / 100.00"
     And I should see "30.00 / 100.00"
 
-  # Delete flow (DEC-0007 phase 2, server-rendered, no @javascript): the delete
+  # Delete flow (DEC-0-07 phase 2, server-rendered, no @javascript): the delete
   # link carries its own server-side sesskey in the URL. Following it renders the
   # confirmation page; pressing Continue exercises the capability + sesskey +
   # recalculation redirect path end to end.
@@ -132,7 +132,7 @@ Feature: View a mod_exelearning activity and its attempts report
     Then I should see "Student One"
     And I should not see "Student Two"
 
-  # DEC-0007 download: with at least one attempt recorded, the teacher report
+  # DEC-0-07 download: with at least one attempt recorded, the teacher report
   # offers the core dataformat selector (CSV/Excel/ODS/JSON). The empty-state
   # scenario above already asserts no selector appears with no attempts. The
   # objectid is the trueorfalse iDevice registered by the default fixture

@@ -99,7 +99,7 @@ final class admin_setting_styles_render_test extends advanced_testcase {
      * buttons post to, and admin_externalpage_setup() needs it) but hidden from
      * the admin menu: managing styles happens on the plugin settings page, and a
      * second visible manager page duplicated the widgets — including an upload
-     * control that silently discarded files (UX-01, DEC-0067).
+     * control that silently discarded files (UX-01, DEC-110-01).
      */
     public function test_styles_admin_page_is_registered_but_hidden(): void {
         global $CFG;

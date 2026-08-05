@@ -65,7 +65,7 @@ class mod_exelearning_generator extends \testing_module_generator {
             'gradepass'        => 0,
             'grademethod'      => 0, // GRADE_HIGHEST.
             'grademodel'       => 1, // EXELEARNING_GRADEMODEL_PERITEM.
-            'gradeenabled'     => 1, // Graded activity (DEC-0029).
+            'gradeenabled'     => 1, // Graded activity (DEC-13-07).
             'maxattempt'       => 0,
             'reviewmode'       => 1, // REVIEW_ALWAYS.
             'gradedisplaytype' => 0,
@@ -78,7 +78,7 @@ class mod_exelearning_generator extends \testing_module_generator {
 
         // A packagefilepath of false (or an explicit empty string) creates the
         // instance with no package at all — the create-from-scratch path
-        // (issue #13 #1, DEC-0024): the teacher authors it later in the embedded
+        // (issue #13 #1, DEC-13-03): the teacher authors it later in the embedded
         // editor. Otherwise resolve the fixture path (defaulting when omitted).
         $nopackage = property_exists($record, 'packagefilepath')
             && ($record->packagefilepath === false || $record->packagefilepath === '');

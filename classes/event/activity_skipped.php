@@ -25,7 +25,7 @@
 namespace mod_exelearning\event;
 
 /**
- * Fired when a source activity is skipped during migration (DEC-0050).
+ * Fired when a source activity is skipped during migration (DEC-13-12).
  *
  * Covers the blocked statuses (no importable source, ambiguous embedded sources, or an
  * externally hosted package). Logged at the source course context with the source

@@ -5,7 +5,7 @@ fecha: 2026-06-04
 agente: pendiente
 prioridad: media
 objetivo: >-
-  Materializar DEC-0033: hacer descubrible el reemplazo del .elpx (ya soportado por
+  Materializar DEC-18-01: hacer descubrible el reemplazo del .elpx (ya soportado por
   update_instance) y añadir un origen de paquete por URL externa estilo mod_scorm
   (descarga server-side + reuso del pipeline de extracción/sync), con actualización
   manual ("Actualizar ahora") en Fase 1 y updatefreq opcional en Fase 2.
@@ -14,19 +14,19 @@ pasos:
   - "P1 (reemplazo): documentar en docs/USER_GUIDE.md que re-subir en el formulario reemplaza el contenido; añadir acción visible 'Reemplazar paquete' en view.php (cap. profesor) que reutilice save_and_extract + sync_grade_items + warn_if_grades_stale."
   - "Esquema: columna nueva reference (char 255) en {exelearning} + db/upgrade.php + db/install.xml + backup/restore + privacy si aplica."
   - "mod_form.php: selector packagesource (upload | externalurl) análogo a scormtype; campo packageurl (PARAM_RAW_TRIMMED) hideIf packagesource!=externalurl; persistir packageurl en reference."
-  - "lib.php: al guardar con origen URL, descargar con $fs->create_file_from_url(filerecord, reference, ['calctimeout'=>true], true) al filearea package, validar exelearning_package_has_content_xml (DEC-0027), y reutilizar exelearning_extract_stored_package; gating por contenthash (no re-extraer ni subir revision si no cambió)."
+  - "lib.php: al guardar con origen URL, descargar con $fs->create_file_from_url(filerecord, reference, ['calctimeout'=>true], true) al filearea package, validar exelearning_package_has_content_xml (DEC-16-01), y reutilizar exelearning_extract_stored_package; gating por contenthash (no re-extraer ni subir revision si no cambió)."
   - "Seguridad: usar la clase curl de Moodle (hereda \\core\\files\\curl_security_helper), validar URL (HEAD 200 + esquema http(s)) antes de guardar; ajuste de admin allowexternalurl en settings.php DESACTIVADO por defecto (paridad allowtypeexternal de mod_scorm)."
-  - "view.php: botón 'Actualizar ahora' (cap. profesor, sesskey) que re-descarga y re-extrae bajo demanda; reusar warn_if_grades_stale (DEC-0021)."
+  - "view.php: botón 'Actualizar ahora' (cap. profesor, sesskey) que re-descarga y re-extrae bajo demanda; reusar warn_if_grades_stale (DEC-12-01)."
   - "lang/en/exelearning.php: packagesource*, packageurl*, err_url*, updatenow, allowexternalurl (orden alfabético estricto)."
   # --- Fase 2 (opcional, si hay demanda de sync desatendida) ---
   - "Fase 2: updatefreq (never[default]/everyday/everytime) + db/tasks.php + \\mod_exelearning\\task\\update_external_packages (paridad scorm_cron_scheduled_task, 1x/día sólo instancias con origen URL y updatefreq=everyday)."
   - "Fase 2: token/cabecera de autorización opcional para tirar del REST de eXeLearning v4 (GET /api/v1/projects/:uuid/export/elpx exige Bearer JWT; sin permalink público)."
 relacionados:
-  - DEC-0033
-  - DEC-0021
-  - DEC-0024
-  - DEC-0027
-  - DEC-0019
+  - DEC-18-01
+  - DEC-12-01
+  - DEC-13-03
+  - DEC-16-01
+  - DEC-0-16
 criterios_aceptacion:
   - "Re-subir un paquete (o pulsar 'Reemplazar paquete') incrementa revision, re-extrae a content/{rev} y dispara el aviso de notas obsoletas si hay intentos."
   - "Con origen URL, un .elpx servido por HTTP(S) se descarga, pasa has_content_xml y se extrae idéntico a una subida; un ZIP sin content.xml se rechaza."
@@ -34,7 +34,7 @@ criterios_aceptacion:
   - "Una URL a host bloqueado falla vía curl_security_helper; el origen URL está oculto si el admin no activa allowexternalurl."
   - "phpcs --standard=moodle limpio; PHPDoc completo; backup/restore y db/upgrade cubiertos por tests."
 notas: >-
-  El file picker URL nativo de Moodle (repository_url) queda descartado en DEC-0033: se oculta
+  El file picker URL nativo de Moodle (repository_url) queda descartado en DEC-18-01: se oculta
   para .elpx/.zip (sólo soporta web_image) y haría copia única sin sincronización. mod_scorm es
   el precedente del core (scormtype/reference/updatefreq/create_file_from_url) pero NO tiene
   botón 'actualizar ahora' — eso es la mejora propia de Fase 1.

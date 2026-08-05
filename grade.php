@@ -20,7 +20,7 @@
  * The Moodle gradebook links the per-grade "grade analysis" entry to this script,
  * passing the clicked item's `itemnumber` (and `userid`). Shipping this file is also
  * what makes that link appear (same as core mod_scorm / mod_h5pactivity). The
- * destination is role-based (issue #13 #4, DEC-0023/DEC-0028): teachers/graders get
+ * destination is role-based (issue #13 #4, DEC-13-02/DEC-13-06): teachers/graders get
  * the attempts report (the actual attempt behind the grade); students are deep-linked
  * to the specific iDevice in the content. The gradebook column header itself is fixed
  * by Moodle core to view.php and cannot be deep-linked by a plugin.

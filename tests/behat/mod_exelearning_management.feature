@@ -42,7 +42,7 @@ Feature: Manage a mod_exelearning activity in a course
   # Adapted from mod/h5pactivity h5pactivity_grade_settings.feature: activity
   # settings are not stored by the generator, so set one on the edit form and
   # confirm it round-trips. Uses this plugin's own attempt-limit field (maxattempt,
-  # DEC-0007) by element id to stay independent of the visible label text.
+  # DEC-0-07) by element id to stay independent of the visible label text.
   Scenario: Activity settings entered on the edit form are persisted
     Given I am on the "Evaluable unit" "exelearning activity editing" page logged in as teacher1
     And I set the field "id_maxattempt" to "3"

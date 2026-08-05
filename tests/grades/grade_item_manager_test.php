@@ -24,7 +24,7 @@ global $CFG;
 require_once($CFG->dirroot . '/mod/exelearning/lib.php');
 
 /**
- * Unit tests for the grade item manager extracted from lib.php (DEC-0054).
+ * Unit tests for the grade item manager extracted from lib.php (DEC-71-01).
  *
  * @package    mod_exelearning
  * @category   test
@@ -35,7 +35,7 @@ require_once($CFG->dirroot . '/mod/exelearning/lib.php');
 final class grade_item_manager_test extends advanced_testcase {
     /**
      * format_name() labels a per-iDevice column "activity · page · type" and clamps
-     * the result to the 255-char column width (B5, DEC-0044).
+     * the result to the 255-char column width (B5, DEC-34-01).
      */
     public function test_format_name_labels_and_truncates(): void {
         $instance = (object) ['name' => 'My activity'];
@@ -106,7 +106,7 @@ final class grade_item_manager_test extends advanced_testcase {
 
     /**
      * remove_all() soft-deletes the plugin grade-item rows and removes the Moodle
-     * gradebook columns (master grading switch off, DEC-0029).
+     * gradebook columns (master grading switch off, DEC-13-07).
      */
     public function test_remove_all_soft_deletes_rows_and_columns(): void {
         global $DB;
@@ -142,7 +142,7 @@ final class grade_item_manager_test extends advanced_testcase {
 
     /**
      * update_item() never creates an overall column in PERITEM mode: the guard
-     * deletes any stray itemnumber=0 column (B2b follow-up, DEC-0044 / DEC-0038).
+     * deletes any stray itemnumber=0 column (B2b follow-up, DEC-34-01 / DEC-25-01).
      */
     public function test_update_item_keeps_no_overall_in_peritem(): void {
         $this->resetAfterTest();

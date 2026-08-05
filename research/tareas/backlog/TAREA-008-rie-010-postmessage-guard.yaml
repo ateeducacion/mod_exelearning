@@ -15,8 +15,8 @@ pasos:
   - "Ejecutar `vendor/bin/phpcs --standard=moodle` si se toca PHP de apoyo."
 relacionados:
   - RIE-010
-  - DEC-0016
-  - DEC-0018
+  - DEC-4-01
+  - DEC-6-01
 criterios_aceptacion:
   - "El handler legacy rechaza mensajes cuyo source/origin no coincide con el iframe esperado."
   - "`amd/src` y `amd/build` quedan sincronizados por `grunt amd`."

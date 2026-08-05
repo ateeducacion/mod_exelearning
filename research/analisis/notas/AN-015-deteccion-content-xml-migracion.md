@@ -9,8 +9,8 @@ fuentes:
   - REPO-005
 relacionados:
   - AN-004
-  - DEC-0026
-  - DEC-0050
+  - DEC-13-05
+  - DEC-13-12
 herramienta_ia:
   interfaz: claude-code
   modelo: claude-opus-4-8
@@ -81,7 +81,7 @@ Un `.elpx` nativo es un ZIP con `content.xml` en su raíz, así que resuelve a
   reabrir la actividad y la detección de items calificables (`grade_sync`, que
   parsea `content.xml`) no tendría nada que leer. Migrar tal paquete crearía una
   actividad degradada.
-- La migración es **no destructiva** (DEC-0026/DEC-0050): la actividad legacy
+- La migración es **no destructiva** (DEC-13-05/DEC-13-12): la actividad legacy
   permanece operativa. Omitir un paquete no migrable no pierde datos; el
   administrador sigue usando el plugin legacy o reexporta con fuente.
 - El `.elp` legacy queda fuera de alcance por decisión de producto (coherente con

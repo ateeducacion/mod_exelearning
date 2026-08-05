@@ -17,8 +17,8 @@
 /**
  * Serve-time patch for the `form`/`scrambled-list` iDevice save guards (issue #13).
  *
- * Extracted verbatim from lib.php (DEC-0054). The idempotent str_replace logic is
- * unchanged; lib.php keeps a thin delegator. See DEC-0042 (and upstream
+ * Extracted verbatim from lib.php (DEC-71-01). The idempotent str_replace logic is
+ * unchanged; lib.php keeps a thin delegator. See DEC-13-11 (and upstream
  * exelearning/exelearning#1925) for the rationale.
  *
  * @package    mod_exelearning
@@ -50,7 +50,7 @@ final class idevice_patch {
      * `isScorm > 0`). The patch targets the unique `data.isScorm` variant of the guard
      * (the init-time guards use `ldata.isScorm`), is idempotent (the matched string is
      * removed), and degrades safely: if a future producer reformats the guard the
-     * replace is a no-op and behaviour reverts to today's. See research ADR DEC-0042.
+     * replace is a no-op and behaviour reverts to today's. See research ADR DEC-13-11.
      *
      * @param int $contextid
      * @param int $revision

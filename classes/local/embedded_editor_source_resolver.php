@@ -27,7 +27,7 @@ namespace mod_exelearning\local;
 /**
  * Resolves whether the bundled embedded editor is usable at runtime.
  *
- * The editor is a release artifact (DEC-0065): every official release ZIP ships
+ * The editor is a release artifact (DEC-106-01): every official release ZIP ships
  * it pre-built under dist/static/, and that is the only source the plugin ever
  * serves. There is no runtime installer and no moodledata copy any more — a
  * leftover moodledata/mod_exelearning/embedded_editor directory from the removed

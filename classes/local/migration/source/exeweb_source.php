@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Read-only migration source for mod_exeweb (issue #13 #3, DEC-0050).
+ * Read-only migration source for mod_exeweb (issue #13 #3, DEC-13-12).
  *
  * @package    mod_exelearning
  * @copyright  2026 ATE (Área de Tecnología Educativa)
@@ -159,7 +159,7 @@ final class exeweb_source implements source_interface {
     }
 
     /**
-     * The target uses the default per-iDevice model (exeweb has no grades, DEC-0008).
+     * The target uses the default per-iDevice model (exeweb has no grades, DEC-0-08).
      *
      * @return int
      */

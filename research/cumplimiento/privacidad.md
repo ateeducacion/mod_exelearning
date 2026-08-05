@@ -9,8 +9,8 @@ no una hipótesis.
 ## Datos personales almacenados (estado actual)
 
 El plugin guarda datos personales de **alumnado** en `exelearning_attempt` (historial de
-intentos plano, DEC-0007) y datos de **profesorado/gestores** en `exelearning_migration`
-(traza de auditoría de la herramienta de migración, DEC-0026/DEC-0050). `provider::get_metadata()`
+intentos plano, DEC-0-07) y datos de **profesorado/gestores** en `exelearning_migration`
+(traza de auditoría de la herramienta de migración, DEC-13-05/DEC-13-12). `provider::get_metadata()`
 declara ambas campo a campo y añade un enlace al subsistema `core_grades`, porque el plugin
 publica las puntuaciones de cada usuario en el libro de calificaciones de Moodle mediante
 `grade_update()`.
@@ -91,7 +91,7 @@ cada ruta de borrado del plugin recalcula la nota para no dejar residuos.
 ## xAPI — roadmap, no es dato actual
 
 El plugin **no** almacena statements xAPI hoy. El tracking actual es 100% shim SCORM 1.2 y la
-ingesta xAPI es un plan (`docs/xapi-integration-plan.md`, DEC-0032), pendiente de PR2/TAREA-015.
+ingesta xAPI es un plan (`docs/xapi-integration-plan.md`, DEC-17-01), pendiente de PR2/TAREA-015.
 Cuando se implemente, las decisiones de privacidad a tomar serán:
 
 - Si se persisten statements completos (con `result.response`) o solo el resumen

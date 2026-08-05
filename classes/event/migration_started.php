@@ -25,7 +25,7 @@
 namespace mod_exelearning\event;
 
 /**
- * Fired once per site-wide migration run, before any activity is processed (DEC-0050).
+ * Fired once per site-wide migration run, before any activity is processed (DEC-13-12).
  *
  * Logged at system context (the tool runs site-wide); the source component and the
  * total number of source activities travel in `other`. Logged at LEVEL_OTHER as an

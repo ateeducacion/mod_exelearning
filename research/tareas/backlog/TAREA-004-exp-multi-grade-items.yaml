@@ -15,7 +15,7 @@ relacionados:
   - REPO-004
   - FTE-006
   - AN-002
-  - DEC-0003
+  - DEC-0-03
 criterios_aceptacion:
   - "Dos columnas en el libro de calificaciones, no agregadas."
   - "Actualización idempotente comprobada."

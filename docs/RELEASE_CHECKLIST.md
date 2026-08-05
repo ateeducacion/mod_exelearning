@@ -1,13 +1,13 @@
 # Release checklist — STABLE release gate
 
 > An objective, checkable gate for every `mod_exelearning` STABLE release. The
-> plugin is `MATURITY_STABLE` (`version.php:33`) since DEC-0057 (PR #77,
+> plugin is `MATURITY_STABLE` (`version.php:33`) since DEC-77-01 (PR #77,
 > 2026-06-13); this checklist is now the per-release verification list — **every
 > STABLE release must keep every exit criterion in §11 green**. History: the
-> plugin went ALPHA → BETA after the critical-bug audit (DEC-0044, 9 confirmed
-> fixes; `research/decisiones/adr/DEC-0044-auditoria-bugs-criticos.md`), then
-> BETA → STABLE (DEC-0057;
-> `research/decisiones/adr/DEC-0057-extraccion-no-destructiva.md`).
+> plugin went ALPHA → BETA after the critical-bug audit (DEC-34-01, 9 confirmed
+> fixes; `research/decisiones/adr/DEC-34-01-auditoria-bugs-criticos.md`), then
+> BETA → STABLE (DEC-77-01;
+> `research/decisiones/adr/DEC-77-01-extraccion-no-destructiva.md`).
 
 ## How to run the checks
 
@@ -95,18 +95,18 @@
 - [ ] Soft-delete on re-upload: a removed iDevice sets
       `exelearning_grade_item.deleted = 1`, preserving grade history
       (`db/install.xml:56`; sync at `lib.php:1224-1242`).
-- [ ] Completion-by-grade works (`gradepass`, DEC-0010, `db/install.xml:22`).
+- [ ] Completion-by-grade works (`gradepass`, DEC-0-10, `db/install.xml:22`).
 - [ ] `gradeenabled = 0`: no grade items, no reports, behaves like a plain
-      resource (DEC-0029, `db/install.xml:26`).
+      resource (DEC-13-07, `db/install.xml:26`).
 - [ ] Overlong package identifiers are clamped to column widths (no `dml`
-      fatal mid-sync — B5, DEC-0044, `lib.php:1207-1217`).
+      fatal mid-sync — B5, DEC-34-01, `lib.php:1207-1217`).
 
 ## 5. External services
 
 - [ ] `moodle-plugin-ci validate` green (web service / external function
       definitions; `ci.yml:179-181`).
 - [ ] Mobile app smoke test: list, view, and `save_track` against a real
-      activity (B6 0-score guard, DEC-0044).
+      activity (B6 0-score guard, DEC-34-01).
 
 ## 6. Install / upgrade
 
@@ -135,7 +135,7 @@ mariadb10.11):
       (`blueprint.json`, `editormode = embedded`, pinned `v4.0.1` asset).
 - [ ] Release ZIP bundles the editor built from the **matching editor tag**, not
       `main` (`release.yml` semver-match: a plugin release `vX.Y.Z` builds editor
-      `vX.Y.Z`; DEC-0058). **Invariant:** the plugin release tag must exist as an
+      `vX.Y.Z`; DEC-78-01). **Invariant:** the plugin release tag must exist as an
       editor tag in `exelearning/exelearning` (the family is versioned in lockstep;
       the first release is `v4.0.1`). The `release-workflow-check` CI job
       (`scripts/check-release-workflow.sh`) guards this statically.
@@ -164,7 +164,7 @@ mariadb10.11):
       entry by hand — the skill produces a draft, not a finished changelog. The file
       ships inside the release ZIP, so administrators read it.
 
-## 10b. Version metadata (DEC-0068)
+## 10b. Version metadata (DEC-111-01)
 
 - [ ] A release-preparation PR commits the final `$plugin->version` (YYYYMMDDXX,
       strictly above the latest published version and every `db/upgrade.php`
@@ -179,7 +179,7 @@ mariadb10.11):
 
 ## 11. Exit criteria — conditions that must hold for a STABLE release
 
-`version.php:33` is `MATURITY_STABLE`; the gate was first satisfied at DEC-0057
+`version.php:33` is `MATURITY_STABLE`; the gate was first satisfied at DEC-77-01
 (PR #77). Each STABLE release (and any re-promotion after a regression) requires
 **all** of the following to hold:
 
@@ -190,26 +190,26 @@ mariadb10.11):
 - [ ] Privacy export **and** deletion verified end-to-end, grades recalculated — §3.
 - [ ] All gradebook edge cases in §4 pass, including the >100-iDevice cap and
       soft-delete-on-re-upload.
-- [ ] No open critical bug beyond the DEC-0044 set; the audit's confirmed fixes
+- [ ] No open critical bug beyond the DEC-34-01 set; the audit's confirmed fixes
       have regression tests.
 - [ ] Docs (§10) updated for the released version.
 
 **Explicitly NOT blockers (roadmap items):**
 
-- **DEC-0045** serve-time transform — status *Propuesta*
-  (`research/decisiones/adr/DEC-0045-transformacion-en-servido.md:4`); the
+- **DEC-34-02** serve-time transform — status *Propuesta*
+  (`research/decisiones/adr/DEC-34-02-transformacion-en-servido.md:4`); the
   `content_transformer` and its tests are still pending (`:84`). Roadmap, not a
   STABLE blocker.
-- **DEC-0032** dual SCORM 1.2 + xAPI ingestion — status *Propuesta*; the xAPI
+- **DEC-17-01** dual SCORM 1.2 + xAPI ingestion — status *Propuesta*; the xAPI
   channel is unimplemented (PR2 / TAREA-015,
-  `research/decisiones/adr/DEC-0032-ingesta-dual-scorm-xapi.md:4`,`:128`;
+  `research/decisiones/adr/DEC-17-01-ingesta-dual-scorm-xapi.md:4`,`:128`;
   `docs/tracking-architecture.md`). Roadmap, not a STABLE blocker.
 
 **Documented-and-accepted posture (must remain documented, not necessarily fixed):**
 
-- **RIE-001** ELPX package isolation hardening — DEC-0019 is *Aceptada* with the
+- **RIE-001** ELPX package isolation hardening — DEC-0-16 is *Aceptada* with the
   explicit decision to **document the trade-offs and current posture, not
   implement any mitigation yet**
-  (`research/decisiones/adr/DEC-0019-aislamiento-paquete-elpx.md:4`,`:42-43`,`:214`).
+  (`research/decisiones/adr/DEC-0-16-aislamiento-paquete-elpx.md:4`,`:42-43`,`:214`).
   STABLE requires this remain documented; the deferred mitigations (M1–M7) stay on
   the roadmap.

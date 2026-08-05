@@ -34,8 +34,8 @@ pendientes:
   - "TAREA-017: portar editor embebido (Makefile + dirs + AMD + capability)."
   - "TAREA-008 (futura): per-iDevice routing — requiere o cambios upstream (PREG-002) o inyectar un hook que el iDevice JS llame con su idevice-id."
 relacionados:
-  - DEC-0003
-  - DEC-0004
+  - DEC-0-03
+  - DEC-0-04
   - AN-002
   - AN-005
   - AN-007

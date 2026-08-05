@@ -15,7 +15,7 @@ context7:
   fecha: null
   version_devuelta: "[N/A]"
 fecha_consulta: 2026-06-17
-relevancia_para_mod_exelearning: "Decide la política de versión del endpoint xAPI (DEC-0063): 2.0 NO obliga a nada (mod_exelearning no es un LRS), el modelo de Statement es retro-compatible y el emisor upstream envía 1.0.3 → consumir 1.0.3 pero validar la versión de forma PERMISIVA (tolerante a 2.0.0). Complementa FTE-015 (reglas canónicas 1.0.3)."
+relevancia_para_mod_exelearning: "Decide la política de versión del endpoint xAPI (DEC-0-18): 2.0 NO obliga a nada (mod_exelearning no es un LRS), el modelo de Statement es retro-compatible y el emisor upstream envía 1.0.3 → consumir 1.0.3 pero validar la versión de forma PERMISIVA (tolerante a 2.0.0). Complementa FTE-015 (reglas canónicas 1.0.3)."
 herramienta_ia:
   interfaz: claude-code
   modelo: claude-opus-4-8
@@ -114,6 +114,6 @@ Ortogonal (xAPI no define UI).
 
 - PREG: si upstream migrara el emisor a `2.0.0` (header + `version:2.0.0` + quizá `contextAgents`), el
   consumidor —si solo lee `object.id` + `result.score` y es tolerante a versión— **seguiría funcionando sin
-  cambios** `[HIPOTESIS]`. Única acción preventiva: no rechazar por header (ver DEC-0063).
-- PREG: ¿conviene registrar el perfil xAPI de eXeLearning (DEC-0014 punto 3) como Profile IEEE-conforme algún
+  cambios** `[HIPOTESIS]`. Única acción preventiva: no rechazar por header (ver DEC-0-18).
+- PREG: ¿conviene registrar el perfil xAPI de eXeLearning (DEC-0-14 punto 3) como Profile IEEE-conforme algún
   día? Fuera de alcance hoy.

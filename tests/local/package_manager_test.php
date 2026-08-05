@@ -19,7 +19,7 @@ namespace mod_exelearning\local;
 use advanced_testcase;
 
 /**
- * Unit tests for the package manager extracted from lib.php (DEC-0054).
+ * Unit tests for the package manager extracted from lib.php (DEC-71-01).
  *
  * @package    mod_exelearning
  * @category   test
@@ -61,7 +61,7 @@ final class package_manager_test extends advanced_testcase {
 
     /**
      * validate_content_xml() accepts a ZIP that carries content.xml at its root and
-     * rejects one that does not (DEC-0027).
+     * rejects one that does not (DEC-16-01).
      */
     public function test_validate_content_xml(): void {
         $this->resetAfterTest();

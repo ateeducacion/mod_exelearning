@@ -9,10 +9,10 @@ fuentes:
   - FTE-007
   - FTE-008
 relacionados:
-  - DEC-0003
-  - DEC-0007
-  - DEC-0008
-  - DEC-0015
+  - DEC-0-03
+  - DEC-0-07
+  - DEC-0-08
+  - DEC-0-15
   - AN-002
   - AN-003
 herramienta_ia:
@@ -22,7 +22,7 @@ herramienta_ia:
 
 ## Motivo
 
-DEC-0015 etiquetó la complejidad de `mod_exelearning` como "alta". Revisión
+DEC-0-15 etiquetó la complejidad de `mod_exelearning` como "alta". Revisión
 (erseco): suena alarmista. Esta nota desglosa qué es realmente "complejo" y
 corrige la etiqueta a **media, acotada y ya domada**.
 
@@ -38,7 +38,7 @@ corrige la etiqueta a **media, acotada y ya domada**.
   (FTE-006), usado por `mod_workshop` (submission + assessment) — AN-002. No es
   territorio inexplorado.
 - **iframe + sidebar**: heredado tal cual de `mod_exeweb` (AN-001/AN-008). Probado.
-- **Finalización por nota**: es `completionpassgrade` del core (DEC-0010), no lógica
+- **Finalización por nota**: es `completionpassgrade` del core (DEC-0-10), no lógica
   custom.
 
 ## Dónde está la complejidad REAL (3 puntos acotados)
@@ -64,6 +64,6 @@ mecánico y está cubierto por tests + CI verde.
   externos** (formato de export e ids de eXeLearning). Eso es *riesgo de
   acoplamiento*, no *complejidad de implementación*.
 - La única pieza que añade complejidad "no estándar" es el **shim SCORM 1.2**, y es
-  un mal necesario hasta que eXeLearning emita xAPI (DEC-0014).
+  un mal necesario hasta que eXeLearning emita xAPI (DEC-0-14).
 
-→ DEC-0015 actualizada: fila "complejidad" pasa de **alta** a **media (acotada)**.
+→ DEC-0-15 actualizada: fila "complejidad" pasa de **alta** a **media (acotada)**.

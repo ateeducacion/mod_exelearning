@@ -17,7 +17,7 @@
 /**
  * URL builders for mod_exelearning gradebook deep-links and navigation.
  *
- * Extracted verbatim from lib.php (DEC-0054) so the URL/routing logic is
+ * Extracted verbatim from lib.php (DEC-71-01) so the URL/routing logic is
  * unit-testable in isolation; lib.php keeps thin delegators with the same
  * function signatures Moodle and the plugin's own callers use.
  *
@@ -44,7 +44,7 @@ final class urls {
      * passing its itemnumber (same pattern as core mod_h5pactivity). This maps that
      * itemnumber to the owning iDevice's stable objectid so the view can deep-link
      * straight to that iDevice instead of the resource front page (issue #13 #4,
-     * DEC-0023). itemnumber 0 (the overall grade) links to the front page.
+     * DEC-13-02). itemnumber 0 (the overall grade) links to the front page.
      *
      * @param stdClass $exelearning Instance record.
      * @param int $cmid Course module id.
@@ -75,7 +75,7 @@ final class urls {
      * deep-linked by a plugin; the per-grade "grade analysis" link (which appears because
      * this module ships grade.php) is the only place we can target. Teachers/graders go to
      * the attempts report (the actual attempt behind the grade); students are deep-linked
-     * to the specific iDevice in the content (issue #13 #4, DEC-0028).
+     * to the specific iDevice in the content (issue #13 #4, DEC-13-06).
      *
      * @param stdClass $exelearning Instance record.
      * @param int $cmid Course module id.

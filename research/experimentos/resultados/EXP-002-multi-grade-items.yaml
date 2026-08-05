@@ -62,7 +62,7 @@ resultado: |
   el mapeo persistente objectid → itemnumber están en
   classes/local/package.php y mdl_exelearning_grade_item.
 
-  Cierra DEC-0003 a favor del PLAN B documentado en AN-005/AN-007: consumir el
+  Cierra DEC-0-03 a favor del PLAN B documentado en AN-005/AN-007: consumir el
   ELPX nativo, parsear el manifest propietario content.xml y usar multi-itemnumber
   estándar Moodle. No requiere cambios upstream en eXeLearning.
 evidencias:
@@ -92,8 +92,8 @@ verificacion_runtime:
   modo_preview: "POST mode=preview con score=22 → response {ok:true,mode:'preview'}, timemodified de BD inalterado"
   anti_bypass_alumno: "switch-to-student + ?mode=preview → cae a grading silenciosamente"
 relacionados:
-  - DEC-0003
-  - DEC-0004
+  - DEC-0-03
+  - DEC-0-04
   - AN-001
   - AN-002
   - AN-005

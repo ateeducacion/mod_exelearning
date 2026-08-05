@@ -225,7 +225,7 @@ if (!is_enrolled($coursecontext, $adminuser, '', true)) {
 require_once($CFG->libdir . '/completionlib.php');
 
 // Enable completion tracking in the course (required for "require passing grade",
-// the SCORM-style condition — DEC-0010).
+// the SCORM-style condition — DEC-0-10).
 if (empty($course->enablecompletion)) {
     $DB->set_field('course', 'enablecompletion', 1, ['id' => $course->id]);
     $course->enablecompletion = 1;
@@ -272,7 +272,7 @@ $makedraft = function (string $pathname) use ($adminctx, $fs): int {
     return $draftid;
 };
 
-// Completion fields "SCORM style: must pass" (DEC-0010): use the core
+// Completion fields "SCORM style: must pass" (DEC-0-10): use the core
 // "require passing grade" condition (completionpassgrade), uniform across
 // exelearning, SCORM and H5P.
 $completionpass = [
@@ -299,7 +299,7 @@ if (is_file($fixtures['exelearning']) && !$moduleexists('exelearning', $config['
             'introformat' => FORMAT_HTML,
             'package'     => $makedraft($fixtures['exelearning']),
             // PERITEM (default): the gradebook shows one column per gradable iDevice
-            // and no overall column (DEC-0038). Completion targets a per-iDevice item
+            // and no overall column (DEC-25-01). Completion targets a per-iDevice item
             // instead of an aggregate overall (workshop model); see the override
             // below. "Pass the whole activity to complete" lives in OVERALL mode.
             'grademax'    => 100,
@@ -311,7 +311,7 @@ if (is_file($fixtures['exelearning']) && !$moduleexists('exelearning', $config['
             'groupingid'  => 0,
         ], [
             // Complete on receiving a grade for the first gradable iDevice. PERITEM
-            // has no overall item (DEC-0038), so completion points at iDevice 1
+            // has no overall item (DEC-25-01), so completion points at iDevice 1
             // (completiongradeitemnumber=1) using Moodle's native selector.
             'completion'                => COMPLETION_TRACKING_AUTOMATIC,
             'completionview'            => 0,

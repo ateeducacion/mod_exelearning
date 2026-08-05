@@ -1,11 +1,11 @@
 # xAPI integration plan
 
-> Status: **implemented** (PR2 / TAREA-015, **DEC-0064**). eXeLearning PR #1867 is **merged**
-> (commit `e3b1bd13`, 2026-06-18) so the contract is frozen. Decision trail: DEC-0032 (architecture),
-> DEC-0063 (validation/version), DEC-0064 (implementation). Emitter contract: `FTE-011`.
+> Status: **implemented** (PR2 / TAREA-015, **DEC-85-01**). eXeLearning PR #1867 is **merged**
+> (commit `e3b1bd13`, 2026-06-18) so the contract is frozen. Decision trail: DEC-17-01 (architecture),
+> DEC-0-18 (validation/version), DEC-85-01 (implementation). Emitter contract: `FTE-011`.
 > Statement→model mapping & trust analysis: `AN-012`. Moodle `core_xapi`: `FTE-007`.
 >
-> **What shipped (DEC-0064), refining the plan below:**
+> **What shipped (DEC-85-01), refining the plan below:**
 > - **xAPI-primary, not dual-on-the-same-package.** When the served package bundles
 >   `libs/xapi/exe_xapi.js` (detected by `exelearning_package_emits_xapi()`), Moodle grades via xAPI
 >   and boots `window.API` as an **inert SCORM stub** (`js/scorm_tracker.js` `disableTracking`), so the
@@ -14,11 +14,11 @@
 >   and the pipwerks `set()` — the channels are coextensive.
 > - **Endpoint = a plain AJAX script** `xapi_track.php` (sesskey + capability, mirroring `track.php`),
 >   not a `core_external` service. **Listener = an inline IIFE** `js/xapi_listener.js` (the
->   `js/scorm_tracker.js` / DEC-0056 pattern, Vitest-tested), not an `amd/src` module. Both delegate to
+>   `js/scorm_tracker.js` / DEC-74-01 pattern, Vitest-tested), not an `amd/src` module. Both delegate to
 >   `\mod_exelearning\local\xapi\statement_normalizer` + `\mod_exelearning\local\xapi\ingestor`.
 > - **Overall comes from the package statement** (`passed`/`failed`/`completed` `finalScore`), validated
 >   server-side — per-iDevice `answered` statements carry no weight to recompute a weighted overall from
->   (refines §5 below and DEC-0063 §2; honours DEC-0018 by validating, not blind-trusting).
+>   (refines §5 below and DEC-0-18 §2; honours DEC-6-01 by validating, not blind-trusting).
 
 ## 1. Upstream contract (eXeLearning `exe_xapi.js`, PR #1867)
 
@@ -56,7 +56,7 @@ cmi5 is explicitly **excluded** upstream.
 
 Just as the plugin injects the pipwerks loader into each package `<head>`
 (`exelearning_inject_scorm_loader`, delegador en `lib.php` →
-`\mod_exelearning\local\scorm\scorm_injector::inject()`, DEC-0054), it will inject:
+`\mod_exelearning\local\scorm\scorm_injector::inject()`, DEC-71-01), it will inject:
 
 ```js
 window.exeXapi = {
@@ -69,9 +69,9 @@ window.exeXapi = {
 
 This keeps PII out of the page and makes honest packages post **only** to Moodle.
 
-## 3. Listener (`js/xapi_listener.js`) — *as shipped (DEC-0064)*
+## 3. Listener (`js/xapi_listener.js`) — *as shipped (DEC-85-01)*
 
-Implemented as an **inline IIFE** (the `js/scorm_tracker.js` / DEC-0056 pattern), dual-exposed via
+Implemented as an **inline IIFE** (the `js/scorm_tracker.js` / DEC-74-01 pattern), dual-exposed via
 `window.exeXapiListener` + `module.exports` for Vitest, **not** an `amd/src` module (grade-critical
 client JS is injected synchronously and needs no AMD build).
 
@@ -82,15 +82,15 @@ client JS is injected synchronously and needs no AMD build).
 - Forward to `xapi_track.php` with `sesskey`, `cmid`, and the page-load `registration`.
 - Never read or expose PII in JS.
 
-## 4. Server endpoint (`xapi_track.php`) — *as shipped (DEC-0064)*
+## 4. Server endpoint (`xapi_track.php`) — *as shipped (DEC-85-01)*
 
 The endpoint is a **plain AJAX script** `xapi_track.php` (`AJAX_SCRIPT`, session key confirmed
 from the JSON body (SEC-04) +
 `require_capability('mod/exelearning:savetrack')`), **mirroring `track.php`** — not a `core_external`
 service (so there is **no `db/services.php` entry**). It decodes the statement, runs
-`\mod_exelearning\local\xapi\statement_normalizer` (the canonical DEC-0063 validation) and delegates
+`\mod_exelearning\local\xapi\statement_normalizer` (the canonical DEC-0-18 validation) and delegates
 to `\mod_exelearning\local\xapi\ingestor`, which reuses `track::apply_item_scores` / `attempts::*` /
-`grade_update`. A plain script still satisfies DEC-0063's "custom endpoint that ignores the actor and
+`grade_update`. A plain script still satisfies DEC-0-18's "custom endpoint that ignores the actor and
 reuses the pipeline" — the recorded choice was *custom endpoint vs `core_xapi`*, and a script **is** a
 custom endpoint. An **optional** `core_xapi` handler (FTE-007, h5pactivity pattern AN-003) is
 **deferred** to a follow-up, purely for events/analytics.
@@ -105,9 +105,9 @@ The route analysis (`AN-012`) that weighed a `core_external` service vs `core_xa
 The endpoint must:
 
 1. Require a valid session + `sesskey`; resolve `cmid`/instance server-side.
-2. `require_capability('mod/exelearning:savetrack')` (or preview rule, DEC-0006).
+2. `require_capability('mod/exelearning:savetrack')` (or preview rule, DEC-0-06).
 3. **Ignore** the statement actor; attribute to `$USER`.
-4. Honour `gradeenabled` (DEC-0029): if grading is off for the activity, there are no grade
+4. Honour `gradeenabled` (DEC-13-07): if grading is off for the activity, there are no grade
    items — accept-and-ignore (no-op) rather than create anything.
 5. Resolve `object.id` → `ideviceId` → `exelearning_grade_item.objectid` → `itemnumber`
    for this instance; **reject** unknown ids.
@@ -129,7 +129,7 @@ The endpoint must:
 | `verb=completed` | overall `completion` (`itemnumber=0`) |
 | `verb=passed`/`failed` | overall `status` + `success` |
 | `verb=initialized`/`terminated` | attempt open/close (via `registration` ↔ `sessiontoken`) |
-| `object.id = …/idevice/{ideviceId}` | `objectid → itemnumber` (DEC-0017); unknown → reject |
+| `object.id = …/idevice/{ideviceId}` | `objectid → itemnumber` (DEC-5-01); unknown → reject |
 | `result.score.scaled` | `scorepct = scaled*100` |
 | `result.success` / `result.completion` | `status` / `completion` |
 | `context.extensions[package-id]` | instance ownership check |
@@ -138,7 +138,7 @@ The endpoint must:
 
 ## 6. Persistence, grading, completion
 
-- Reuse `exelearning_attempt` (flat, DEC-0007). **No** header+detail tables.
+- Reuse `exelearning_attempt` (flat, DEC-0-07). **No** header+detail tables.
 - Grading and completion are **unchanged**: the normalizer feeds the same
   `apply_item_scores` / `record_item` / `grade_update` / `completion_info::update_state`
   path the SCORM endpoint uses. No second grade-calculation path.
@@ -149,8 +149,8 @@ The endpoint must:
 
 - **Out of scope:** cmi5, external-LRS dependency, the `'*'` origin as a trusted target, and the
   `core_xapi` events/analytics handler (deferred to a follow-up).
-- **PR1 (done):** documentation + ADRs (DEC-0032/DEC-0063).
-- **PR2 (done, TAREA-015 / DEC-0064):** `js/xapi_listener.js` + `xapi_track.php` + normalizer +
+- **PR1 (done):** documentation + ADRs (DEC-17-01/DEC-0-18).
+- **PR2 (done, TAREA-015 / DEC-85-01):** `js/xapi_listener.js` + `xapi_track.php` + normalizer +
   ingestor + `config_injector` + `exelearning_tracking_events` + the `disableTracking` inert SCORM
   stub + PHPUnit/Vitest tests. SCORM 1.2 stays as the compatibility path for legacy packages
-  (DEC-0003); xAPI-primary for packages that emit it (DEC-0064).
+  (DEC-0-03); xAPI-primary for packages that emit it (DEC-85-01).

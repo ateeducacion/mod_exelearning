@@ -20,7 +20,7 @@ use advanced_testcase;
 use mod_exelearning\local\migration\source\classification;
 
 /**
- * Unit tests for the classification value object (issue #13 #3, DEC-0050).
+ * Unit tests for the classification value object (issue #13 #3, DEC-13-12).
  *
  * @package    mod_exelearning
  * @category   test

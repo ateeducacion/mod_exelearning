@@ -23,7 +23,7 @@ herramienta_ia:
 > **[ACTUALIZACION 2026-06-17]** Ficha de bootstrap (2026-05-29, opus-4-7). La pregunta abierta de más abajo
 > «¿eXeLearning emite xAPI hoy?» está **respondida: sí** (PR upstream #1867, **FTE-011**). Reglas canónicas de
 > validación del consumidor en **FTE-015**, versión/forward-compat 2.0 en **FTE-017**, mapeo a la tubería en
-> **AN-012/AN-014**, decisión en **DEC-0032/DEC-0063**.
+> **AN-012/AN-014**, decisión en **DEC-17-01/DEC-0-18**.
 
 Especificación ADL que reemplaza el modelo CMI por **statements** firmados enviados a
 un Learning Record Store (LRS). Forma: `actor + verb + object [+ result + context]`.

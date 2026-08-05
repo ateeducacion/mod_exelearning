@@ -21,7 +21,7 @@ use mod_exelearning\local\package;
 
 /**
  * Unit tests for the content.xml parser, focused on per-iDevice contenthash
- * (the change-detection that drives the "grades are now stale" warning, DEC-0021).
+ * (the change-detection that drives the "grades are now stale" warning, DEC-12-01).
  *
  * @package    mod_exelearning
  * @category   test
@@ -35,7 +35,7 @@ final class package_test extends advanced_testcase {
      *
      * The optional 5th element is the eXeLearning per-iDevice `isScorm` flag
      * (0/1/2). When provided it is emitted inside `<jsonProperties>` exactly as the
-     * editor does, so detection (gated on isScorm > 0, DEC-0022) sees it. Omitting
+     * editor does, so detection (gated on isScorm > 0, DEC-13-01) sees it. Omitting
      * it (or passing null) models an iDevice with no scoring config — never
      * detected. A raw JSON string may also be passed to model nested shapes
      * (e.g. interactive-video's `{"scorm":{"isScorm":2}}`).
@@ -201,7 +201,7 @@ final class package_test extends advanced_testcase {
     /**
      * Only iDevices the author marked for assessment (isScorm > 0) are detected;
      * a gradable-type iDevice left unscored (isScorm 0) or with no scoring config
-     * is skipped (issue #13 #2, DEC-0022).
+     * is skipped (issue #13 #2, DEC-13-01).
      */
     public function test_only_marked_idevices_are_detected(): void {
         $this->resetAfterTest();
@@ -265,7 +265,7 @@ final class package_test extends advanced_testcase {
     /**
      * html-type iDevices (interactive-video, dragdrop, periodic-table, beforeafter…)
      * have no jsonProperties and carry isScorm inside the htmlView. Detection must
-     * read the htmlView too (DEC-0022 amendment, issue #13 — the "only 2 detected"
+     * read the htmlView too (DEC-13-01 amendment, issue #13 — the "only 2 detected"
      * bug). The flag may be nested under "scorm".
      */
     public function test_isscorm_in_htmlview_detected(): void {
@@ -290,7 +290,7 @@ final class package_test extends advanced_testcase {
      * GeoGebra does not serialise the score-saving marker as an `isScorm` JSON
      * property. Its export runtime treats the `auto-geogebra-scorm` CSS class as
      * the scored marker, adds the SCORM save button, registers the activity, and
-     * builds runtime options with `isScorm: 2` (issue #29; DEC-0043).
+     * builds runtime options with `isScorm: 2` (issue #29; DEC-29-01).
      */
     public function test_geogebra_scorm_class_detected(): void {
         $this->resetAfterTest();
@@ -371,7 +371,7 @@ final class package_test extends advanced_testcase {
      * `*-DataGame` div in the htmlView, with empty jsonProperties and no plain
      * isScorm anywhere. Detection must decrypt that div (eXeLearning's `decrypt()`:
      * unescape + XOR 146) and honour the flag, while still skipping an iDevice
-     * whose decrypted flag is 0 (issue #13 "only 12 of 30 detected"; DEC-0037).
+     * whose decrypted flag is 0 (issue #13 "only 12 of 30 detected"; DEC-13-10).
      */
     public function test_isscorm_in_encrypted_datagame_detected(): void {
         $this->resetAfterTest();

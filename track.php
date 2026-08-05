@@ -57,7 +57,7 @@ $exelearning = $DB->get_record('exelearning', ['id' => $cm->instance], '*', MUST
 require_login($course, false, $cm);
 $context = context_module::instance($cm->id);
 
-// Preview mode (DEC-0006): only when the caller has management capability.
+// Preview mode (DEC-0-06): only when the caller has management capability.
 // A regular student who changes ?mode=preview falls back to grading silently.
 $ispreview = ($mode === 'preview')
         && has_capability('moodle/course:manageactivities', $context);

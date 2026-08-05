@@ -44,18 +44,18 @@ resolucion: |
   comportamiento documentado de upstream, no un bug de nuestro plugin.
 
   Sobre SCORM 2004 / cmi5 / objectives: no verificado en esta iteración (el bridge
-  actual es SCORM 1.2, ver DEC-0003). Queda fuera de alcance hasta el bridge xAPI.
+  actual es SCORM 1.2, ver DEC-0-03). Queda fuera de alcance hasta el bridge xAPI.
 
   ACTUALIZACIÓN 2026-05-29: la estabilidad de objectid quedó RESUELTA upstream por
   el PR exelearning/exelearning#1791 (merged 2026-05-19): los ids se preservan
   verbatim al importar/re-exportar (sólo reasigna en colisión). Por tanto, con un
   editor post-#1791 el objectid SÍ es estable entre re-uploads y entre
-  editar+guardar. Esto cierra el riesgo RIE-006 (ver DEC-0012) y resuelve PREG-002.
+  editar+guardar. Esto cierra el riesgo RIE-006 (ver DEC-0-12) y resuelve PREG-002.
 relacionados:
   - REPO-005
   - FTE-001
   - FTE-002
   - FTE-008
   - TAREA-003
-  - DEC-0003
-  - DEC-0012
+  - DEC-0-03
+  - DEC-0-12

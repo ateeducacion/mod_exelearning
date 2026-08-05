@@ -17,7 +17,7 @@
 /**
  * Admin page: bulk-migrate mod_exeweb / mod_exescorm activities into eXeLearning.
  *
- * Site-wide, non-destructive migration tool (issue #13 #3, DEC-0026, DEC-0050). The
+ * Site-wide, non-destructive migration tool (issue #13 #3, DEC-13-05, DEC-13-12). The
  * originals are kept; admins verify the result before removing the old plugin. A
  * preflight pass shows what is ready/blocked before the run. exescorm grades are
  * copied to the new activity's overall grade. The page is a thin controller: all

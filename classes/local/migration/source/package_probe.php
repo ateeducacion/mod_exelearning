@@ -16,7 +16,7 @@
 
 /**
  * Content-based detection of a migratable eXeLearning source inside a stored
- * legacy package (issue #13 #3, DEC-0050).
+ * legacy package (issue #13 #3, DEC-13-12).
  *
  * @package    mod_exelearning
  * @copyright  2026 ATE (Área de Tecnología Educativa)
