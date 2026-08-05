@@ -212,7 +212,7 @@ clean-editor:
 
 PLUGIN_NAME = mod_exelearning
 
-# Validate the committed version metadata (DEC-0068): real, monotonic
+# Validate the committed version metadata (DEC-111-01): real, monotonic
 # YYYYMMDDXX version, release = 'dev' on the development branch, strictly above
 # every db/upgrade.php savepoint.
 check-version:
@@ -231,7 +231,7 @@ check-release-version:
 # Create a distributable ZIP package
 # Usage: make package RELEASE=4.0.3
 # The Moodle version is NOT generated here: version.php ships exactly as
-# committed (DEC-0068); check-release-version validates it first. Delegates to
+# committed (DEC-111-01); check-release-version validates it first. Delegates to
 # scripts/package.sh, which uses only git ("git archive") so it needs no
 # zip/rsync/python/php and works in Git Bash on Windows. The working tree is
 # never modified and the ZIP is rooted at the Moodle install folder

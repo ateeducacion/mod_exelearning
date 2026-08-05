@@ -4,10 +4,10 @@
 > release package, and how the in-browser editor saves a package back into the
 > activity. Embedded-only by design (DEC-0009): no eXeLearning Online, no HMAC,
 > no remote service. (DEC-0005 — the original embedded/online toggle — is
-> superseded, and so is the runtime installer: since DEC-0065 the editor is a
+> superseded, and so is the runtime installer: since DEC-106-01 the editor is a
 > release artifact.)
 
-## 1. The editor is a release artifact (DEC-0065)
+## 1. The editor is a release artifact (DEC-106-01)
 
 The editor has exactly one source: the pre-built static bundle shipped inside
 the release ZIP at `$CFG->dirroot/mod/exelearning/dist/static/`. The plugin
@@ -36,7 +36,7 @@ Where the bundle comes from:
   package without a valid `dist/static/` and a non-empty `.editor-version`, and
   stamps the editor's version and AGPL-3.0-or-later licence into the ZIP's
   `thirdpartylibs.xml`. The release workflow builds the editor from the tag
-  matching the plugin release (DEC-0058), so a given plugin version always ships
+  matching the plugin release (DEC-78-01), so a given plugin version always ships
   one known editor build.
 - **Source checkouts** contain no `dist/static/`; run `make build-editor` to
   compile it locally. Until then embedded editing is simply unavailable.
@@ -49,7 +49,7 @@ removed installer era is obsolete and ignored; upgrading cleans the installer's
 config keys (`db/upgrade.php`, stage 2026072400) but deliberately leaves the
 directory for the administrator to delete.
 
-**Site-wide toggle (DEC-0066).** Embedded editing can be switched off with the
+**Site-wide toggle (DEC-108-01).** Embedded editing can be switched off with the
 `exelearning/editordisabled` admin setting (a deliberately negative checkbox,
 unticked by default, so the unset config and the unticked box both mean
 "editing on"). `exelearning_embedded_editor_enabled()` combines the toggle with bundle
@@ -156,7 +156,7 @@ The "Save to Moodle" button drives the export round-trip
    `__MOODLE_EXE_CONFIG__.saveUrl`).
 
    > Note: the save endpoint is `editor/save.php` (content save), **not**
-   > `manage_embedded_editor_upload.php` (a removed editor-install endpoint; see DEC-0065).
+   > `manage_embedded_editor_upload.php` (a removed editor-install endpoint; see DEC-106-01).
 3. `editor/save.php` re-checks `require_login()` + `require_sesskey()` +
    `require_capability('moodle/course:manageactivities')` (`editor/save.php:43-46`),
    stores the upload in the **`package` filearea** at `itemid = revision + 1`
@@ -165,7 +165,7 @@ The "Save to Moodle" button drives the export round-trip
    with the SCORM loader shim (`exelearning_extract_stored_package()` `:132`), and
    **re-detects gradable iDevices** via `exelearning_sync_grade_items()` (`:133`) —
    new iDevices add gradebook columns, removed ones are soft-deleted with grade
-   history preserved (DEC-0021 warning via `exelearning_warn_if_grades_stale()`
+   history preserved (DEC-12-01 warning via `exelearning_warn_if_grades_stale()`
    `:138`). It returns `{success, revision, format}`.
 4. The client rewrites the package and content URLs to the new revision with a
    cache buster (`updatePackageUrlRevision()` `:57-71`,
@@ -182,5 +182,5 @@ exchanges packages purely over `postMessage` + same-origin AJAX. The eXeLearning
 deliberately discarded (DEC-0009,
 `research/decisiones/adr/DEC-0009-solo-editor-embebido.md:23-45`): no
 `editormode` toggle, no `exeonlinebaseuri`, no `hmackey1`, no token TTL. There
-is no outbound traffic at all: since DEC-0065 the editor arrives inside the
+is no outbound traffic at all: since DEC-106-01 the editor arrives inside the
 release package and the runtime performs no downloads (§1).

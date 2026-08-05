@@ -17,7 +17,7 @@
 /**
  * Storage and extraction of the stored ELPX package (mod_exeweb style).
  *
- * Extracted verbatim from lib.php (DEC-0054). It owns the lifecycle of the
+ * Extracted verbatim from lib.php (DEC-71-01). It owns the lifecycle of the
  * `package` and `content` fileareas: save the uploaded ZIP, locate the stored
  * archive at any itemid, validate it, extract it to `content/{revision}/` and
  * apply the serve-time SCORM transforms. It complements {@see package} (which
@@ -58,7 +58,7 @@ final class package_manager {
         $context = context_module::instance($data->coursemodule);
         $fs = get_file_storage();
 
-        // Safety net against destroying the stored package (B1, DEC-0044). The
+        // Safety net against destroying the stored package (B1, DEC-34-01). The
         // submitted value is a draft itemid that is non-empty even when it carries no
         // file; saving such an empty draft used to delete every stored package itemid
         // (the form reads itemid 0 but the embedded editor stores at itemid=revision),
@@ -143,7 +143,7 @@ final class package_manager {
     /**
      * Whether a stored package archive is a real eXeLearning v4 package.
      *
-     * Both `.elpx` and `.zip` are accepted on upload (DEC-0027); the genuine marker is
+     * Both `.elpx` and `.zip` are accepted on upload (DEC-16-01); the genuine marker is
      * a `content.xml` (ODE 2.0) entry at the archive root, which every eXeLearning v4
      * export contains. Used by mod_form to reject an arbitrary .zip at submit time.
      *
@@ -288,7 +288,7 @@ final class package_manager {
 
         // 8) For packages that bundle the upstream xAPI emitter (eXeLearning PR #1867),
         // pin window.exeXapi.parentOrigin to this site and force actor:null so honest
-        // packages post statements only to Moodle (DEC-0064, RIE-013). No-op for legacy
+        // packages post statements only to Moodle (DEC-85-01, RIE-013). No-op for legacy
         // packages without the emitter. Grading itself is guarded server-side by the
         // xapi_track.php origin/capability checks regardless of this hardening.
         config_injector::inject($context->id, (int) $data->revision, self::host_origin());

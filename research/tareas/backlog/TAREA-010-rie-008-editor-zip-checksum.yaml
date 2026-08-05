@@ -15,9 +15,9 @@ pasos:
   - "Documentar explícitamente la decisión si no hay digest fiable que pinear."
 relacionados:
   - RIE-008
-  - DEC-0016
+  - DEC-4-01
 criterios_aceptacion:
   - "El instalador verifica digest/firma o deja documentado por qué no puede hacerlo."
-  - "TLS estricto y blocklist SSRF de DEC-0016 se mantienen intactos."
+  - "TLS estricto y blocklist SSRF de DEC-4-01 se mantienen intactos."
   - "La ruta Moodle Playground conserva su excepción justificada si sigue siendo necesaria."
 notas: "Defensa en profundidad; no sustituye las mitigaciones TLS/SSRF ya aplicadas."

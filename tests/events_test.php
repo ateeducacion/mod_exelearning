@@ -28,7 +28,7 @@ use mod_exelearning\local\track;
 
 /**
  * Tests for the mod_exelearning events added for traceability (P2) and the
- * once-per-attempt tracking lifecycle events emitted by track::ingest() (DEC-0051).
+ * once-per-attempt tracking lifecycle events emitted by track::ingest() (DEC-68-01).
  *
  * @package    mod_exelearning
  * @category   test

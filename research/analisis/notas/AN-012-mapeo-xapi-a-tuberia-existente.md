@@ -11,9 +11,9 @@ fuentes:
 relacionados:
   - DEC-0007
   - DEC-0014
-  - DEC-0017
-  - DEC-0018
-  - DEC-0032
+  - DEC-5-01
+  - DEC-6-01
+  - DEC-17-01
 herramienta_ia:
   interfaz: claude-code
   modelo: claude-opus-4-8
@@ -32,8 +32,8 @@ SCORM ya produce y se inyecta en `track::apply_item_scores()` / `attempts::recor
 
 - **La tubería actual es ya un punto de inyección único.** `track.php:177-281` recibe
   `itemscores = { objectid: { scorepct(0..100), weighted, title } }`, rutea por
-  `objectid → itemnumber` (`track::apply_item_scores`, DEC-0017), recalcula el overall
-  (`track::recompute_overall_pct`, DEC-0018), graba intentos
+  `objectid → itemnumber` (`track::apply_item_scores`, DEC-5-01), recalcula el overall
+  (`track::recompute_overall_pct`, DEC-6-01), graba intentos
   (`attempts::record_item`), agrega por `grademethod` (`attempts::aggregate_scaled`,
   DEC-0007) y publica con `grade_update(... itemnumber ...)`. El shim de `view.php:498-528`
   sólo **construye** ese `itemscores` leyendo el DOM del iframe (`captureItemScores`,
@@ -61,7 +61,7 @@ SCORM ya produce y se inyecta en `track::apply_item_scores()` / `attempts::recor
 | `verb = completed` | `completion` del overall (`itemnumber=0`) |
 | `verb = passed` / `failed` | `status` passed/failed + `success` del overall |
 | `verb = terminated` | fin de intento (cierre de sesión) |
-| `object.id = …/idevice/{ideviceId}` | `ideviceId → exelearning_grade_item.objectid → itemnumber` (DEC-0017); desconocido → **rechazo** |
+| `object.id = …/idevice/{ideviceId}` | `ideviceId → exelearning_grade_item.objectid → itemnumber` (DEC-5-01); desconocido → **rechazo** |
 | `result.score.scaled` (per-iDevice, 0..1) | `scorepct = scaled*100` → entrada `itemscores[objectid]` |
 | `result.score.scaled` (paquete, 0..1) | overall: `scorepct = scaled*100` → `itemnumber=0` (evita recálculo; el productor ya pondera) |
 | `result.success` / `result.completion` | `status` / `completion` del intento |
@@ -80,10 +80,10 @@ exponen `result.score.scaled` (0..1), que es la forma canónica para `scorepct =
 3. **Ignorar `actor`** del cliente → usar `$USER` (paridad con la confianza nula del shim
    SCORM, que tampoco recibe identidad del paquete).
 4. `object.id` debe resolver a un `objectid` **de esta instancia** (`exelearning_grade_item`,
-   DEC-0017); desconocido → rechazo (no crear items desde el cliente).
-5. Respeta `gradeenabled` (DEC-0029): con calificación desactivada no hay items → no-op.
+   DEC-5-01); desconocido → rechazo (no crear items desde el cliente).
+5. Respeta `gradeenabled` (DEC-13-07): con calificación desactivada no hay items → no-op.
 6. Overall: preferir el statement de paquete (`passed`/`failed`), pero **revalidar en
-   servidor**; nunca confiar ciegamente un "final score" del cliente (espíritu de DEC-0018).
+   servidor**; nunca confiar ciegamente un "final score" del cliente (espíritu de DEC-6-01).
 7. `postMessage`: el host **fija** `parentOrigin` a su origen y **valida** `event.origin`
    contra el origen del iframe (`pluginfile.php`); rechazar `'*'`/mismatch (RIE-013, cf.
    RIE-010, guard de postMessage del editor embebido).
@@ -108,13 +108,13 @@ exponen `result.score.scaled` (0..1), que es la forma canónica para `scorepct =
     subsistema `core_xapi` (sin eventos/estado automáticos).
   - [HIPOTESIS] La vía más limpia para "ignorar actor y reusar la tubería" es el **endpoint
     propio** para ingestión/nota, con un **handler `core_xapi` opcional** sólo para
-    eventos/analítica más adelante. Se decide en DEC-0032 y se detalla en
+    eventos/analítica más adelante. Se decide en DEC-17-01 y se detalla en
     `docs/xapi-integration-plan.md`.
 
 ## [HIPOTESIS]
 
 - El statement de paquete (`passed`/`failed`) hace **innecesario** el recálculo servidor
-  del overall para el caso xAPI (a diferencia del SCORM multipágina, DEC-0018), porque el
+  del overall para el caso xAPI (a diferencia del SCORM multipágina, DEC-6-01), porque el
   productor ya entrega el agregado ponderado. A validar en PR2 con fixtures reales.
 
 ## Consecuencias para `mod_exelearning`

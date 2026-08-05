@@ -20,7 +20,7 @@ use mod_exelearning\local\attempts;
 use mod_exelearning\local\track;
 
 /**
- * Ingests one xAPI statement into the existing grade pipeline (DEC-0032/DEC-0064).
+ * Ingests one xAPI statement into the existing grade pipeline (DEC-17-01/DEC-85-01).
  *
  * This is the xAPI counterpart of the SCORM `track::ingest()` orchestration. It does
  * NOT add a parallel model: it normalises the statement to the same `itemscores`
@@ -38,8 +38,8 @@ use mod_exelearning\local\track;
  *
  * The overall (`itemnumber=0`) is taken from the package `passed/failed/completed`
  * statement — the producer's *weighted* finalScore — because per-iDevice `answered`
- * statements carry no weight (DEC-0064); it is validated and clamped server-side
- * rather than blindly trusted (spirit of DEC-0018).
+ * statements carry no weight (DEC-85-01); it is validated and clamped server-side
+ * rather than blindly trusted (spirit of DEC-6-01).
  *
  * @package    mod_exelearning
  * @copyright  2026 ATE (Área de Tecnología Educativa)
@@ -103,7 +103,7 @@ class ingestor {
             return ['ok' => true, 'lifecycle' => true, 'verb' => $norm['verb']];
         }
 
-        // Master grading switch (DEC-0029): with grading off there are no grade items,
+        // Master grading switch (DEC-13-07): with grading off there are no grade items,
         // so the statement routes nowhere — a no-op, consistent with rejecting an
         // unknown objectid. Still recorded for audit/idempotency.
         if (empty($exe->gradeenabled)) {
@@ -172,14 +172,14 @@ class ingestor {
                 self::maybe_emit_started($exe, $course, $cm, $userid, $attempt, $attemptexisted);
             } else {
                 // Package verb: the overall (itemnumber=0). Take the producer's weighted
-                // finalScore, validate-and-clamp to the grade range (DEC-0064/DEC-0018).
+                // finalScore, validate-and-clamp to the grade range (DEC-85-01/DEC-6-01).
                 $overall = max($grademin, min($grademax, ((float) $norm['overallpct'] / 100.0) * $grademax));
                 $status = (string) $norm['status'];
                 attempts::record_item($exe->id, $userid, $attempt, 0, $overall, $grademax, $status, $registration);
                 $scaledoverall = attempts::aggregate_scaled($exe->id, $userid, 0, $grademethod);
                 $finaloverall = ($scaledoverall === null) ? $overall : ($scaledoverall * $grademax);
 
-                // Publish the aggregated overall ONLY in OVERALL mode (DEC-0038); in
+                // Publish the aggregated overall ONLY in OVERALL mode (DEC-25-01); in
                 // PERITEM the per-iDevice columns carry the gradebook and the overall
                 // item exists only for completionpassgrade.
                 if ($grademodel === EXELEARNING_GRADEMODEL_OVERALL) {
@@ -204,7 +204,7 @@ class ingestor {
                 $result['rawscore'] = $finaloverall;
                 $result['status'] = $status;
 
-                // Recompute completion (completionpassgrade / DEC-0052), then the
+                // Recompute completion (completionpassgrade / DEC-69-01), then the
                 // once-per-attempt lifecycle events (start + outcome).
                 $completion = new \completion_info($course);
                 if ($completion->is_enabled($cm)) {
@@ -234,7 +234,7 @@ class ingestor {
 
     /**
      * Whether an objectid resolves to a registered (non-deleted) grade item of the
-     * instance — the ownership/identity check (DEC-0017 / DEC-0063 §4).
+     * instance — the ownership/identity check (DEC-5-01 / DEC-0063 §4).
      *
      * @param int    $exelearningid
      * @param string $objectid
@@ -293,7 +293,7 @@ class ingestor {
 
     /**
      * Fires attempt_started once, only on the commit that creates the attempt
-     * (mirrors the SCORM path's observability contract, DEC-0051).
+     * (mirrors the SCORM path's observability contract, DEC-68-01).
      *
      * @param \stdClass $exe
      * @param \stdClass $course
@@ -328,7 +328,7 @@ class ingestor {
 
     /**
      * Fires attempt_completed once, only on the transition into a terminal status
-     * (mirrors the SCORM path's observability contract, DEC-0051).
+     * (mirrors the SCORM path's observability contract, DEC-68-01).
      *
      * @param \stdClass    $exe
      * @param \stdClass    $course

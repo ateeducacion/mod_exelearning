@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Static guard (DEC-0058): the Release workflow must build the embedded editor
+# Static guard (DEC-78-01): the Release workflow must build the embedded editor
 # from a fixed editor TAG matching the plugin release tag -- never from the
 # moving `main` branch -- so two builds of the same plugin release always bundle
 # the same editor (and the editor reports the final version, not a nightly/alpha

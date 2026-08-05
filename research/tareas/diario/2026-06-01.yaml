@@ -6,7 +6,7 @@ resumen: >-
   ledger, TODO, matriz DEC-0003, experimentos e índices.
 
 acciones:
-  - "status.yaml sincronizado con DEC-0014 aceptada y con DEC-0015..DEC-0018 añadidas."
+  - "status.yaml sincronizado con DEC-0014 aceptada y con DEC-0015, DEC-4-01, DEC-5-01 y DEC-6-01 añadidas."
   - "TAREA-002/003/004/005/006 marcadas como Done en el ledger; TAREA-007 añadida."
   - "Creadas TAREA-008, TAREA-009 y TAREA-010 para RIE-010, RIE-011 y RIE-008."
   - "TODO.md reescrito para reflejar sólo pendientes reales."
@@ -21,9 +21,9 @@ relacionados:
   - DEC-0003
   - DEC-0014
   - DEC-0015
-  - DEC-0016
-  - DEC-0017
-  - DEC-0018
+  - DEC-4-01
+  - DEC-5-01
+  - DEC-6-01
   - TAREA-005
   - TAREA-008
   - TAREA-009

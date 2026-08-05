@@ -2,10 +2,10 @@ fecha: 2026-06-04
 sesion: adr-reemplazo-paquete-y-origen-url-pr-docs
 agente: claude-code
 resumen: >-
-  ADR documental (DEC-0033, Propuesta) sobre cómo mantener actualizado el contenido de una
+  ADR documental (DEC-18-01, Propuesta) sobre cómo mantener actualizado el contenido de una
   actividad: (P1) reemplazo del .elpx y (P2) origen por URL con sincronización. Hallazgo P1:
   el reemplazo YA está soportado (exelearning_update_instance re-extrae, sube revision,
-  re-sincroniza grade items y avisa de notas obsoletas, DEC-0021). Hallazgo P2: el file picker
+  re-sincroniza grade items y avisa de notas obsoletas, DEC-12-01). Hallazgo P2: el file picker
   URL de Moodle (repository_url) NO sirve (oculto para .zip/.elpx, sólo web_image; y haría copia
   única sin sync); el patrón correcto es el de mod_scorm (selector de origen + reference +
   create_file_from_url + updatefreq), añadiendo un botón 'Actualizar ahora' (lo que a mod_scorm
@@ -16,17 +16,17 @@ acciones:
   - "Investigado mod_scorm (3 frentes en paralelo): scormtype LOCAL/LOCALSYNC/EXTERNAL/AICCURL, packageurl→reference, updatefreq NEVER/EVERYDAY/EVERYTIME, scorm_parse + create_file_from_url + gating por sha1hash, cron_task 1x/día, curl_security_helper, allowtype* opt-in. Confirmado: NO hay botón 'actualizar ahora'."
   - "Investigado Moodle File/Repository API: repository_url sólo web_image + FILE_INTERNAL|FILE_EXTERNAL (sin FILE_REFERENCE) → copia única, sin re-pull; references vivas sólo en repos filesystem/cloud; filemanager con accepted_types .elpx/.zip oculta el URL downloader."
   - "Investigado eXeLearning v4: .elpx=ZIP con content.xml; export REST GET /api/v1/projects/:uuid/export/elpx (Bearer JWT); sin permalink anónimo; sin versionado de proyecto (detección por updatedAt/hash)."
-  - "Creada DEC-0033 (decisión: confirmar reemplazo + acción visible; origen URL estilo mod_scorm con opt-in admin; cadencia manual primero, updatefreq opcional) y TAREA-016 (implementación Fase 1/2)."
-  - "Consolidados índices: AGENTS.md (tabla de ADRs completa DEC-0001..0033 + sección Pendiente + sesión), TODO.md, status.yaml (DEC-0033 + TAREA-016) y regenerados docs/indices (build_indexes.py) + validado (test_schema_validation.py)."
+  - "Creada DEC-18-01 (decisión: confirmar reemplazo + acción visible; origen URL estilo mod_scorm con opt-in admin; cadencia manual primero, updatefreq opcional) y TAREA-016 (implementación Fase 1/2)."
+  - "Consolidados índices: AGENTS.md (tabla de ADRs completa: los 33 ADRs entonces existentes + sección Pendiente + sesión), TODO.md, status.yaml (DEC-18-01 + TAREA-016) y regenerados docs/indices (build_indexes.py) + validado (test_schema_validation.py)."
 evidencia:
-  - "research/decisiones/adr/DEC-0033-actualizacion-paquete-y-origen-url.md"
+  - "research/decisiones/adr/DEC-18-01-actualizacion-paquete-y-origen-url.md"
   - "research/tareas/backlog/TAREA-016-impl-reemplazo-y-origen-url.yaml"
 pendientes:
   - "PR de implementación (TAREA-016): reemplazo visible + origen URL + 'Actualizar ahora' + tests (Fase 1); updatefreq + token eXe v4 (Fase 2)."
 relacionados:
-  - DEC-0033
-  - DEC-0021
-  - DEC-0024
-  - DEC-0027
+  - DEC-18-01
+  - DEC-12-01
+  - DEC-13-03
+  - DEC-16-01
   - DEC-0019
   - TAREA-016

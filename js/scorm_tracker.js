@@ -67,7 +67,7 @@
      * $('.idevice_node').index(el)+1 ordering, so N resolves to the right objectid
      * (the .idevice_node element id, equal to <odeIdeviceId> and to our
      * exelearning_grade_item.objectid). This is the multi-page collision fix
-     * (DEC-0017 / RIE-007).
+     * (DEC-5-01 / RIE-007).
      *
      * @param {Document|null} doc The iframe's content document (null if unavailable).
      * @returns {Object|null} Map of N (int) to objectid, or null when nothing resolves.
@@ -167,7 +167,7 @@
             return fr && fr.contentDocument;
         };
         var bindUnload = config.bindUnload !== false;
-        // Inert mode for xAPI-primary packages (DEC-0064): window.API still answers
+        // Inert mode for xAPI-primary packages (DEC-85-01): window.API still answers
         // findAPI()/LMSInitialize so pipwerks reports connected and the iDevices run
         // (and thus emit their xAPI statements), but no score is ever POSTed to
         // track.php — grading flows through the xAPI listener instead. The legacy
@@ -179,7 +179,7 @@
         var itemScores = {};    // objectid => { scorepct, weighted, title }.
 
         function send(sync) {
-            // xAPI-primary packages keep window.API alive but never POST (DEC-0064).
+            // xAPI-primary packages keep window.API alive but never POST (DEC-85-01).
             if (disableTracking) { dirty = false; return true; }
             if (!dirty) { return true; }
             var snapshot = JSON.stringify(cmi);
@@ -219,7 +219,7 @@
         }
 
         // On each suspend_data write, capture the just-scored iDevice by objectid while
-        // the scoring page is still loaded in the iframe (DEC-0017).
+        // the scoring page is still loaded in the iframe (DEC-5-01).
         function handleSuspend(value) {
             var newParsed = parseSuspend(value);
             var domMap = resolveObjectMap(getScoringDocument());
@@ -238,7 +238,7 @@
             LMSSetValue:     function (k, v) {
                 cmi[k] = String(v); dirty = true;
                 // Resolve per-iDevice scores to stable objectids while the scoring
-                // page is still loaded in the iframe (DEC-0017).
+                // page is still loaded in the iframe (DEC-5-01).
                 if (k === 'cmi.suspend_data') {
                     handleSuspend(cmi[k]);
                     schedule();

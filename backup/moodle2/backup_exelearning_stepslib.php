@@ -40,14 +40,14 @@ class backup_exelearning_activity_structure_step extends backup_activity_structu
         // grademodel/maxattempt/reviewmode/teachermodevisible/gradepass/
         // gradeenabled/gradecat are all NOT NULL instance settings; omitting them
         // made restore silently revert grading model, attempt limits, review
-        // policy, pass grade, the master grading switch (DEC-0029) and the grade
-        // category (DEC-0034) to the install.xml defaults — so a deliberately
+        // policy, pass grade, the master grading switch (DEC-13-07) and the grade
+        // category (DEC-19-01) to the install.xml defaults — so a deliberately
         // ungraded activity (gradeenabled=0) came back graded and re-created its
-        // gradebook columns on first view (B4, DEC-0044). gradesyncrev is
+        // gradebook columns on first view (B4, DEC-34-01). gradesyncrev is
         // deliberately NOT backed up so the restored copy re-scans its package
         // once on first view.
         // completionstatusrequired is the custom completion rule's stored config
-        // (DEC-0052); it must round-trip so a restored copy keeps the rule.
+        // (DEC-69-01); it must round-trip so a restored copy keeps the rule.
         $exelearning = new backup_nested_element('exelearning', ['id'], [
             'course', 'name', 'intro', 'introformat',
             'entrypath', 'entryname', 'revision', 'gradeenabled', 'grademax',
@@ -61,7 +61,7 @@ class backup_exelearning_activity_structure_step extends backup_activity_structu
         $gradeitems = new backup_nested_element('gradeitems');
 
         // The contenthash must round-trip: it backs the stale-grades warning
-        // (DEC-0021) when an iDevice is edited in place.
+        // (DEC-12-01) when an iDevice is edited in place.
         $gradeitem = new backup_nested_element('gradeitem', ['id'], [
             'itemnumber', 'objectid', 'pageid', 'idevicetype', 'name',
             'grademax', 'grademin', 'contenthash', 'deleted', 'timecreated', 'timemodified',

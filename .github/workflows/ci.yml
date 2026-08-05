@@ -301,7 +301,7 @@ jobs:
           flags: javascript
           disable_search: true
 
-  # Guards for the release pipeline. Static (DEC-0058): a published release must
+  # Guards for the release pipeline. Static (DEC-78-01): a published release must
   # build the embedded editor from the matching editor TAG, never from the moving
   # `main` branch, so two builds of the same plugin tag always bundle the same
   # editor. Executable: the packager itself is run, because its stamping and
@@ -316,7 +316,7 @@ jobs:
       - name: Validate release workflow editor pinning
         run: bash scripts/check-release-workflow.sh
 
-      - name: Validate version metadata (DEC-0068)
+      - name: Validate version metadata (DEC-111-01)
         run: |
           bash scripts/check-version-selftest.sh
           bash scripts/check-version.sh

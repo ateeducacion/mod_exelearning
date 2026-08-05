@@ -27,7 +27,7 @@ global $CFG;
 require_once($CFG->dirroot . '/mod/exelearning/lib.php');
 
 /**
- * Unit tests for the target activity builder (issue #13 #3, DEC-0050).
+ * Unit tests for the target activity builder (issue #13 #3, DEC-13-12).
  *
  * @package    mod_exelearning
  * @category   test
@@ -86,7 +86,7 @@ final class activity_builder_test extends advanced_testcase {
 
     /**
      * The source idnumber is never copied: the source survives in the same course,
-     * so copying it would create a course-wide duplicate (DEC-0050).
+     * so copying it would create a course-wide duplicate (DEC-13-12).
      */
     public function test_idnumber_is_never_copied(): void {
         global $DB;

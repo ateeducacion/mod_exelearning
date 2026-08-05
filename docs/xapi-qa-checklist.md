@@ -1,4 +1,4 @@
-# xAPI ingestion — manual QA checklist (DEC-0064)
+# xAPI ingestion — manual QA checklist (DEC-85-01)
 
 > Unit/integration tests (`tests/local/xapi/*`, `tests/js/xapi_listener.test.js`) cover the
 > validation, grading parity and the listener resend. This checklist is the **manual, real-package**

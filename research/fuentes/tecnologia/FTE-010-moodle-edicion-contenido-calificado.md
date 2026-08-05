@@ -17,7 +17,7 @@ context7:
   fecha: null
   version_devuelta: "[PENDIENTE: context7]"
 fecha_consulta: 2026-06-02
-relevancia_para_mod_exelearning: "Define la política de core (snapshot, no recálculo silencioso, aviso opt-in) que mod_exelearning debe igualar al editar un .elpx calificado (DEC-0021)."
+relevancia_para_mod_exelearning: "Define la política de core (snapshot, no recálculo silencioso, aviso opt-in) que mod_exelearning debe igualar al editar un .elpx calificado (DEC-12-01)."
 herramienta_ia:
   interfaz: claude-code
   modelo: claude-opus-4-8
@@ -103,10 +103,10 @@ correcta/puntuación. Foco en qué les pasa a los **intentos** y a las **notas**
   `scaledscore` ya calculado (`track.php`): por tanto el **recálculo estilo quiz es
   arquitectónicamente imposible** (no se puede re-derivar la nota de un intento pasado
   contra el contenido nuevo). El espacio de diseño se reduce a *snapshot* + aviso +
-  (opcional) invalidar/resetear intentos. Ver DEC-0021.
+  (opcional) invalidar/resetear intentos. Ver DEC-12-01.
 
 ## Preguntas abiertas
 
 - Cierra parcialmente la pregunta abierta de FTE-006 ("política de re-upload: preservar
   `itemnumber` por `objectid` estable vs renumerar"): mod_exelearning preserva por
-  `objectid` (DEC-0012/DEC-0017) y ahora avisa de la nota obsoleta (DEC-0021).
+  `objectid` (DEC-0012/DEC-5-01) y ahora avisa de la nota obsoleta (DEC-12-01).

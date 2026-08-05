@@ -163,12 +163,12 @@ editor remains):
 
 The editor has exactly one source: the pre-built copy shipped inside the release
 ZIP at `dist/static/`
-([DEC-0065](./research/decisiones/adr/DEC-0065-editor-empaquetado-solo-en-release.md)).
+([DEC-106-01](./research/decisiones/adr/DEC-106-01-editor-empaquetado-solo-en-release.md)).
 There is nothing to install, update or repair at runtime — the plugin never
 downloads editor code after installation, so everything it serves is part of the
 reviewed release package, and a given plugin version always ships one known
 editor build (pinned to the matching editor tag,
-[DEC-0058](./research/decisiones/adr/DEC-0058-fijar-editor-tag-en-release.md)).
+[DEC-78-01](./research/decisiones/adr/DEC-78-01-fijar-editor-tag-en-release.md)).
 
 Administrators cannot update the editor independently: updating the editor means
 installing the next plugin release. When the bundle is absent (a source checkout)
@@ -183,7 +183,7 @@ When a teacher uploads a `.elpx`, the plugin extracts the package and detects
 gradable iDevices from `content.xml`. The default gradebook model is **per-iDevice
 only**: one visible column per detected gradable iDevice (`itemnumber=1..N`) and
 **no overall column** — the two models are symmetric, with no hidden overall stub
-([DEC-0038](./research/decisiones/adr/DEC-0038-sin-columna-overall-en-peritem.md)).
+([DEC-25-01](./research/decisiones/adr/DEC-25-01-sin-columna-overall-en-peritem.md)).
 Pass-grade completion targets a registered gradable item directly (Moodle's
 completion-by-grade). The teacher can switch the activity to **overall only** when a
 single aggregated grade is preferred (SCORM-style). The former "both" mode was
@@ -209,7 +209,7 @@ xAPI support via `core_xapi` is on the roadmap.
 The plugin exposes external functions for the official Moodle App and other
 external clients, all registered under `MOODLE_OFFICIAL_MOBILE_SERVICE` and
 enforcing context, login and capabilities in code
-([DEC-0040](./research/decisiones/adr/DEC-0040-mobile-external-api.md)):
+([DEC-26-02](./research/decisiones/adr/DEC-26-02-mobile-external-api.md)):
 
 | Function | Type | Capability | Purpose |
 |---|---|---|---|

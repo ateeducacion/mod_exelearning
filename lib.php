@@ -35,10 +35,10 @@
 define('EXELEARNING_GRADEMODEL_OVERALL', 0); // Overall grade only (itemnumber=0).
 define('EXELEARNING_GRADEMODEL_PERITEM', 1); // One column per gradable iDevice (default).
 
-// DEC-0052: custom completion rule `completionstatusrequired`. The activity is
+// DEC-69-01: custom completion rule `completionstatusrequired`. The activity is
 // marked complete when the user's attempt reaches a required status. The column is
 // nullable; NULL disables the rule. A module-level rule (one state per module),
-// aligned with Moodle's completion abstraction (DEC-0049 rejected per-iDevice).
+// aligned with Moodle's completion abstraction (DEC-67-01 rejected per-iDevice).
 define('EXELEARNING_COMPLETIONSTATUS_PASSED', 1); // Require a passed attempt.
 define('EXELEARNING_COMPLETIONSTATUS_COMPLETED', 2); // Require a completed attempt.
 define('EXELEARNING_COMPLETIONSTATUS_ANY', 3); // Require a passed OR completed attempt.
@@ -118,7 +118,7 @@ function exelearning_add_instance($data, $mform = null) {
     if (!isset($data->gradecat)) {
         $data->gradecat = 0;
     }
-    // Custom completion rule (DEC-0052): NULL disables the rule. mod_form's
+    // Custom completion rule (DEC-69-01): NULL disables the rule. mod_form's
     // data_postprocessing() already normalises the submitted value to an int or
     // null; default to null when the caller does not provide it.
     if (!isset($data->completionstatusrequired)) {
@@ -156,8 +156,8 @@ function exelearning_update_instance($data, $mform = null) {
     $data->id = $data->instance;
     $data->timemodified = time();
     // Snapshot the pre-update grading model/method so we can tell a pure grading
-    // change (re-aggregate valid attempts) from a package re-upload (DEC-0021
-    // snapshot-and-warn) after the record is written (B2, DEC-0044).
+    // change (re-aggregate valid attempts) from a package re-upload (DEC-12-01
+    // snapshot-and-warn) after the record is written (B2, DEC-34-01).
     $oldrow = $DB->get_record(
         'exelearning',
         ['id' => $data->id],
@@ -192,7 +192,7 @@ function exelearning_update_instance($data, $mform = null) {
     if (!isset($data->gradecat)) {
         $data->gradecat = 0;
     }
-    // Custom completion rule (DEC-0052): NULL disables the rule. mod_form's
+    // Custom completion rule (DEC-69-01): NULL disables the rule. mod_form's
     // data_postprocessing() sets this to an int or null; default to null when the
     // caller does not provide it so an update never leaves a stray stale value.
     if (!isset($data->completionstatusrequired)) {
@@ -228,8 +228,8 @@ function exelearning_update_instance($data, $mform = null) {
     // exelearning_sync_grade_items() deletes and recreates the gradebook columns
     // empty (PERITEM<->OVERALL) or keeps them aggregated with the old method — so
     // the published grades would vanish or go stale until students resubmit.
-    // Re-publish them from the attempt history (B2, DEC-0044). A package re-upload
-    // (content change) is deliberately NOT recomputed here: it keeps DEC-0021
+    // Re-publish them from the attempt history (B2, DEC-34-01). A package re-upload
+    // (content change) is deliberately NOT recomputed here: it keeps DEC-12-01
     // snapshot-and-warn semantics via exelearning_warn_if_grades_stale() below.
     if (
         (int) $data->grademodel !== (int) $oldrow->grademodel
@@ -240,7 +240,7 @@ function exelearning_update_instance($data, $mform = null) {
 
     // Re-uploading a package over an activity that already has attempts may add,
     // remove or re-score gradable iDevices; warn that old grades are not
-    // recomputed (DEC-0021). The notice renders on the post-form redirect.
+    // recomputed (DEC-12-01). The notice renders on the post-form redirect.
     exelearning_warn_if_grades_stale($data->id, $delta, (int) $data->coursemodule);
 
     // Also warn if the package exceeds the gradebook item cap (excess iDevices dropped).
@@ -290,7 +290,7 @@ function exelearning_delete_instance($id) {
 
 /**
  * Returns information to be displayed on the course page and the custom completion
- * rule configuration for the activity (DEC-0052).
+ * rule configuration for the activity (DEC-69-01).
  *
  * Exposes the stored completionstatusrequired field so
  * \mod_exelearning\completion\custom_completion can read the rule's required status
@@ -412,7 +412,7 @@ function exelearning_reset_gradebook($courseid, $type = '') {
         // for 'deleted', not 'reset'. In PERITEM the overall (0) never exists, in
         // OVERALL no per-iDevice item exists, and soft-deleted iDevices still raise
         // MAX(itemnumber), so a course reset spawned phantom columns that inflated
-        // the course total (B3, DEC-0044).
+        // the course total (B3, DEC-34-01).
         $items = grade_item::fetch_all([
             'itemtype'     => 'mod',
             'itemmodule'   => 'exelearning',
@@ -459,7 +459,7 @@ function exelearning_grade_item_update($exelearning, $grades = null, array $item
  * only the former declared, core did nothing (and logged "you have declared one
  * of ... but not both"), so course-reset "remove all grades", grade-item unlock
  * and user-undelete history recovery silently dropped every exelearning grade
- * while exelearning_attempt still held the data (B2b, DEC-0044).
+ * while exelearning_attempt still held the data (B2b, DEC-34-01).
  *
  * Each user's grade is re-aggregated from exelearning_attempt with the current
  * grademethod/grademodel via exelearning_recalculate_user_grades(), so it is also
@@ -639,7 +639,7 @@ function exelearning_extend_settings_navigation(
     if (!$context || !has_capability('mod/exelearning:viewreport', $context)) {
         return;
     }
-    // No reports node when the activity is not graded (DEC-0029).
+    // No reports node when the activity is not graded (DEC-13-07).
     if (!$DB->get_field('exelearning', 'gradeenabled', ['id' => $PAGE->cm->instance])) {
         return;
     }
@@ -701,7 +701,7 @@ function exelearning_get_stored_package(int $contextid): ?\stored_file {
 /**
  * Whether a stored package archive is a real eXeLearning v4 package.
  *
- * Both `.elpx` and `.zip` are accepted on upload (DEC-0027); the genuine marker is
+ * Both `.elpx` and `.zip` are accepted on upload (DEC-16-01); the genuine marker is
  * a `content.xml` (ODE 2.0) entry at the archive root, which every eXeLearning v4
  * export contains. Used by mod_form to reject an arbitrary .zip at submit time.
  *
@@ -743,7 +743,7 @@ function exelearning_inject_scorm_loader(int $contextid, int $revision): void {
  * Whether the extracted package bundles the eXeLearning xAPI emitter
  * (`libs/xapi/exe_xapi.js`, upstream PR #1867).
  *
- * Drives the channel choice in view.php (DEC-0064): an xAPI-capable package grades via
+ * Drives the channel choice in view.php (DEC-85-01): an xAPI-capable package grades via
  * xAPI (the SCORM shim is kept inert), while a legacy package keeps SCORM grading.
  *
  * @param int $contextid The activity module context id.
@@ -762,7 +762,7 @@ function exelearning_package_emits_xapi(int $contextid, int $revision): bool {
 }
 
 /**
- * Whether the xAPI-primary grading channel is enabled site-wide (DEC-0064).
+ * Whether the xAPI-primary grading channel is enabled site-wide (DEC-85-01).
  *
  * Master switch (admin setting `exelearning/xapiprimaryenabled`) sitting in front of the
  * per-package channel choice in view.php and the `xapi_track.php` endpoint: when on
@@ -799,7 +799,7 @@ function exelearning_xapi_primary_enabled(): bool {
  * `isScorm > 0`). The patch targets the unique `data.isScorm` variant of the guard
  * (the init-time guards use `ldata.isScorm`), is idempotent (the matched string is
  * removed), and degrades safely: if a future producer reformats the guard the
- * replace is a no-op and behaviour reverts to today's. See research ADR DEC-0042.
+ * replace is a no-op and behaviour reverts to today's. See research ADR DEC-13-11.
  *
  * @param int $contextid
  * @param int $revision
@@ -809,7 +809,7 @@ function exelearning_patch_idevice_save_guards(int $contextid, int $revision): v
 }
 
 /**
- * Removes all gradebook items of an activity (master grading switch off, DEC-0029).
+ * Removes all gradebook items of an activity (master grading switch off, DEC-13-07).
  *
  * Soft-deletes the plugin's grade-item mapping rows and deletes the matching Moodle
  * grade items, including the overall item (itemnumber 0), so nothing shows in the
@@ -828,7 +828,7 @@ function exelearning_remove_all_grade_items(stdClass $instance): void {
  *
  * Returns the change delta against the previously synced state so callers can
  * warn the teacher when editing a graded package alters the gradable set
- * (DEC-0021). "changed" means the same objectid whose content block hash
+ * (DEC-12-01). "changed" means the same objectid whose content block hash
  * differs, i.e. an in-place options/scoring edit.
  *
  * @param int $exelearningid
@@ -841,7 +841,7 @@ function exelearning_sync_grade_items(int $exelearningid, ?int $contextid = null
 
 /**
  * Queues a teacher-facing warning when editing a graded package changed its
- * gradable set while student attempts already exist (DEC-0021).
+ * gradable set while student attempts already exist (DEC-12-01).
  *
  * mod_exelearning keeps the snapshot semantics of mod_scorm / mod_h5pactivity:
  * existing attempts and the grades derived from them are NOT recomputed when the
@@ -899,7 +899,7 @@ function exelearning_recalculate_user_grades(stdClass $instance, int $userid): v
  * per user per item).
  *
  * Aggregation respects grademethod (DEC-0007, via attempts::aggregate_values()) and
- * the grademodel column rules: PERITEM has no overall column (DEC-0038), OVERALL has
+ * the grademodel column rules: PERITEM has no overall column (DEC-25-01), OVERALL has
  * no per-iDevice columns (DEC-0008). A user with no attempts for an item gets a null
  * rawgrade, clearing any stale grade.
  *
@@ -923,14 +923,14 @@ function exelearning_grade_item_name(stdClass $instance, stdClass $detected): st
 
 /**
  * Relaxes core's "completion grade item has no grade field" validation error for a
- * registered gradable item (B7, DEC-0044).
+ * registered gradable item (B7, DEC-34-01).
  *
  * Core's moodleform_mod::validation() rejects every completiongradeitemnumber with a
  * badcompletiongradeitemnumber error (key 'completionpassgrade') because
  * mod_exelearning maps 101 itemnumbers (gradeitems::MAX_ITEMNUMBER) but stores each
  * grade in its own table instead of exposing per-itemnumber grade_ideviceN form
  * fields — so core's "this item has no grade field" check always fails, making the
- * DEC-0038 completion-by-grade feature impossible to save from the form. This
+ * DEC-25-01 completion-by-grade feature impossible to save from the form. This
  * stopgap clears that specific error when "require passing grade" is OFF and the
  * chosen item is a real gradebook column (a per-iDevice item in PERITEM, or the
  * overall in OVERALL): it does carry a grade, just not via a core form field.
@@ -952,7 +952,7 @@ function exelearning_relax_completion_grade_errors(array $errors, array $data, i
 /**
  * Places every grade item of the activity under the configured grade category.
  *
- * The grade category selector (DEC-0034) is stored on exelearning.gradecat, but
+ * The grade category selector (DEC-19-01) is stored on exelearning.gradecat, but
  * grade_update() silently ignores the categoryid key (it is not in its allowed
  * field list), so the parent category must be set with grade_item::set_parent() —
  * the same API course/modlib.php uses for core's "Grade category" dropdown.
@@ -968,7 +968,7 @@ function exelearning_apply_grade_category(stdClass $instance): void {
     \mod_exelearning\grades\grade_item_manager::apply_category($instance);
 }
 
-// Note: exelearning_exclude_overall_grade() (DEC-0035) was removed in DEC-0038.
+// Note: exelearning_exclude_overall_grade() (DEC-19-02) was removed in DEC-25-01.
 // It excluded the hidden overall (itemnumber=0) from aggregation so it would not
 // blank the student's total. PERITEM no longer creates an overall item at all, so
 // there is nothing to exclude and the root cause (a hidden item that aggregates)
@@ -1003,7 +1003,7 @@ function exelearning_get_package_url($exelearning, $context) {
  * passing its itemnumber (same pattern as core mod_h5pactivity). This maps that
  * itemnumber to the owning iDevice's stable objectid so the view can deep-link
  * straight to that iDevice instead of the resource front page (issue #13 #4,
- * DEC-0023). itemnumber 0 (the overall grade) links to the front page.
+ * DEC-13-02). itemnumber 0 (the overall grade) links to the front page.
  *
  * @param stdClass $exelearning Instance record.
  * @param int $cmid Course module id.
@@ -1021,7 +1021,7 @@ function exelearning_grade_item_view_url(stdClass $exelearning, int $cmid, int $
  * deep-linked by a plugin; the per-grade "grade analysis" link (which appears because
  * this module ships grade.php) is the only place we can target. Teachers/graders go to
  * the attempts report (the actual attempt behind the grade); students are deep-linked
- * to the specific iDevice in the content (issue #13 #4, DEC-0028).
+ * to the specific iDevice in the content (issue #13 #4, DEC-13-06).
  *
  * @param stdClass $exelearning Instance record.
  * @param int $cmid Course module id.
@@ -1045,7 +1045,7 @@ function exelearning_grade_analysis_url(
  * Returns the absolute path to the index.html of the bundled embedded editor.
  *
  * Wrapper for embedded_editor_source_resolver::get_index_source(). The editor is
- * a release artifact shipped under dist/static/ (DEC-0065); when it is absent or
+ * a release artifact shipped under dist/static/ (DEC-106-01); when it is absent or
  * invalid this returns null and embedded editing is unavailable.
  *
  * @return string|null Path to index.html, or null when no editor is available.
@@ -1057,7 +1057,7 @@ function exelearning_get_embedded_editor_index_source(): ?string {
 /**
  * Returns whether embedded editing is available on this site.
  *
- * Two conditions must hold (DEC-0065, DEC-0066): the bundled editor passes
+ * Two conditions must hold (DEC-106-01, DEC-108-01): the bundled editor passes
  * validation, and the administrator has not switched embedded editing off via
  * the site-wide `editordisabled` setting. The toggle is deliberately negative
  * (like `stylesblockimport`) so the unset state and the unticked checkbox both
@@ -1079,7 +1079,7 @@ function exelearning_embedded_editor_enabled(): bool {
 }
 
 /**
- * Aborts the request when embedded editing is disabled site-wide (DEC-0066).
+ * Aborts the request when embedded editing is disabled site-wide (DEC-108-01).
  *
  * Guard for the editor endpoints (editor/index.php bootstrap, editor/save.php):
  * hiding the button is not enough, a direct request must be refused too.

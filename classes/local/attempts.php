@@ -81,7 +81,7 @@ class attempts {
      * Whether any student has at least one attempt on this activity.
      *
      * Used to decide whether editing the package should warn the teacher that
-     * existing grades are now stale (DEC-0021).
+     * existing grades are now stale (DEC-12-01).
      *
      * @param int $exelearningid
      * @return bool

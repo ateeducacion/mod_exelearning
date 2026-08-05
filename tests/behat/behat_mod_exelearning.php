@@ -26,7 +26,7 @@ use Behat\Mink\Exception\ExpectationException;
  * Steps to exercise mod_exelearning tracking and report behaviour in Behat.
  *
  * The non-JS score seeding step uses the same server-side objectid routing as
- * track.php, keeping CI deterministic while PHPUnit covers the DEC-0017 collision
+ * track.php, keeping CI deterministic while PHPUnit covers the DEC-5-01 collision
  * and browser-level bridge checks remain in the e2e/manual lane.
  *
  * @package    mod_exelearning

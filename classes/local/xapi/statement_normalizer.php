@@ -22,7 +22,7 @@ namespace mod_exelearning\local\xapi;
  * The eXeLearning emitter (`exe_xapi.js`, upstream PR #1867, merged at commit
  * `e3b1bd13`) posts xAPI 1.0.3 statements to the host. This class turns one decoded
  * statement into the same `itemscores` shape the SCORM shim produces, so the existing
- * scoring pipeline can ingest it unchanged (DEC-0032). It performs the canonical,
+ * scoring pipeline can ingest it unchanged (DEC-17-01). It performs the canonical,
  * citable validation fixed in DEC-0063 *before* any grading happens, and it never
  * trusts the client: the actor, authority, stored and timestamp are ignored by the
  * caller; this class only reads `verb`, `object.id`, `result.score` and the stable
@@ -151,7 +151,7 @@ class statement_normalizer {
 
         // Package verb: completed|passed|failed. The score is the producer's weighted
         // finalScore (f/100); it is the authoritative overall (answered statements
-        // carry no weight to recompute it from — DEC-0064). The caller still clamps it
+        // carry no weight to recompute it from — DEC-85-01). The caller still clamps it
         // to the grade range server-side.
         $status = ($verb === 'completed') ? 'completed' : $verb;
         // The `success` flag lives at result.success in xAPI (NOT result.score.success);

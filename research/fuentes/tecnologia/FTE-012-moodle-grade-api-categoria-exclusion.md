@@ -16,7 +16,7 @@ context7:
   fecha: 2026-06-04
   version_devuelta: "moodle/moodle (MOODLE_405_STABLE + MOODLE_500_STABLE) — reputación High. Confirma allowlist de grade_update, set_excluded/get_hiding_affected y el default del ajuste de totales."
 fecha_consulta: 2026-06-04
-relevancia_para_mod_exelearning: "Fundamenta DEC-0034 (el selector de categoría debe aplicarse con grade_item::set_parent porque grade_update ignora categoryid) y DEC-0035 (excluir la nota overall oculta de la agregación con grade_grade::set_excluded para que Moodle no vacíe el total del alumno)."
+relevancia_para_mod_exelearning: "Fundamenta DEC-19-01 (el selector de categoría debe aplicarse con grade_item::set_parent porque grade_update ignora categoryid) y DEC-19-02 (excluir la nota overall oculta de la agregación con grade_grade::set_excluded para que Moodle no vacíe el total del alumno)."
 herramienta_ia:
   interfaz: claude-code
   modelo: claude-opus-4-8
@@ -102,9 +102,9 @@ se filtren a quien no tenga `moodle/grade:viewhidden`.)
 
 ## Aplicación a mod_exelearning
 
-- **DEC-0034**: el selector `gradecat` se aplica a cada grade item con `set_parent()`
+- **DEC-19-01**: el selector `gradecat` se aplica a cada grade item con `set_parent()`
   (no con `grade_update`), en `exelearning_apply_grade_category()`.
-- **DEC-0035**: en modo peritem, tras escribir la nota overall (oculta) se llama
+- **DEC-19-02**: en modo peritem, tras escribir la nota overall (oculta) se llama
   `grade_grade::set_excluded(true)` (`exelearning_exclude_overall_grade()`), de modo que
   el total del alumno deja de vaciarse y no hay doble conteo, conservando
   `finalgrade`/`gradepass` para la finalización.

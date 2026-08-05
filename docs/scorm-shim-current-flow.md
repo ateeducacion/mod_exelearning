@@ -4,7 +4,7 @@
 > currently **100% SCORM 1.2 shim**; there is no xAPI path yet.
 > Decision trail (Spanish): `research/decisiones/adr/` — DEC-0003 (SCORM 1.2 standard),
 > DEC-0006 (preview/grading), DEC-0007 (attempts), DEC-0008 (grade model), DEC-0010
-> (completion), DEC-0017 (objectid routing), DEC-0018 (overall recompute), DEC-0029
+> (completion), DEC-5-01 (objectid routing), DEC-6-01 (overall recompute), DEC-13-07
 > (master grading switch).
 
 ## Why a shim
@@ -15,7 +15,7 @@ supplies that object from the **parent** page (`view.php`) so the package can re
 scores without being a real SCORM package. eXeLearning v4 only calls
 `pipwerks.SCORM.init()` if the loader is injected into each HTML `<head>`; the plugin does
 that in `exelearning_inject_scorm_loader()` (delegador en `lib.php`) →
-`\mod_exelearning\local\scorm\scorm_injector::inject()` (DEC-0054) — see the "Pipwerks lazy"
+`\mod_exelearning\local\scorm\scorm_injector::inject()` (DEC-71-01) — see the "Pipwerks lazy"
 note in the root `AGENTS.md`.
 
 ## Components
@@ -24,7 +24,7 @@ note in the root `AGENTS.md`.
 |---|---|---|
 | Package delivery | `view.php:569-579` | Serves the extracted package in a same-origin `<iframe>` from `pluginfile.php/.../content/<revision>/index.html`. Sandbox: `allow-scripts allow-same-origin allow-popups allow-forms allow-popups-to-escape-sandbox` (no `allow-top-navigation`, no `allow-modals`). |
 | SCORM API shim | `view.php:380-530` | Inline `window.API` in the parent window. Buffers CMI pairs, debounced auto-commit, POSTs to `track.php`. |
-| objectid capture | `view.php:430-461` | On each `cmi.suspend_data` write, reads the iframe DOM (`.idevice_node` ids) to map the page-local index `N` to the stable **objectid** (DEC-0017 / RIE-007). |
+| objectid capture | `view.php:430-461` | On each `cmi.suspend_data` write, reads the iframe DOM (`.idevice_node` ids) to map the page-local index `N` to the stable **objectid** (DEC-5-01 / RIE-007). |
 | Tracking endpoint | `track.php` | Validates the request, routes per-iDevice scores, records attempts, pushes grades, recomputes completion. |
 | Domain services | `classes/local/track.php`, `attempts.php`, `package.php` | Reusable parsing/routing/aggregation extracted out of the endpoint. |
 | Data model | `db/install.xml` | `exelearning`, `exelearning_grade_item`, `exelearning_attempt`. |
@@ -39,7 +39,7 @@ note in the root `AGENTS.md`.
   send on `beforeunload` so closing the tab does not drop a grade (`view.php:493-528`).
 - **Per-iDevice objectid routing** (`captureItemScores`/`resolveObjectMap`,
   `view.php:430-461`): only the iDevice scored on the currently loaded page resolves
-  against the DOM, which is what defeats the multi-page `suspend_data` collision (DEC-0017).
+  against the DOM, which is what defeats the multi-page `suspend_data` collision (DEC-5-01).
 - POST body: `{ id: <cmid>, session, cmi, itemscores }` where
   `itemscores = { objectid: { scorepct(0..100), weighted, title } }` (`view.php:465`).
 
@@ -62,11 +62,11 @@ note in the root `AGENTS.md`.
 7. **Resolve attempt** number from the session token (`attempts::resolve_attempt_number`,
    `track.php:150-154`) and enforce `maxattempt` (`track.php:158-175`).
 8. **Per-iDevice** (`itemnumber > 0`): preferred `track::apply_item_scores()` by stable
-   objectid (DEC-0017); legacy fallback `track::apply_legacy_peritem()` by page-local `N`
+   objectid (DEC-5-01); legacy fallback `track::apply_legacy_peritem()` by page-local `N`
    (`track.php:179-200`).
 9. **Overall** (`itemnumber = 0`): when an objectid map is present, recompute the overall
    from per-item scores via `track::recompute_overall_pct()` instead of trusting
-   `cmi.core.score.raw` (DEC-0018, `track.php:210-229`); record it
+   `cmi.core.score.raw` (DEC-6-01, `track.php:210-229`); record it
    (`attempts::record_item`) and aggregate across attempts by `grademethod`
    (`attempts::aggregate_scaled`, DEC-0007).
 10. **Publish** with `grade_update('mod/exelearning', …, itemnumber=0, …)`; in PERITEM mode
@@ -77,7 +77,7 @@ note in the root `AGENTS.md`.
 
 ## Data model
 
-- **`exelearning`** — instance config incl. `gradeenabled` (DEC-0029 master grading
+- **`exelearning`** — instance config incl. `gradeenabled` (DEC-13-07 master grading
   switch: 1=graded, 0=plain resource), `grademax/grademin/gradepass`, `grademethod`
   (0 highest…4 lowest), `grademodel` (0 overall / 1 peritem), `maxattempt`, `reviewmode`.
 - **`exelearning_grade_item`** — one row per gradable iDevice: `objectid`

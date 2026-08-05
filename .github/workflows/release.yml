@@ -2,7 +2,7 @@
 name: Release
 
 # Builds the distributable ZIP for a published GitHub release (or a manual test
-# build). Under the DEC-0068 version policy this workflow VALIDATES metadata and
+# build). Under the DEC-111-01 version policy this workflow VALIDATES metadata and
 # never mutates it: the release-preparation PR commits the final
 # $plugin->version / $plugin->release before the tag is created, the tag points
 # at that exact commit, and the package ships version.php verbatim. Nothing here
@@ -69,7 +69,7 @@ jobs:
             echo "EXELEARNING_EDITOR_REF_TYPE=${{ github.event.inputs.editor_ref_type }}" >> $GITHUB_ENV
           fi
 
-      - name: Validate release metadata (DEC-0068)
+      - name: Validate release metadata (DEC-111-01)
         run: |
           if [ "${{ github.event_name }}" = "release" ]; then
             # The checked-out commit must be exactly the tagged commit, and

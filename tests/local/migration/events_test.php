@@ -24,7 +24,7 @@ use mod_exelearning\event\migration_started;
 use mod_exelearning\tests\helper_trait;
 
 /**
- * Unit tests for the migration events (issue #13 #3, DEC-0050).
+ * Unit tests for the migration events (issue #13 #3, DEC-13-12).
  *
  * @package    mod_exelearning
  * @category   test

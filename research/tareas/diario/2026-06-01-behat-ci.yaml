@@ -9,8 +9,8 @@ resumen: >-
 acciones:
   - "Consultados logs de GitHub Actions del run 26767455663: 5 escenarios pasaban y el único `@javascript` fallaba antes del primer Background por JS/AJAX pendiente."
   - "CI ajustada para que Behat no use `continue-on-error` y para configurar `$CFG->behat_increasetimeout = 3` tras `moodle-plugin-ci install`."
-  - "Escenario Behat DEC-0017 sustituido por un caso sin `@javascript` que siembra puntuaciones por `objectid` con `track::apply_item_scores` y verifica el informe."
-  - "DEC-0004 y DEC-0017 actualizados con la revisión de CI Behat."
+  - "Escenario Behat DEC-5-01 sustituido por un caso sin `@javascript` que siembra puntuaciones por `objectid` con `track::apply_item_scores` y verifica el informe."
+  - "DEC-0004 y DEC-5-01 actualizados con la revisión de CI Behat."
 
 evidencia:
   - "Run fallido base: GitHub Actions PR #8, `26767455663`, error `Javascript code and/or AJAX requests are not ready after 30 seconds (core/first)`."
@@ -22,5 +22,5 @@ pendientes:
 
 relacionados:
   - DEC-0004
-  - DEC-0017
+  - DEC-5-01
   - TAREA-011

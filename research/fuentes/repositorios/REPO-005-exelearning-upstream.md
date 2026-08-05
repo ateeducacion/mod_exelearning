@@ -19,8 +19,8 @@ herramienta_ia:
 > - **xAPI / PREG-002 superados:** la afirmación de abajo «la granularidad por iDevice se pierde en el cable
 >   SCORM» y PREG-002 (exponer per-iDevice aguas arriba) quedan **superadas**: eXeLearning upstream **ya emite
 >   statements xAPI por iDevice** (PR #1867, ver **FTE-011**), y `mod_exelearning` **ya logra
->   multi-grade-items** por iDevice vía el shim SCORM + ruteo por `objectid` estable (**DEC-0017/DEC-0032**).
-> - **PREG-001 resuelta:** identificadores estables de iDevice confirmados (DEC-0017, PR upstream #1791; diario 2026-05-29).
+>   multi-grade-items** por iDevice vía el shim SCORM + ruteo por `objectid` estable (**DEC-5-01/DEC-17-01**).
+> - **PREG-001 resuelta:** identificadores estables de iDevice confirmados (DEC-5-01, PR upstream #1791; diario 2026-05-29).
 > - **Estructura del paquete:** la estructura **verificada contra fixtures reales** del `.elpx` extraído es
 >   autoritativa en **FTE-008** (`content.xml` + `theme/` + `content/`); el diagrama web de abajo es del
 >   bootstrap y puede no coincidir con el export actual.

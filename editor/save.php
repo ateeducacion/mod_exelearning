@@ -44,7 +44,7 @@ require_login($course, true, $cm);
 require_sesskey();
 $context = context_module::instance($cm->id);
 require_capability('moodle/course:manageactivities', $context);
-// Embedded editing can be switched off site-wide (DEC-0066): refuse saves too,
+// Embedded editing can be switched off site-wide (DEC-108-01): refuse saves too,
 // not only the editor bootstrap — this is the state-changing half of the flow.
 exelearning_require_embedded_editor_enabled();
 
@@ -131,7 +131,7 @@ try {
     );
     $delta = exelearning_sync_grade_items($exelearning->id, $context->id);
     // If editing changed the gradable set (added/removed/edited-options) and
-    // attempts exist, warn that prior grades are not recomputed (DEC-0021). The
+    // attempts exist, warn that prior grades are not recomputed (DEC-12-01). The
     // editor reloads view.php after a successful save (amd/src/editor_modal.js),
     // so this queued notification surfaces there without any JS change.
     exelearning_warn_if_grades_stale($exelearning->id, $delta, $cmid);

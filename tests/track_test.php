@@ -28,7 +28,7 @@ require_once($CFG->libdir . '/gradelib.php');
 /**
  * Unit tests for the SCORM tracking helper (per-iDevice grade routing).
  *
- * Covers RIE-007 / DEC-0017: routing scores to the right gradebook column by stable
+ * Covers RIE-007 / DEC-5-01: routing scores to the right gradebook column by stable
  * objectid instead of by the page-local index N that collides across pages.
  *
  * @package    mod_exelearning
@@ -241,7 +241,7 @@ final class track_test extends advanced_testcase {
     /**
      * recompute_overall_pct() returns the weight-weighted mean of scorepct, falls back
      * to a simple mean when all weights are zero, clamps out-of-range scorepct, skips
-     * malformed entries and returns null when nothing is usable (DEC-0018).
+     * malformed entries and returns null when nothing is usable (DEC-6-01).
      */
     public function test_recompute_overall_pct(): void {
         // Weighted mean: (80*100 + 40*300) / 400 = 50.
@@ -343,7 +343,7 @@ final class track_test extends advanced_testcase {
         $result = track::ingest($instance, $course, $cm, $student->id, $payload, false);
 
         // The server-side overall (60) diverges from the client's cmi.core.score.raw
-        // of 0, so the divergence is logged (DEC-0018) — proving the client overall
+        // of 0, so the divergence is logged (DEC-6-01) — proving the client overall
         // is never trusted.
         $this->assertDebuggingCalled();
         $this->assertTrue($result['ok']);
@@ -519,7 +519,7 @@ final class track_test extends advanced_testcase {
     }
 
     /**
-     * In OVERALL mode ingest() publishes the aggregated overall column (DEC-0038).
+     * In OVERALL mode ingest() publishes the aggregated overall column (DEC-25-01).
      */
     public function test_ingest_overall_mode_publishes_overall_column(): void {
         [$instance, $student] = $this->create_activity_with_student(['grademodel' => 0]);

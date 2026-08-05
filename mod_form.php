@@ -66,7 +66,7 @@ class mod_exelearning_mod_form extends moodleform_mod {
             ]
         );
         $mform->addHelpButton('package', 'package', 'mod_exelearning');
-        // The package is optional (issue #13 #1, DEC-0024): leaving it empty creates
+        // The package is optional (issue #13 #1, DEC-13-03): leaving it empty creates
         // an empty activity that the teacher authors in place with the embedded
         // editor ("Edit with eXeLearning"), mirroring how the sibling plugins let
         // you start a new resource from scratch. Uploading an .elpx still works.
@@ -74,14 +74,14 @@ class mod_exelearning_mod_form extends moodleform_mod {
         // Grading configuration. Split into two sections — "Grading" (how the
         // activity is scored) and "Attempts management" (how multiple attempts are
         // handled) — mirroring mod_scorm / mod_exescorm so the grade settings stay
-        // focused and uncluttered (DEC-0031).
+        // focused and uncluttered (DEC-13-09).
         $mform->addElement(
             'header',
             'gradingsection',
             get_string('gradingheading', 'mod_exelearning')
         );
 
-        // Master grading switch (issue #13, DEC-0029): when off, the activity
+        // Master grading switch (issue #13, DEC-13-07): when off, the activity
         // creates no grade items, no reports, and shows nothing in the gradebook
         // (it behaves like a plain resource). On by default.
         $mform->addElement(
@@ -155,7 +155,7 @@ class mod_exelearning_mod_form extends moodleform_mod {
         $mform->setDefault('gradedisplaytype', GRADE_DISPLAY_TYPE_DEFAULT);
         $mform->addHelpButton('gradedisplaytype', 'gradedisplay', 'mod_exelearning');
 
-        // Grade category (DEC-0034): standard "Grade category" selector, reusing
+        // Grade category (DEC-19-01): standard "Grade category" selector, reusing
         // core's strings. The chosen category is applied to every grade item of the
         // activity (overall + per-iDevice) by exelearning_apply_grade_category()
         // through grade_item::set_parent(), because grade_update() ignores categoryid.
@@ -169,7 +169,7 @@ class mod_exelearning_mod_form extends moodleform_mod {
 
         // Attempts management: how multiple student attempts are limited, combined
         // into the gradebook grade, and reviewed. Kept in its own section so the
-        // grade settings above are not overcrowded (DEC-0007, DEC-0031).
+        // grade settings above are not overcrowded (DEC-0007, DEC-13-09).
         $mform->addElement(
             'header',
             'attemptssection',
@@ -217,7 +217,7 @@ class mod_exelearning_mod_form extends moodleform_mod {
         $mform->addHelpButton('reviewmode', 'reviewmode', 'mod_exelearning');
 
         // Disable every grade and attempt setting when the activity is not graded
-        // (DEC-0029); covers the fields in both the Grading and Attempts sections.
+        // (DEC-13-07); covers the fields in both the Grading and Attempts sections.
         $gradefields = [
             'grademodel', 'grademax', 'grademin', 'gradepass', 'gradedisplaytype',
             'gradecat', 'maxattempt', 'grademethod', 'reviewmode',
@@ -260,7 +260,7 @@ class mod_exelearning_mod_form extends moodleform_mod {
         if (!empty($this->current->id)) {
             $context = context_module::instance($this->current->coursemodule);
             // Seed the filemanager draft from the package's ACTUAL itemid, not a
-            // hardcoded 0 (B1, DEC-0044). The embedded editor (editor/save.php)
+            // hardcoded 0 (B1, DEC-34-01). The embedded editor (editor/save.php)
             // stores the saved .elpx at itemid=revision and deletes itemid 0, so
             // reading only itemid 0 produced an empty draft; a later settings save
             // then wiped the stored package and left the activity unrecoverable.
@@ -290,7 +290,7 @@ class mod_exelearning_mod_form extends moodleform_mod {
             }
         }
 
-        // Custom completion (DEC-0052): seed the enabling checkbox from the stored
+        // Custom completion (DEC-69-01): seed the enabling checkbox from the stored
         // status. A non-null completionstatusrequired means the rule is active, so
         // tick the checkbox and reflect the saved status in the select.
         $suffix = $this->get_suffix();
@@ -307,7 +307,7 @@ class mod_exelearning_mod_form extends moodleform_mod {
         // authoritative, but fall back to the overall grade item's actual category
         // when it is unset (activity created before the gradecat column, or moved
         // manually in the gradebook) so re-saving does not silently relocate it
-        // (DEC-0034).
+        // (DEC-19-01).
         if (empty($defaultvalues['gradecat']) && !empty($this->current->id)) {
             $overall = grade_item::fetch([
                 'itemtype'     => 'mod',
@@ -338,7 +338,7 @@ class mod_exelearning_mod_form extends moodleform_mod {
         $errors = parent::validation($data, $files);
 
         // Relax core's badcompletiongradeitemnumber rejection for a registered
-        // gradable item (B7, DEC-0044). The logic is a pure, unit-tested helper in
+        // gradable item (B7, DEC-34-01). The logic is a pure, unit-tested helper in
         // lib.php so it can be covered without constructing the whole moodleform_mod.
         $errors = exelearning_relax_completion_grade_errors(
             $errors,
@@ -358,7 +358,7 @@ class mod_exelearning_mod_form extends moodleform_mod {
         }
 
         // Accept both .elpx and .zip, but the upload must be a real eXeLearning v4
-        // package, i.e. a ZIP containing content.xml (DEC-0027). This rejects an
+        // package, i.e. a ZIP containing content.xml (DEC-16-01). This rejects an
         // arbitrary .zip at submit time instead of creating a broken activity.
         $draftid = (int) ($data['package'] ?? 0);
         if ($draftid > 0) {
@@ -375,7 +375,7 @@ class mod_exelearning_mod_form extends moodleform_mod {
     }
 
     /**
-     * Adds the custom completion rule for the activity (DEC-0052).
+     * Adds the custom completion rule for the activity (DEC-69-01).
      *
      * A single module-level rule: the activity is marked complete when the user's
      * attempt reaches a required status. A checkbox enables the rule and a select
@@ -419,7 +419,7 @@ class mod_exelearning_mod_form extends moodleform_mod {
     }
 
     /**
-     * Whether the custom completion rule is enabled (DEC-0052).
+     * Whether the custom completion rule is enabled (DEC-69-01).
      *
      * @param array $data Submitted form data.
      * @return bool True when the status-required rule is enabled.
@@ -430,7 +430,7 @@ class mod_exelearning_mod_form extends moodleform_mod {
     }
 
     /**
-     * Normalises the custom completion data before the instance is saved (DEC-0052).
+     * Normalises the custom completion data before the instance is saved (DEC-69-01).
      *
      * Stores the selected status when the rule is enabled and automatic completion
      * is active, otherwise stores NULL so the rule is treated as disabled.

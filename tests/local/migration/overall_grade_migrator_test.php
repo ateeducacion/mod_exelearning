@@ -28,7 +28,7 @@ require_once($CFG->dirroot . '/mod/exelearning/lib.php');
 require_once($CFG->libdir . '/gradelib.php');
 
 /**
- * Unit tests for the overall grade migrator (issue #13 #3, DEC-0050).
+ * Unit tests for the overall grade migrator (issue #13 #3, DEC-13-12).
  *
  * The source grade item is seeded on a real installed module (mod_assign stands in
  * for mod_exescorm, which is not installed in CI). The migrator is component-agnostic,

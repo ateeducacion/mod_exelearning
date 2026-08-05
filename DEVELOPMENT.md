@@ -179,7 +179,7 @@ modified. **`version.php` ships exactly as committed** — packaging validates t
 metadata (`make package` depends on `check-release-version`) but never rewrites
 it, so rebuilding the same tag on any day produces the same `version.php`.
 
-The bundled editor is mandatory (DEC-0065): packaging **fails** — with a clear
+The bundled editor is mandatory (DEC-106-01): packaging **fails** — with a clear
 error and no partial ZIP — unless `dist/static/` holds a valid editor
 (`index.html` plus the expected asset directories) and `.editor-version` names a
 version. Run `make build-editor` first. The ZIP's `thirdpartylibs.xml` is then
@@ -196,8 +196,8 @@ files, internal docs) is not — the README links to the docs on GitHub instead.
 
 ## Versioning and releases
 
-Policy: [DEC-0068](./research/decisiones/adr/DEC-0068-version-real-monotona-en-main.md)
-(supersedes DEC-0030). `main` always carries a **real, monotonic Moodle
+Policy: [DEC-111-01](./research/decisiones/adr/DEC-111-01-version-real-monotona-en-main.md)
+(supersedes DEC-13-08). `main` always carries a **real, monotonic Moodle
 version** and `$plugin->release = 'dev'`:
 
 - **No sentinels, in either direction.** `9999999999` bricks any site installed

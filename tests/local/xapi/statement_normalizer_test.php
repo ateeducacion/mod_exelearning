@@ -17,7 +17,7 @@
 namespace mod_exelearning\local\xapi;
 
 /**
- * Unit tests for the pure xAPI statement validator/normaliser (DEC-0063/DEC-0064).
+ * Unit tests for the pure xAPI statement validator/normaliser (DEC-0063/DEC-85-01).
  *
  * @package    mod_exelearning
  * @category   test

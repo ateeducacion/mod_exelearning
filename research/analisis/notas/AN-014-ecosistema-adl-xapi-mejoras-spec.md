@@ -11,14 +11,14 @@ fuentes:
   - FTE-011
 relacionados:
   - DEC-0063
-  - DEC-0032
+  - DEC-17-01
   - DEC-0003
   - DEC-0014
   - DEC-0015
   - DEC-0007
-  - DEC-0017
-  - DEC-0018
-  - DEC-0029
+  - DEC-5-01
+  - DEC-6-01
+  - DEC-13-07
 herramienta_ia:
   interfaz: claude-code
   modelo: claude-opus-4-8
@@ -26,7 +26,7 @@ herramienta_ia:
 
 ## Resumen
 
-Los cuatro recursos **no aportan código de runtime ni cambian la arquitectura** ya fijada en DEC-0032 +
+Los cuatro recursos **no aportan código de runtime ni cambian la arquitectura** ya fijada en DEC-17-01 +
 `docs/xapi-integration-plan.md`, pero sí una **base normativa y de patrones** que la precisa y blinda.
 `xAPI-Spec 1.0.3` (FTE-015) es el ancla de mayor valor: fija las **reglas de validación** que el endpoint
 `submit_xapi_statement` debe imponer y respalda canónicamente el trust model «IGNORA `actor`→`$USER`».
@@ -43,8 +43,8 @@ licencia y sin código xAPI → se documenta que **no** es dependencia.
   (`classes/external/save_track.php:137`); un endpoint xAPI sería el **tercer caller**, no un pipeline paralelo.
   La plantilla `external_api` es `classes/external/manage_embedded_editor.php` (`db/services.php`).
 - **Multi-item y trust ya implementados:** `apply_item_scores()` (`track.php:470-520`) rutea por `objectid`
-  estable (DEC-0017) e **ignora silenciosamente** objectids no registrados (`registered_objectids()`,
-  `track.php:117-124`); `recompute_overall_pct()` **nunca** confía el overall del cliente (DEC-0018);
+  estable (DEC-5-01) e **ignora silenciosamente** objectids no registrados (`registered_objectids()`,
+  `track.php:117-124`); `recompute_overall_pct()` **nunca** confía el overall del cliente (DEC-6-01);
   `aggregate_values()` implementa highest/average/first/last/lowest (`attempts.php:324-342`).
 - **cmi5launch confirma el patrón de nota** (REPO-008): *«si una sesión tiene más de un score, solo el más
   alto»* (`progress.php::cmi5launch_retrieve_score`) + agregación highest/average en dos niveles
@@ -87,7 +87,7 @@ licencia y sin código xAPI → se documenta que **no** es dependencia.
 |---|---|---|---|---|
 | **M1** | Sección «Validación canónica del endpoint»: rechazar `scaled∉[-1,1]`, `raw∉[min,max]`, `statement.id` no-UUID, verbo fuera de lista blanca, `null` fuera de `extensions`; ignorar `actor`/`authority`/`stored`/`timestamp` del cliente | `xapi-integration-plan.md` §4 + futuro `submit_xapi_statement` | FTE-015 (`xAPI-Data.md` §4.4, §4.1.5) | **alta** |
 | **M2** | Precisar `scaled→scorepct`: el emisor usa `s/10` por iDevice y `f/100` por paquete (no `[0,1]` uniforme); validar rango; aclarar dominio eXeLearning `[0,1]` | `xapi-integration-plan.md` §5 (tabla, línea 104) | FTE-011 (líneas 23-31) + FTE-015 §4.1.5 + REPO-008 `retrieve_score` | **alta** |
-| **M3** | Regla `highest score wins por (registration, ideviceId)` para selección, **distinta** del dedup por `statement.id`; anclar al `grademethod`/`aggregate_values` existente | `xapi-integration-plan.md` §4/§6 + DEC-0032 | REPO-008 `progress.php`/`grade_helpers.php`; `attempts.php:324-342` | media |
+| **M3** | Regla `highest score wins por (registration, ideviceId)` para selección, **distinta** del dedup por `statement.id`; anclar al `grademethod`/`aggregate_values` existente | `xapi-integration-plan.md` §4/§6 + DEC-17-01 | REPO-008 `progress.php`/`grade_helpers.php`; `attempts.php:324-342` | media |
 | **M4** | Anclar normativamente «IGNORA `actor`/`authority`/`stored`/`timestamp`»; contrastar con cmi5launch (confía en LRS/player; aquí el statement llega del navegador → validar `event.origin`) | `xapi-integration-plan.md` §4.3 + `tracking-architecture.md` | FTE-015 §4.1.9/4.1.10; REPO-008 `cmi5_connectors.php` | media |
 | **M5** | Idempotencia con semántica LRS (id repetido → no re-aplicar; 409 si difiere); `X-API-Version` solo en la rama HTTP, no en `postMessage` | `xapi-integration-plan.md` §4.7/§6 + futura `exelearning_tracking_events` | FTE-015 Part Three §2.1.2/2.1.3, §6.2 | media |
 | **M6** | Declarar descartes de alcance nominales: State API/Document Resources, Agent/Activity Profile, Signed Statements (JWS) — además de cmi5/LRS externo | `xapi-integration-plan.md` §7 | FTE-015 Part Three §2.2/2.4; FTE-016 (`@xapi/cmi5` aparte) | media |
@@ -111,21 +111,21 @@ depende de un player externo (CATAPULT) + LRS, y en xAPI.js cmi5 es un paquete *
 ambos prueban que su valor está en LRS/catálogos lanzables, no en un recurso HTML embebido same-origin— y
 añade un **matiz de diseño**: precisamente porque cmi5launch **delega** `passed/failed/completed` al player y
 `mod_exelearning` **no tiene player**, la decisión `passed/failed` debe vivir en el **servidor** (umbral/
-`gradepass`, espíritu DEC-0018), no esperarse del paquete. Esto no supersede DEC-0014; concreta M4 y M6.
+`gradepass`, espíritu DEC-6-01), no esperarse del paquete. Esto no supersede DEC-0014; concreta M4 y M6.
 
 ## [HIPOTESIS]
 
 - El statement de paquete (`passed`/`failed`) podría **evitar** el recálculo server-side del overall que el
-  SCORM multipágina necesita (DEC-0018), porque el productor ya entrega el agregado ponderado (FTE-011,
+  SCORM multipágina necesita (DEC-6-01), porque el productor ya entrega el agregado ponderado (FTE-011,
   AN-012). **Pero** M4 sugiere lo contrario para `success/passed`: sin player, revalidar el umbral en servidor.
-  A resolver en PR2 con fixtures reales (EXP-004 fase viva) — coherencia con DEC-0018 a fijar.
+  A resolver en PR2 con fixtures reales (EXP-004 fase viva) — coherencia con DEC-6-01 a fijar.
 - `M1` con **rechazo duro** (400) de `scaled<0` vs **clamp** documentado a `[0,1]`: el dominio eXeLearning es
   `[0,1]`; probablemente baste validar y normalizar, pero la política debe decidirse antes de implementar.
 
 ## Consecuencias para `mod_exelearning`
 
 - Cero cambios de arquitectura: la ingesta xAPI sigue siendo un **normalizador fino → `apply_item_scores`**
-  (DEC-0032). Lo que cambia es la **especificación del endpoint**: gana reglas de validación citables (M1-M6).
+  (DEC-17-01). Lo que cambia es la **especificación del endpoint**: gana reglas de validación citables (M1-M6).
 - El listener (`amd/src/xapi_listener.js`) y el endpoint (`classes/external/submit_xapi_statement`) ganan un
   **contrato tipado** (FTE-016) y **fixtures** (M7) para los tests Vitest/PHPUnit de PR2.
 - `Moodle-PHP-Libs` queda **cerrado** como no-dependencia (M9); `thirdpartylibs.xml` sigue declarando solo
@@ -157,7 +157,7 @@ añade un **matiz de diseño**: precisamente porque cmi5launch **delega** `passe
 
 **Resoluciones de diseño (erseco, 2026-06-17)** — las preguntas abiertas del endpoint quedan decididas y
 registradas en **DEC-0063 §Resoluciones de diseño**: `scaled∉[0,1]` → **rechazo 400**; overall → **recálculo
-server-side** (DEC-0018); `registration`/`sessiontoken` **conviven**; ingesta = **endpoint custom** +
-`core_xapi` opcional luego. En paralelo: DEC-0033 → **solo Fase 1** (reemplazo descubrible + URL externa
-opt-in admin, refresco manual); DEC-0045 → **diferida** (la salida definitiva es xAPI); RIE-001 → **aceptado**
+server-side** (DEC-6-01); `registration`/`sessiontoken` **conviven**; ingesta = **endpoint custom** +
+`core_xapi` opcional luego. En paralelo: DEC-18-01 → **solo Fase 1** (reemplazo descubrible + URL externa
+opt-in admin, refresco manual); DEC-34-02 → **diferida** (la salida definitiva es xAPI); RIE-001 → **aceptado**
 + roadmap en la rama `feature/secure-iframe-scorm-bridge`.

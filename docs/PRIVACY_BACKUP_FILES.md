@@ -48,7 +48,7 @@ and writes them through `writer::with_context()`. Timestamps are normalized with
 All three deletion entry points delete `exelearning_attempt` rows **and then
 recalculate the gradebook** so an erased user keeps no stale grade with no backing
 attempt (`clear_grades_for_users()` `:81-95`, which calls
-`exelearning_recalculate_user_grades()` → `\mod_exelearning\grades\grade_recalculator::recalculate_user()`, DEC-0054):
+`exelearning_recalculate_user_grades()` → `\mod_exelearning\grades\grade_recalculator::recalculate_user()`, DEC-71-01):
 
 | Request | Method | Lines |
 |---------|--------|-------|
@@ -98,12 +98,12 @@ Backup specifics:
   back to `0` (`restore_…stepslib.php:72`); `attempt.userid` is remapped via the
   user mapping (`:130`).
 - **`gradecat` cross-course reset**: `gradecat` is a course-specific
-  `grade_categories.id` (DEC-0034). It survives a same-course duplicate but **not**
+  `grade_categories.id` (DEC-19-01). It survives a same-course duplicate but **not**
   a cross-course restore, where the target category does not yet exist. Restore
   keeps it only if the category exists in the destination course, otherwise resets
   it to `0` (the course top category) (`:81-86`); per-iDevice items are re-parented
   later on first view by `exelearning_apply_grade_category()`
-  (→ `\mod_exelearning\grades\grade_item_manager::apply_category()`) (B4, DEC-0044).
+  (→ `\mod_exelearning\grades\grade_item_manager::apply_category()`) (B4, DEC-34-01).
 - **Moodle grade items re-created, not restored**: the plugin's own
   `exelearning_grade_item` rows are restored, but the actual Moodle gradebook
   `grade_item` columns are **not** restored directly — they are re-created on first

@@ -7,7 +7,7 @@ url_upstream: "https://github.com/moodlehq/moodle-tool_migratehvp2h5p"
 commit_consultado: "main @ release 0.2.0 (consultado 2026-06-12)"
 fecha_consulta: 2026-06-12
 licencia: "GPL-3.0-or-later"
-rol_para_mod_exelearning: "Precedente oficial del patrón 'migración de plugin contrib hacia un módulo core más nuevo como herramienta administrativa separada con CLI'. Citado en DEC-0050 para corregir la afirmación previa de que no existía una migración hvp → h5pactivity."
+rol_para_mod_exelearning: "Precedente oficial del patrón 'migración de plugin contrib hacia un módulo core más nuevo como herramienta administrativa separada con CLI'. Citado en DEC-13-12 para corregir la afirmación previa de que no existía una migración hvp → h5pactivity."
 herramienta_ia:
   interfaz: claude-code
   modelo: claude-opus-4-8
@@ -44,11 +44,11 @@ herramienta_ia:
   resultados. La ruta oficial es este tool **separado**, no un paso de `db/upgrade.php` del
   módulo core.
 
-## Relevancia para mod_exelearning (DEC-0050)
+## Relevancia para mod_exelearning (DEC-13-12)
 
 - Confirma que el patrón Moodle para migrar un plugin contrib hacia un módulo core es una
   **herramienta administrativa separada** (`tool_*`), igual que `tool_lpmigrate` en core.
-- DEC-0050 **diverge** conscientemente (mantiene la herramienta dentro de
+- DEC-13-12 **diverge** conscientemente (mantiene la herramienta dentro de
   `mod_exelearning`) porque el destino ya posee los internals necesarios, el par de
   orígenes es pequeño y la entrada solo aparece si hay un sibling instalado.
 - Que este precedente incluya **CLI** respalda diferir `cli/migrate.php` a una segunda

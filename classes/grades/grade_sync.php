@@ -17,11 +17,11 @@
 /**
  * Gradebook synchronisation for mod_exelearning.
  *
- * Extracted verbatim from lib.php (DEC-0054). It detects the gradable iDevices in
+ * Extracted verbatim from lib.php (DEC-71-01). It detects the gradable iDevices in
  * the stored package, registers/soft-deletes the matching Moodle grade items
  * (multi-itemnumber pattern, capped at gradeitems::MAX_ITEMNUMBER), reports the
  * change delta, warns the teacher when a graded re-upload alters the gradable set
- * with attempts already present (DEC-0021), and re-publishes grades from the
+ * with attempts already present (DEC-12-01), and re-publishes grades from the
  * attempt history. No grade math changed — every grade_update() call and guard is
  * preserved; lib.php keeps thin delegators with the original `exelearning_*`
  * signatures so every caller (view.php, editor/*, mod_form.php, migration) is
@@ -53,7 +53,7 @@ final class grade_sync {
      *
      * Returns the change delta against the previously synced state so callers can
      * warn the teacher when editing a graded package alters the gradable set
-     * (DEC-0021). "changed" means the same objectid whose content block hash
+     * (DEC-12-01). "changed" means the same objectid whose content block hash
      * differs, i.e. an in-place options/scoring edit.
      *
      * "capped" counts gradable iDevices that could not be registered because the
@@ -80,7 +80,7 @@ final class grade_sync {
         }
         $context = context::instance_by_id($contextid);
 
-        // Master grading switch (DEC-0029): when the activity is not graded, remove all
+        // Master grading switch (DEC-13-07): when the activity is not graded, remove all
         // gradebook items (soft-delete our rows + delete the Moodle grade items, overall
         // included) and detect nothing. Attempt history (exelearning_attempt) is kept.
         if (empty($instance->gradeenabled)) {
@@ -98,11 +98,11 @@ final class grade_sync {
         $grademodel = (int) ($instance->grademodel ?? EXELEARNING_GRADEMODEL_PERITEM);
 
         // Canonical grade item (itemnumber=0) according to the grading model
-        // (DEC-0008, revised by DEC-0038). The two models are now symmetric: OVERALL
+        // (DEC-0008, revised by DEC-25-01). The two models are now symmetric: OVERALL
         // shows only the aggregated column, PERITEM shows only the per-iDevice
         // columns. There is no longer a hidden overall stub in PERITEM — a hidden
         // item still shows (greyed) to teachers with moodle/grade:viewhidden and was
-        // reported as a confusing "extra grade" (DEC-0038). Completion-by-grade keeps
+        // reported as a confusing "extra grade" (DEC-25-01). Completion-by-grade keeps
         // working the Moodle-native way: the teacher points completiongradeitemnumber
         // at a per-iDevice item (workshop model), or uses OVERALL mode to complete on
         // passing the activity as a whole (DEC-0010).
@@ -114,7 +114,7 @@ final class grade_sync {
             grade_item_manager::update_item($instance, null, ['hidden' => 0]);
         } else {
             // Per iDevice (default): no overall column at all. Delete any overall left
-            // over from a previous sync or from the legacy hidden-stub model (DEC-0038).
+            // over from a previous sync or from the legacy hidden-stub model (DEC-25-01).
             grade_update(
                 'mod/exelearning',
                 $instance->course,
@@ -147,7 +147,7 @@ final class grade_sync {
         if ($detected === []) {
             // No gradable iDevices: PERITEM has no grade items at all, OVERALL keeps
             // its single aggregated column. Place whatever exists under the configured
-            // grade category (DEC-0034); a no-op when there are no items.
+            // grade category (DEC-19-01); a no-op when there are no items.
             grade_item_manager::apply_category($instance);
             return $delta;
         }
@@ -172,7 +172,7 @@ final class grade_sync {
             // they are used as the $existing lookup key or written to the DB, so an
             // adversarial/overlong content.xml cannot throw a dml_write_exception
             // mid-sync (a student-facing fatal through the view.php self-heal) (B5,
-            // DEC-0044). objectid/pageid are char(191), idevicetype char(64).
+            // DEC-34-01). objectid/pageid are char(191), idevicetype char(64).
             $d->idevicetype = core_text::substr((string) $d->idevicetype, 0, 64);
             $d->objectid    = core_text::substr((string) $d->objectid, 0, 191);
             $d->pageid      = ($d->pageid === null)
@@ -300,7 +300,7 @@ final class grade_sync {
         }
 
         // Place the overall and every per-iDevice column under the configured grade
-        // category (DEC-0034); grade_update() above cannot do this itself.
+        // category (DEC-19-01); grade_update() above cannot do this itself.
         grade_item_manager::apply_category($instance);
 
         return $delta;
@@ -308,7 +308,7 @@ final class grade_sync {
 
     /**
      * Queues a teacher-facing warning when editing a graded package changed its
-     * gradable set while student attempts already exist (DEC-0021).
+     * gradable set while student attempts already exist (DEC-12-01).
      *
      * mod_exelearning keeps the snapshot semantics of mod_scorm / mod_h5pactivity:
      * existing attempts and the grades derived from them are NOT recomputed when the
@@ -370,7 +370,7 @@ final class grade_sync {
      * only the former declared, core did nothing (and logged "you have declared one
      * of ... but not both"), so course-reset "remove all grades", grade-item unlock
      * and user-undelete history recovery silently dropped every exelearning grade
-     * while exelearning_attempt still held the data (B2b, DEC-0044).
+     * while exelearning_attempt still held the data (B2b, DEC-34-01).
      *
      * Each user's grade is re-aggregated from exelearning_attempt with the current
      * grademethod/grademodel via grade_recalculator, so it is also the correct
@@ -385,7 +385,7 @@ final class grade_sync {
         global $CFG, $DB;
         require_once($CFG->libdir . '/gradelib.php');
 
-        // Not graded (DEC-0029): no grade items exist, so there is nothing to publish.
+        // Not graded (DEC-13-07): no grade items exist, so there is nothing to publish.
         if (empty($exelearning->gradeenabled)) {
             return;
         }

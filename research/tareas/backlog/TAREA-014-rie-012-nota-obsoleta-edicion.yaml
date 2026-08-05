@@ -5,7 +5,7 @@ fecha: 2026-06-02
 agente: pendiente
 prioridad: baja
 objetivo: >-
-  Confirmar que el aviso de nota obsoleta (DEC-0021) no sea ruidoso en paquetes reales:
+  Confirmar que el aviso de nota obsoleta (DEC-12-01) no sea ruidoso en paquetes reales:
   el contenthash por iDevice no debe marcar "changed" cuando un re-export reescribe el
   bloque de content.xml sin cambio semántico (orden, espacios, metadatos volátiles).
 pasos:
@@ -14,7 +14,7 @@ pasos:
   - "Reevaluar si conviene distinguir en el aviso entre alta/baja (cierto) y editado (best-effort)."
 relacionados:
   - RIE-012
-  - DEC-0021
+  - DEC-12-01
   - DEC-0012
   - FTE-010
 criterios_aceptacion:

@@ -144,7 +144,7 @@ La investigación de TAREA-012 (DEC-0019) verifica la HIPÓTESIS de arriba: Mood
 **NO** ofrece servir pluginfile desde un origen separado (`$CFG->wwwroot` único;
 `url.php` lo hardcodea), así que el subdominio dedicado requiere **infraestructura
 fuera de core**. Además confirma que el bridge SCORM es **100% same-origin** (el padre
-lee `iframe.contentDocument` para el `objectid` de DEC-0017, el hijo recorre
+lee `iframe.contentDocument` para el `objectid` de DEC-5-01, el hijo recorre
 `window.parent.API`, el teacher-mode hider inyecta CSS en el `contentDocument`), por lo
 que quitar `allow-same-origin` u optar por origen opaco **rompe el tracking** salvo que
 antes se reescriba el bridge a `postMessage` (patrón H5P). Comparativa y roadmap de

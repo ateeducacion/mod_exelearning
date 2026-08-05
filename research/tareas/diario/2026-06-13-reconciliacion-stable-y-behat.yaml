@@ -3,7 +3,7 @@ sesion: reconciliacion-docs-stable-y-behat
 agente: claude-code
 resumen: >-
   Reconciliación de la documentación de release tras la promoción a MATURITY_STABLE
-  (DEC-0057, PR 77) y corrección de una afirmación falsa sobre el tooling de Behat,
+  (DEC-77-01, PR 77) y corrección de una afirmación falsa sobre el tooling de Behat,
   más una tanda de escenarios Behat adaptados de plugins hermanos. version.php:33 ya
   estaba en MATURITY_STABLE pero docs/RELEASE_CHECKLIST.md, docs/AUDIT_FOLLOWUP.md y
   README.md seguían hablando de BETA como estado actual/pendiente; y RELEASE_CHECKLIST
@@ -14,7 +14,7 @@ resumen: >-
   menor riesgo, adaptados a las convenciones de este plugin (sin @javascript,
   basados en generador), y se documenta qué NO se porta y por qué.
 acciones:
-  - "Maturity → STABLE (item 3): docs/RELEASE_CHECKLIST.md reformulado como gate de release STABLE (Q2): título, blockquote inicial y §11 dejan de decir que MATURITY_BETA es 'current'; se indica que el plugin es STABLE desde DEC-0057 (PR 77) y que la checklist es ahora la lista de verificación por release. docs/AUDIT_FOLLOWUP.md: TL;DR, fila O1, fila de open-items (marcada Done) y nota final pasan a STABLE. README.md:247: 'beta→stable release gate' → 'STABLE release gate'. DEC-0044, DEC-0057 y status.yaml intactos (append-only)."
+  - "Maturity → STABLE (item 3): docs/RELEASE_CHECKLIST.md reformulado como gate de release STABLE (Q2): título, blockquote inicial y §11 dejan de decir que MATURITY_BETA es 'current'; se indica que el plugin es STABLE desde DEC-77-01 (PR 77) y que la checklist es ahora la lista de verificación por release. docs/AUDIT_FOLLOWUP.md: TL;DR, fila O1, fila de open-items (marcada Done) y nota final pasan a STABLE. README.md:247: 'beta→stable release gate' → 'STABLE release gate'. DEC-34-01, DEC-77-01 y status.yaml intactos (append-only)."
   - "Behat note (item 4): docs/RELEASE_CHECKLIST.md elimina la afirmación falsa 'no behat script is defined in composer.json'; la tabla 'How to run the checks' añade filas 'composer behat' (composer.json:32) y 'composer coverage' (composer.json:33); la nota explica composer behat / make behat (Makefile:106-108) / vendor/bin/behat / moodle-plugin-ci behat."
   - "Behat nuevos (Q1=implementar): tests/behat/mod_exelearning_management.feature (duplicar+borrar la actividad, adaptado de mod/h5pactivity duplicate_delete_h5pactivity.feature; round-trip de ajustes en el form de edición vía id_maxattempt, adaptado de h5pactivity_grade_settings.feature). tests/behat/mod_exelearning_grades.feature (puntuaciones sembradas llegan al grader report, adaptado de la aserción user-grades de h5pactivity_grade_settings.feature; usa el modelo per-item por defecto DEC-0008 y el paso custom 'the following eXeLearning SCORM scores exist'). Reutilizan tests/generator/lib.php (packagefilepath, maxattempt) y la fixture research/fixtures/elpx/multipage-gradable.elpx; sin cambios de generador."
   - "Verificado que el camino de notas cruza al gradebook: apply_item_scores() (track.php:470) → apply_one() → grade_update() (track.php:661) en modelo per-item; y que backup/moodle2 existe (duplicación válida)."
@@ -22,7 +22,7 @@ acciones:
   - "Licencias (Rule 12): todas las fuentes de inspiración son GPLv3 (Moodle core + plugins ateeducacion), compatibles; no se vendora ni copia fichero alguno externo, los escenarios usan fixtures propias."
 evidencia:
   - "version.php:33 (MATURITY_STABLE); git 375dd49 (PR 77, BETA→STABLE)"
-  - "research/decisiones/adr/DEC-0057-extraccion-no-destructiva.md:65 (autoriza la promoción)"
+  - "research/decisiones/adr/DEC-77-01-extraccion-no-destructiva.md:65 (autoriza la promoción)"
   - "docs/RELEASE_CHECKLIST.md (título, §11, tabla de checks + nota behat)"
   - "docs/AUDIT_FOLLOWUP.md (TL;DR, fila O1, open-items, nota final), README.md:247"
   - "composer.json:32-33 (behat, coverage); Makefile:106-108 (target behat)"
@@ -33,10 +33,10 @@ pendientes:
   - "CI manda: validar los 3 escenarios nuevos en moodle-plugin-ci behat --profile chrome (Behat no corre en local: sin árbol Moodle dev). Vigilar especialmente que el duplicado conserve el paquete ('Gradable iDevices detected:' en la copia) y que el grader report muestre '80.00'."
   - "Opcional: nota AN-013 formal con la matriz completa de reuso por feature si se quiere conservar el survey como evidencia citable."
 relacionados:
-  - DEC-0057
-  - DEC-0044
+  - DEC-77-01
+  - DEC-34-01
   - DEC-0008
   - DEC-0007
-  - DEC-0017
-  - DEC-0056
+  - DEC-5-01
+  - DEC-74-01
   - REPO-004

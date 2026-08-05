@@ -17,11 +17,11 @@
 /**
  * Batch gradebook recalculation from the stored attempt history.
  *
- * Extracted verbatim from lib.php (DEC-0054). The aggregation/publish logic is
+ * Extracted verbatim from lib.php (DEC-71-01). The aggregation/publish logic is
  * unchanged — it still respects grademethod (DEC-0007) and the grademodel column
- * rules (PERITEM has no overall column DEC-0038; OVERALL has no per-iDevice
+ * rules (PERITEM has no overall column DEC-25-01; OVERALL has no per-iDevice
  * columns DEC-0008) — and issues exactly one grade_update() per itemnumber with
- * grades keyed by userid (the batched, no-N+1 path from DEC-0049 #006). lib.php
+ * grades keyed by userid (the batched, no-N+1 path from DEC-67-01 #006). lib.php
  * keeps thin delegators with the original `exelearning_*` signatures.
  *
  * @package    mod_exelearning
@@ -65,7 +65,7 @@ final class grade_recalculator {
      * per user per item).
      *
      * Aggregation respects grademethod (DEC-0007, via attempts::aggregate_values()) and
-     * the grademodel column rules: PERITEM has no overall column (DEC-0038), OVERALL has
+     * the grademodel column rules: PERITEM has no overall column (DEC-25-01), OVERALL has
      * no per-iDevice columns (DEC-0008). A user with no attempts for an item gets a null
      * rawgrade, clearing any stale grade.
      *
@@ -106,7 +106,7 @@ final class grade_recalculator {
 
         foreach ($items as $itemnumber => $name) {
             unset($base['hidden']);
-            // PERITEM has no overall column (DEC-0038): never (re)publish item 0 there,
+            // PERITEM has no overall column (DEC-25-01): never (re)publish item 0 there,
             // which would recreate it. OVERALL has no per-iDevice columns.
             if ($itemnumber === 0 && $grademodel !== EXELEARNING_GRADEMODEL_OVERALL) {
                 continue;

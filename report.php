@@ -56,7 +56,7 @@ if ($groupmode != NOGROUPS) {
 }
 
 // Optional userid: the gradebook "grade analysis" link (grade.php) forwards the
-// graded user so the teacher lands on that student's attempts (DEC-0028).
+// graded user so the teacher lands on that student's attempts (DEC-13-06).
 $userid = optional_param('userid', 0, PARAM_INT);
 $baseurlparams = ['id' => $cm->id];
 if ($userid > 0) {
@@ -262,7 +262,7 @@ if ($userid > 0 && ($restrictusers === null || in_array($userid, $restrictusers,
         // Escape the name: $OUTPUT->heading() does not HTML-escape its content, and a
         // display name set via LDAP/SAML/WS/CSV upload is not guaranteed tag-stripped,
         // so an unescaped name would run as stored XSS in the grader's session (B8,
-        // DEC-0044). The attempts table below already escapes the same value with s().
+        // DEC-34-01). The attempts table below already escapes the same value with s().
         echo $OUTPUT->heading(s(fullname($filtereduser)), 4);
     }
 }

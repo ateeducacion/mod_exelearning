@@ -7,10 +7,10 @@ fuentes:
   - REPO-002
   - REPO-004
 relacionados:
-  - DEC-0056
+  - DEC-74-01
   - DEC-0008
   - DEC-0007
-  - DEC-0017
+  - DEC-5-01
   - AN-008
   - AN-009
 herramienta_ia:
@@ -107,5 +107,5 @@ los escenarios nuevos usan exclusivamente fixtures propias.
   escenarios en `moodle-plugin-ci behat --profile chrome` y corregir desajustes
   de texto/pasos allí. Puntos de mayor riesgo: que el duplicado conserve el
   paquete y que el grader report renderice "80.00".
-- Si en el futuro se implementa xAPI (DEC-0032), revisar `sending_attempt.feature`
+- Si en el futuro se implementa xAPI (DEC-17-01), revisar `sending_attempt.feature`
   / `save_content_state.feature` de h5pactivity como candidatos a adaptar.

@@ -10,9 +10,9 @@ cumpla debe rechazarse o corregirse antes de integrarse.
    verificable: `repo + ruta + commit`, doc oficial (con URL, versión y fecha de
    consulta), o un experimento reproducible. Sin fuente no hay afirmación.
 2. **Estándar de tracking (DEC-0003 `Aceptada`, 2026-05-29).** El motor vigente es el
-   **bridge SCORM 1.2** + multi-grade-items por `objectid` (DEC-0003/DEC-0017), respaldado
+   **bridge SCORM 1.2** + multi-grade-items por `objectid` (DEC-0003/DEC-5-01), respaldado
    por la matriz `analisis/matrices/matriz-estandar-tracking.yaml`. **xAPI** es la hoja de
-   ruta aceptada como ingesta adicional sobre la **misma** tubería (DEC-0014/DEC-0032 +
+   ruta aceptada como ingesta adicional sobre la **misma** tubería (DEC-0014/DEC-17-01 +
    reglas de validación y versión en DEC-0063), gated al contrato upstream `exelearning#1867`;
    **cmi5 y LTI 1.3 AGS quedan fuera de alcance**. (La "neutralidad de estándar" del bootstrap
    ya se resolvió; toda afirmación nueva sigue citando evidencia.)

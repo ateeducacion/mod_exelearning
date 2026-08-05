@@ -67,7 +67,7 @@ final class tracking_endpoint {
      * @param int $cmid Course module id.
      * @param string $mode grading|preview (DEC-0006).
      * @param string $session Per-page attempt token, groups one page load's writes.
-     * @param bool $disabletracking Keep window.API alive but inert for xAPI-primary packages (DEC-0064).
+     * @param bool $disabletracking Keep window.API alive but inert for xAPI-primary packages (DEC-85-01).
      * @return array Config, JSON-encoded by the caller into the page.
      */
     public static function scorm_config(int $cmid, string $mode, string $session, bool $disabletracking): array {

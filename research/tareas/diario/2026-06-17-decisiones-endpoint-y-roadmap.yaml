@@ -7,16 +7,16 @@ resumen: >-
   eXeLearning PR #1867). Se registran 8 decisiones en los ADR/AN/status correspondientes.
   No hay trabajo de código (fase de diseño); todo es documentación de decisiones.
 acciones:
-  - "DEC-0063 §Resoluciones de diseño (4 decisiones del endpoint xAPI): (1) result.score.scaled fuera de [0,1] → RECHAZO 400 (no clamp); el emisor solo produce [0,1]. (2) Overall (itemnumber=0) = RECÁLCULO server-side desde los answered (paridad SCORM/DEC-0018); el passed/failed del paquete solo da status/success, no el agregado. (3) registration ↔ sessiontoken CONVIVEN (cada canal su llave sobre la misma tabla exelearning_attempt; registration = UUID server-side). (4) Ingesta = ENDPOINT CUSTOM (submit_xapi_statement, ignora actor→$USER) + handler core_xapi OPCIONAL luego solo para eventos. El ADR sigue Propuesta (gated a #1867)."
-  - "DEC-0033 §Resolución de alcance: SOLO FASE 1 (reemplazo descubrible 'Actualizar ahora' + origen por URL externa detrás de toggle admin allowexternalurl opt-in/default-off, refresco manual; patrón B2). Fase 2 (updatefreq + db/tasks.php + token REST eXe v4) DESCARTADA por ahora."
-  - "DEC-0045 (transformación en servido): se mantiene DIFERIDA (Propuesta). La salida definitiva es xAPI, que vuelve innecesaria la reescritura en servido; la inyección en extracción se queda. No se implementa ahora. (Registrado en diario + AN-014; el ADR ya reflejaba Propuesta.)"
+  - "DEC-0063 §Resoluciones de diseño (4 decisiones del endpoint xAPI): (1) result.score.scaled fuera de [0,1] → RECHAZO 400 (no clamp); el emisor solo produce [0,1]. (2) Overall (itemnumber=0) = RECÁLCULO server-side desde los answered (paridad SCORM/DEC-6-01); el passed/failed del paquete solo da status/success, no el agregado. (3) registration ↔ sessiontoken CONVIVEN (cada canal su llave sobre la misma tabla exelearning_attempt; registration = UUID server-side). (4) Ingesta = ENDPOINT CUSTOM (submit_xapi_statement, ignora actor→$USER) + handler core_xapi OPCIONAL luego solo para eventos. El ADR sigue Propuesta (gated a #1867)."
+  - "DEC-18-01 §Resolución de alcance: SOLO FASE 1 (reemplazo descubrible 'Actualizar ahora' + origen por URL externa detrás de toggle admin allowexternalurl opt-in/default-off, refresco manual; patrón B2). Fase 2 (updatefreq + db/tasks.php + token REST eXe v4) DESCARTADA por ahora."
+  - "DEC-34-02 (transformación en servido): se mantiene DIFERIDA (Propuesta). La salida definitiva es xAPI, que vuelve innecesaria la reescritura en servido; la inyección en extracción se queda. No se implementa ahora. (Registrado en diario + AN-014; el ADR ya reflejaba Propuesta.)"
   - "RIE-001 (XSS cross-component): estado identificado → ACEPTADO (status.yaml + campo aceptacion). Riesgo media/baja aceptado con mitigación v1 (sandbox); el hardening Tier 1/2 (DEC-0019) lo implementa la rama feature/secure-iframe-scorm-bridge, no como bloqueante. TAREA-013 (sandboxing JS, que solo se mencionaba en TODO.md sin ficha) queda cubierta ahí; no se crea ficha separada (TODO.md actualizado a [x])."
   - "Housekeeping: status.yaml decisiones_bloqueantes recibe una NOTA aclarando que el índice navegable COMPLETO de los 59 ADRs es docs/indices/adrs.yaml (autogenerado) y que esta sección lista solo las bloqueantes/estructurales (no exhaustiva por diseño). No se completa el ledger a 59 (decisión: adrs.yaml canónico)."
   - "Accesibilidad: única auditoría de cumplimiento pendiente (pasada axe-core), como known-gap post-STABLE no bloqueante; licencias y privacidad vigentes. TODO.md actualizado."
-  - "Registrado en: DEC-0063 (§Resoluciones), DEC-0033 (§Resolución de alcance), AN-014 (§Resoluciones de diseño), status.yaml (RIE-001 aceptado + nota decisiones_bloqueantes), TODO.md (4 entradas: TAREA-015 diseño decidido, TAREA-016 Fase 1, TAREA-013 [x], cumplimiento). Índices regenerados."
+  - "Registrado en: DEC-0063 (§Resoluciones), DEC-18-01 (§Resolución de alcance), AN-014 (§Resoluciones de diseño), status.yaml (RIE-001 aceptado + nota decisiones_bloqueantes), TODO.md (4 entradas: TAREA-015 diseño decidido, TAREA-016 Fase 1, TAREA-013 [x], cumplimiento). Índices regenerados."
 evidencia:
   - "research/decisiones/adr/DEC-0063-...md (§Resoluciones de diseño)"
-  - "research/decisiones/adr/DEC-0033-...md (§Resolución de alcance)"
+  - "research/decisiones/adr/DEC-18-01-...md (§Resolución de alcance)"
   - "research/analisis/notas/AN-014-...md (§Resoluciones de diseño)"
   - "research/status.yaml (RIE-001 estado=aceptado + aceptacion; nota decisiones_bloqueantes)"
   - "research/TODO.md (TAREA-015/016/013 + cumplimiento)"
@@ -26,7 +26,7 @@ pendientes:
   - "Opcional: pasada axe-core (accesibilidad); endurecer test_schema_validation.py para validar enum de estado."
 relacionados:
   - DEC-0063
-  - DEC-0032
-  - DEC-0033
-  - DEC-0045
-  - DEC-0018
+  - DEC-17-01
+  - DEC-18-01
+  - DEC-34-02
+  - DEC-6-01

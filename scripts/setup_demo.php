@@ -299,7 +299,7 @@ if (is_file($fixtures['exelearning']) && !$moduleexists('exelearning', $config['
             'introformat' => FORMAT_HTML,
             'package'     => $makedraft($fixtures['exelearning']),
             // PERITEM (default): the gradebook shows one column per gradable iDevice
-            // and no overall column (DEC-0038). Completion targets a per-iDevice item
+            // and no overall column (DEC-25-01). Completion targets a per-iDevice item
             // instead of an aggregate overall (workshop model); see the override
             // below. "Pass the whole activity to complete" lives in OVERALL mode.
             'grademax'    => 100,
@@ -311,7 +311,7 @@ if (is_file($fixtures['exelearning']) && !$moduleexists('exelearning', $config['
             'groupingid'  => 0,
         ], [
             // Complete on receiving a grade for the first gradable iDevice. PERITEM
-            // has no overall item (DEC-0038), so completion points at iDevice 1
+            // has no overall item (DEC-25-01), so completion points at iDevice 1
             // (completiongradeitemnumber=1) using Moodle's native selector.
             'completion'                => COMPLETION_TRACKING_AUTOMATIC,
             'completionview'            => 0,

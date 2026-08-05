@@ -13,7 +13,7 @@ context7:
   fecha: 2026-06-08
   version_devuelta: "moodle/moodle (v4.5.0 + main) — leído del código del core vía raw.githubusercontent."
 fecha_consulta: 2026-06-08
-relevancia_para_mod_exelearning: "Fundamenta DEC-0038: la finalización por nota puede apuntar a cualquier grade item declarado por el módulo (modelo workshop), por lo que mod_exelearning no necesita un overall oculto permanente en peritem; basta con apuntar completiongradeitemnumber a un iDevice, o usar el modo OVERALL."
+relevancia_para_mod_exelearning: "Fundamenta DEC-25-01: la finalización por nota puede apuntar a cualquier grade item declarado por el módulo (modelo workshop), por lo que mod_exelearning no necesita un overall oculto permanente en peritem; basta con apuntar completiongradeitemnumber a un iDevice, o usar el modo OVERALL."
 herramienta_ia:
   interfaz: claude-code
   modelo: claude-opus-4-8
@@ -70,11 +70,11 @@ item elegido no tiene nota configurada, y `activitygradetopassnotset` si
    recortar el cap o filtrar a items existentes).
 3. Un item **oculto** no se filtra del `<select>` (no hay lógica que lo excluya), pero
    ocultar no es necesario: en `peritem`, mod_exelearning deja los iDevices visibles y
-   borra el overall (DEC-0038).
+   borra el overall (DEC-25-01).
 
 ## Aplicación a mod_exelearning
 
-- **DEC-0038**: como la finalización puede apuntar a un iDevice, se elimina el overall
+- **DEC-25-01**: como la finalización puede apuntar a un iDevice, se elimina el overall
   oculto en `peritem` (que solo existía para `completionpassgrade`, DEC-0010). La
   finalización «aprobar la actividad entera» vive en el modo OVERALL (overall visible
   con `gradepass`); la finalización sobre un ejercicio concreto usa

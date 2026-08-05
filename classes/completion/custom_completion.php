@@ -27,12 +27,12 @@ global $CFG;
 require_once($CFG->dirroot . '/mod/exelearning/lib.php');
 
 /**
- * Activity custom completion subclass for mod_exelearning (DEC-0052).
+ * Activity custom completion subclass for mod_exelearning (DEC-69-01).
  *
  * Defines a single module-level completion rule, `completionstatusrequired`: the
  * activity is marked complete when the user has an attempt whose status reaches the
  * required value (passed, completed, or either). One state per module, aligned with
- * Moodle's completion abstraction — DEC-0049 deliberately rejected per-iDevice
+ * Moodle's completion abstraction — DEC-67-01 deliberately rejected per-iDevice
  * completion (multiple states per module).
  *
  * @package    mod_exelearning

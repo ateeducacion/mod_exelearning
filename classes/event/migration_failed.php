@@ -25,7 +25,7 @@
 namespace mod_exelearning\event;
 
 /**
- * Fired when migrating one source activity aborts with an error (DEC-0050).
+ * Fired when migrating one source activity aborts with an error (DEC-13-12).
  *
  * The partially-created target (if any) is rolled back before this fires, so no
  * mapping row exists and the source can be retried. Logged at the source course

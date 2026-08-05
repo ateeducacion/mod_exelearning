@@ -24,10 +24,10 @@ herramienta_ia:
 ## Resumen ejecutivo
 
 > **[ACTUALIZACION 2026-06-17]** Comparativa de bootstrap (2026-05-29). Matiz de staleness: donde el cuerpo
-> afirma como presente que «eXeLearning **no emite** xAPI» (input de DEC-0014/0015), eso **ya no es cierto**:
+> afirma como presente que «eXeLearning **no emite** xAPI» (input de DEC-0014/DEC-0015), eso **ya no es cierto**:
 > upstream emite statements xAPI por iDevice (PR #1867, **FTE-011**); el consumo + validación canónica está en
 > **FTE-015**, la versión 2.0 / forward-compat en **FTE-017**, y la síntesis en **AN-014** (decisión
-> **DEC-0032/DEC-0063**). La comparativa de estándares sigue válida; solo el «hoy no emite» quedó superado.
+> **DEC-17-01/DEC-0063**). La comparativa de estándares sigue válida; solo el «hoy no emite» quedó superado.
 
 Tres estándares de tracking en juego (AICC queda descartado: legado de 1988, grupo
 disuelto en 2014 — iSpring). En una frase:
@@ -82,7 +82,7 @@ disuelto en 2014 — iSpring). En una frase:
 | Soporte LMS | casi universal | medio | creciente |
 | Lanzamiento "LMS→contenido" | sí | no definido | sí (definido) |
 
-## SCORM 1.2 vs xAPI en mod_exelearning (capa implementada, DEC-0064)
+## SCORM 1.2 vs xAPI en mod_exelearning (capa implementada, DEC-85-01)
 
 > **[ACTUALIZACION 2026-06-18]** Con la ingesta xAPI ya implementada (PR de TAREA-015), esta tabla
 > compara los **dos canales de calificación** tal como conviven en el plugin —a diferencia de la «Tabla de
@@ -99,7 +99,7 @@ disuelto en 2014 — iSpring). En una frase:
 | Identidad / confianza | el paquete no afirma nada; el servidor usa `$USER` | el actor es anónimo por diseño; el servidor usa `$USER` | **empate** — ambos de confianza total en servidor |
 | Idempotencia | ninguna (el upsert del intento absorbe repeticiones) | deduplicado por `statement.id` (`exelearning_tracking_events`) | **xAPI** — auditoría exactamente-una-vez |
 | Offline / móvil / sin navegador | no (requiere el runtime SCORM en navegador) | sí (los mismos statements pueden ir a un LRS) | **xAPI** — portable más allá del iframe |
-| Acoplamiento al productor | exige inyectar pipwerks + el parche del guard de `form`/`scrambled-list` (DEC-0042) | ninguno — el emisor está siempre activo en cada export | **xAPI** — menos mutaciones en servido |
+| Acoplamiento al productor | exige inyectar pipwerks + el parche del guard de `form`/`scrambled-list` (DEC-13-11) | ninguno — el emisor está siempre activo en cada export | **xAPI** — menos mutaciones en servido |
 | Estado del estándar | heredado (SCORM 1.2, era 2004) | actual (xAPI 1.0.3, compatible hacia 2.0) | **xAPI** — moderno y mantenido |
 | Ubicuidad LMS / tooling | casi universal, décadas de soporte | estándar moderno, adopción creciente | **SCORM** — máxima compatibilidad |
 | Madurez en el plugin | productivo, por defecto desde DEC-0003 | nuevo en esta capa | **SCORM** — probado |
@@ -112,7 +112,7 @@ disuelto en 2014 — iSpring). En una frase:
   anteriores al emisor xAPI (DEC-0003).
 - **xAPI destaca en** granularidad estructurada por interacción, eliminar la regex frágil de
   `suspend_data` y la dependencia de pipwerks, idempotencia, portabilidad (móvil/offline/LRS) y ser el
-  estándar moderno y a prueba de futuro. Es el canal primario para los paquetes que lo emiten (DEC-0064).
+  estándar moderno y a prueba de futuro. Es el canal primario para los paquetes que lo emiten (DEC-85-01).
 
 ## Implicación para mod_exelearning (ver DEC-0014 y AN-010)
 

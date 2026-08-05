@@ -195,7 +195,7 @@ if ($showeditorbutton) {
 }
 
 if (!$mainfile) {
-    // Create-from-scratch (issue #13 #1, DEC-0024): an activity may be created
+    // Create-from-scratch (issue #13 #1, DEC-13-03): an activity may be created
     // with no uploaded package. Rather than erroring, guide the teacher to author
     // it in place with the embedded editor (the "Edit with eXeLearning" button is
     // already rendered above when available). Only fall back to the hard error for
@@ -234,7 +234,7 @@ if (!$mainfile) {
     if (!empty($exelearning->teachermodevisible)) {
         $iframeurl->param('exe-teacher', '1');
     }
-    // Deep-link from the gradebook (issue #13 #4, DEC-0023): grade.php maps a
+    // Deep-link from the gradebook (issue #13 #4, DEC-13-02): grade.php maps a
     // clicked grade item's itemnumber to its iDevice objectid and forwards it
     // here. Exported iDevices render as <article id="<odeIdeviceId>">, so a URL
     // fragment scrolls straight to the activity natively on single-page packages
@@ -261,7 +261,7 @@ if (!$mainfile) {
     }
     // Participation summary + report link (DEC-0011 option B, Assignment-style):
     // an at-a-glance "how many have attempted" for the teacher without opening
-    // the report. Respects separate groups. Skipped when the activity is not graded (DEC-0029).
+    // the report. Respects separate groups. Skipped when the activity is not graded (DEC-13-07).
     if ($exelearning->gradeenabled && has_capability('mod/exelearning:viewreport', $context)) {
         // Users visible to this teacher (respects separate groups).
         $currentgroup = groups_get_activity_group($cm, true);
@@ -306,7 +306,7 @@ if (!$mainfile) {
         echo html_writer::end_div();
     }
     // Attempt summary for the student (DEC-0007 phase 2). Skipped when the activity
-    // is not graded (DEC-0029).
+    // is not graded (DEC-13-07).
     if ($exelearning->gradeenabled && !$canpreview) {
         $myattempts = $DB->get_records('exelearning_attempt', [
             'exelearningid' => $exelearning->id,
@@ -396,7 +396,7 @@ if (!$mainfile) {
     // One page-load token groups all of this view's commits into a single attempt,
     // shared by whichever channel grades (DEC-0007).
     $sessiontoken = random_string(20);
-    // Channel choice (DEC-0064): a package that bundles the upstream xAPI emitter grades
+    // Channel choice (DEC-85-01): a package that bundles the upstream xAPI emitter grades
     // via xAPI; the SCORM shim stays alive (so pipwerks finds window.API and the iDevices
     // still run and emit their statements) but inert (it never POSTs to track.php). A
     // legacy package without the emitter keeps SCORM grading exactly as before. The
@@ -417,7 +417,7 @@ if (!$mainfile) {
             (int) $cm->id,
             $mode,
             $sessiontoken,
-            // Inert SCORM shim for xAPI-primary packages (DEC-0064).
+            // Inert SCORM shim for xAPI-primary packages (DEC-85-01).
             $emitsxapi
         ),
         JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
@@ -426,7 +426,7 @@ if (!$mainfile) {
     $bootjs = "\n(function () { window.API = window.exeScormTracker.createScormApi($scormcfg).api; })();";
     echo html_writer::tag('script', $trackerjs . $bootjs);
 
-    // The xAPI listener (DEC-0064): for an xAPI-capable package, receive the emitter's
+    // The xAPI listener (DEC-85-01): for an xAPI-capable package, receive the emitter's
     // exe-xapi-statement postMessages in this parent page, validate the origin and
     // forward each to xapi_track.php. Same inline single-source-of-truth pattern as the
     // SCORM tracker (js/xapi_listener.js, Vitest-tested). It shares $sessiontoken as the
@@ -447,7 +447,7 @@ if (!$mainfile) {
         echo html_writer::tag('script', $listenerjs . $listenerboot);
     }
 
-    // Fullscreen control (issue #13 #6, DEC-0024): a right-aligned button above the
+    // Fullscreen control (issue #13 #6, DEC-13-03): a right-aligned button above the
     // player. The iframe already advertises allow="fullscreen"; amd/src/fullscreen.js
     // drives the Fullscreen API on it (and falls back to vendor-prefixed methods).
     echo html_writer::div(

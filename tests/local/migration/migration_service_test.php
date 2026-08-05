@@ -30,7 +30,7 @@ require_once($CFG->dirroot . '/mod/exelearning/lib.php');
 require_once($CFG->libdir . '/gradelib.php');
 
 /**
- * Unit tests for the migration orchestrator (issue #13 #3, DEC-0050).
+ * Unit tests for the migration orchestrator (issue #13 #3, DEC-13-12).
  *
  * The sibling plugins are not installed in CI, so orchestration is driven through a
  * stub source_interface (an anonymous class) over hand-built rows, while the

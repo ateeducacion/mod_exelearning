@@ -58,7 +58,7 @@ class provider implements
             'timemodified' => 'privacy:metadata:exelearning_attempt:timemodified',
         ], 'privacy:metadata:exelearning_attempt');
 
-        // The xAPI ingestion audit/idempotency log (DEC-0064): one row per processed
+        // The xAPI ingestion audit/idempotency log (DEC-85-01): one row per processed
         // statement.id, attributed to the authenticated user (the client actor is
         // always ignored). The statements carry no PII; the personal datum is the link
         // between this user and the activity interactions.
@@ -78,7 +78,7 @@ class provider implements
         ], 'privacy:metadata:exelearning');
 
         // The migration tool records which manager migrated each mod_exeweb/mod_exescorm
-        // activity into mod_exelearning (DEC-0026 / DEC-0050). This is a system-level
+        // activity into mod_exelearning (DEC-13-05 / DEC-13-12). This is a system-level
         // audit and idempotency map: deleting a row would let a re-run duplicate the
         // target, so on erasure the userid is anonymised to 0 (the table's existing
         // "pre-upgrade / unknown" sentinel) rather than deleted. This mirrors core_tag,

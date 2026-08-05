@@ -11,19 +11,19 @@ resumen: >-
   con TDD y verde de punta a punta (PHPUnit 99/99, phpcs --standard=moodle 0/0). La
   deduplicación del editor embebido se deja fuera de alcance por decisión.
 acciones:
-  - "P1-A parser híbrido (DEC-0039): package.php pasa a DOMDocument por local-name() para la estructura (namespaces/entidades/CDATA/orden de atributos) reutilizando intactos extract_isscorm/decrypt_datagame/hash sobre el texto que el DOM decodifica; fallback al escáner regex (renombrado detect_gradable_idevices_regex) con debugging() del primer error de libxml. Seguridad: LIBXML_NONET sin DTDLOAD/NOENT (DTD externo content.dtd nunca se descarga, XXE inerte) + rechazo de entidades INTERNAS ($dom->doctype->entities). Bug crítico cazado por fixtures reales: los .elpx declaran <!DOCTYPE ode SYSTEM content.dtd> → un rechazo genérico de DOCTYPE habría roto TODOS los paquetes reales."
+  - "P1-A parser híbrido (DEC-26-01): package.php pasa a DOMDocument por local-name() para la estructura (namespaces/entidades/CDATA/orden de atributos) reutilizando intactos extract_isscorm/decrypt_datagame/hash sobre el texto que el DOM decodifica; fallback al escáner regex (renombrado detect_gradable_idevices_regex) con debugging() del primer error de libxml. Seguridad: LIBXML_NONET sin DTDLOAD/NOENT (DTD externo content.dtd nunca se descarga, XXE inerte) + rechazo de entidades INTERNAS ($dom->doctype->entities). Bug crítico cazado por fixtures reales: los .elpx declaran <!DOCTYPE ode SYSTEM content.dtd> → un rechazo genérico de DOCTYPE habría roto TODOS los paquetes reales."
   - "Tests parser (tests/package_test.php, 22 verde): 9 de regresión + namespaces con prefijo, XML inválido con log+fallback, entidades internas rechazadas, DTD externo aceptado, atributos en distinto orden/comillas, entidades en pageName, CDATA multilínea, sin content.xml, paquete corrupto, paquete grande (250), cross-check DOM↔regex y dos fixtures reales (tests/fixtures/real-multipage|real-datagame.content.xml extraídos de research/fixtures/elpx)."
-  - "Refactor track::ingest(): extrae de track.php la orquestación de scoring (normalización, objectid routing DEC-0017, recálculo overall server-side DEC-0018, tope maxattempt, completion) a un método compartido y testeable; track.php queda fino (sesskey + capability + respuesta JSON, mismo contrato). 4 tests de ingest en tests/track_test.php."
-  - "P1-B Mobile API (DEC-0040): 6 clases en classes/external/ (get_exelearnings_by_courses, view_exelearning, get_exelearning_access_information, get_user_attempts, get_user_grades, save_track) sobre core_external\\external_api, registradas en db/services.php con MOODLE_OFFICIAL_MOBILE_SERVICE; patrones de mod_scorm/mod_exeweb (external_warnings, util::validate_courses, helper_for_get_mods_by_courses). own-vs-otro → mod/exelearning:viewreport; packageurl solo a docentes. save_track reutiliza track::ingest()."
+  - "Refactor track::ingest(): extrae de track.php la orquestación de scoring (normalización, objectid routing DEC-5-01, recálculo overall server-side DEC-6-01, tope maxattempt, completion) a un método compartido y testeable; track.php queda fino (sesskey + capability + respuesta JSON, mismo contrato). 4 tests de ingest en tests/track_test.php."
+  - "P1-B Mobile API (DEC-26-02): 6 clases en classes/external/ (get_exelearnings_by_courses, view_exelearning, get_exelearning_access_information, get_user_attempts, get_user_grades, save_track) sobre core_external\\external_api, registradas en db/services.php con MOODLE_OFFICIAL_MOBILE_SERVICE; patrones de mod_scorm/mod_exeweb (external_warnings, util::validate_courses, helper_for_get_mods_by_courses). own-vs-otro → mod/exelearning:viewreport; packageurl solo a docentes. save_track reutiliza track::ingest()."
   - "Hallazgo de seguridad (tests de save_track): el recálculo del overall incluía objectids no registrados → un cliente podía sesgar la nota con objectids falsos. Cerrado: ingest() filtra itemscores a objectids registrados (track::registered_objectids) antes del recálculo. 14 tests de API (params/returns vía clean_returnvalue, contexto/login, matriz de permisos, seguridad save_track)."
-  - "P2 eventos (DEC-0041): attempt_deleted (borrado en report.php), report_viewed (vista de report.php), course_module_instance_list_viewed (index.php). Descartado el evento por commit de tracking (autocommit 500ms = ruido). Tests events_test.php."
+  - "P2 eventos (DEC-26-03): attempt_deleted (borrado en report.php), report_viewed (vista de report.php), course_module_instance_list_viewed (index.php). Descartado el evento por commit de tracking (autocommit 500ms = ruido). Tests events_test.php."
   - "P2 verificación: test roundtrip backup/restore (tests/backup_restore_test.php) — grade items por objectid + intentos preservados. Privacy sin cambios: save_track solo escribe en exelearning_attempt (ya cubierta por el provider)."
   - "Entorno: PHPUnit no venía listo en erseco/alpine-moodle:v5.0.7; montado (composer install + phpunit_prefix/dataroot en config.php + init.php). El contenedor mod_exelearning-moodle-1 monta el worktree principal (rama main), no _2: trabajo sincronizado vía rsync y sandbox limpiado tras testear."
-  - "5 commits en la rama feature/improve-moodle-apis-support; README.md actualizado con la sección Web services (Mobile API). version.php intacto (centinela DEC-0030: make package inyecta la versión real que registra los WS/eventos)."
+  - "5 commits en la rama feature/improve-moodle-apis-support; README.md actualizado con la sección Web services (Mobile API). version.php intacto (centinela DEC-13-08: make package inyecta la versión real que registra los WS/eventos)."
 evidencia:
-  - "research/decisiones/adr/DEC-0039-parser-content-xml-hibrido-dom.md"
-  - "research/decisiones/adr/DEC-0040-mobile-external-api.md"
-  - "research/decisiones/adr/DEC-0041-eventos-selectivos.md"
+  - "research/decisiones/adr/DEC-26-01-parser-content-xml-hibrido-dom.md"
+  - "research/decisiones/adr/DEC-26-02-mobile-external-api.md"
+  - "research/decisiones/adr/DEC-26-03-eventos-selectivos.md"
   - "classes/local/package.php (load_dom, detect_from_dom, collect_region, region_reports_score)"
   - "classes/local/track.php (ingest, registered_objectids)"
   - "classes/external/*.php (6 funciones), db/services.php, lang/en/exelearning.php"
@@ -35,14 +35,14 @@ pendientes:
   - "phpcs preexistente en classes/local/embedded_editor_installer.php:304 (2 warnings, no tocado; editor fuera de alcance)."
   - "Limpieza/extracción del stack del editor embebido compartido: fuera de alcance por decisión (ver RIE-013/DEC-0036)."
 relacionados:
-  - DEC-0039
-  - DEC-0040
-  - DEC-0041
-  - DEC-0017
-  - DEC-0018
-  - DEC-0021
-  - DEC-0022
-  - DEC-0037
+  - DEC-26-01
+  - DEC-26-02
+  - DEC-26-03
+  - DEC-5-01
+  - DEC-6-01
+  - DEC-12-01
+  - DEC-13-01
+  - DEC-13-10
   - REPO-001
   - REPO-002
   - REPO-004

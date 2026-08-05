@@ -1,11 +1,11 @@
 # Tracking architecture — SCORM 1.2 + xAPI ingestion
 
-> Status: **implemented** (DEC-0032 architecture + **DEC-0064** implementation; Spanish ADRs under
+> Status: **implemented** (DEC-17-01 architecture + **DEC-85-01** implementation; Spanish ADRs under
 > `research/decisiones/adr/`). The xAPI channel shipped in PR2 / TAREA-015 now that eXeLearning
 > PR #1867 is merged (`e3b1bd13`). See also `scorm-shim-current-flow.md` (the SCORM path) and
 > `xapi-integration-plan.md` (the design + what shipped).
 >
-> **xAPI-primary (DEC-0064):** a package that bundles `libs/xapi/exe_xapi.js` is graded via xAPI and
+> **xAPI-primary (DEC-85-01):** a package that bundles `libs/xapi/exe_xapi.js` is graded via xAPI and
 > its `window.API` is an **inert stub** (`js/scorm_tracker.js` `disableTracking`); legacy packages keep
 > SCORM. So a given package uses exactly one grade channel — no double-counting. The listener is the
 > inline IIFE `js/xapi_listener.js` and the endpoint is the plain script `xapi_track.php`
@@ -30,10 +30,10 @@ The "common internal model" the dual layer needs **already exists** and is reuse
 
 - `exelearning_attempt` — **flat** attempt table, axis `itemnumber` 0..N + `sessiontoken`
   (DEC-0007; the original header+detail design was evaluated and rejected — DEC-0007:176-186).
-- `exelearning_grade_item` — stable `objectid → itemnumber` map (DEC-0017).
-- `classes/local/track.php` + `attempts.php` — routing, overall recompute (DEC-0018),
+- `exelearning_grade_item` — stable `objectid → itemnumber` map (DEC-5-01).
+- `classes/local/track.php` + `attempts.php` — routing, overall recompute (DEC-6-01),
   attempt recording, `grademethod` aggregation, `grade_update()`. The orchestration is the
-  single shared entry point `track::ingest()` (DEC-0040): the web `track.php` and the mobile
+  single shared entry point `track::ingest()` (DEC-26-02): the web `track.php` and the mobile
   `save_track` web service already call it, so a future xAPI source would be a **third**
   caller of the same pipeline, not a parallel one.
 
@@ -70,15 +70,15 @@ to the SCORM endpoint today):
 - **Ignore the statement `actor`** (the emitter sends an anonymous account by design,
   FTE-011) and attribute the grade to `$USER`.
 - Map `object.id` → `objectid` and accept only objectids that already exist for **this**
-  instance (DEC-0017); reject unknown ones (never create items from the client).
-- Respect `gradeenabled` (DEC-0029): when grading is off there are no grade items, so
+  instance (DEC-5-01); reject unknown ones (never create items from the client).
+- Respect `gradeenabled` (DEC-13-07): when grading is off there are no grade items, so
   statements route nowhere (a no-op, consistent with rejecting unknown objectids).
-- Re-validate the overall on the server (spirit of DEC-0018).
+- Re-validate the overall on the server (spirit of DEC-6-01).
 - `postMessage`: the host injects `parentOrigin = <Moodle origin>` and the listener checks
   `event.origin` against the iframe `pluginfile.php` origin; `'*'`/mismatch is rejected
   (RIE-013).
 
-## Edge cases & failure modes (DEC-0064)
+## Edge cases & failure modes (DEC-85-01)
 
 The statement is fully attacker-controlled (an authenticated student can POST a crafted
 body straight to `xapi_track.php`, bypassing the listener), so every accepted field is
@@ -149,7 +149,7 @@ systemic (origin/CSP, a proxy dropping the unload POST, a package not emitting t
 
 ## Reused vs new
 
-| Concern | Reused | New (DEC-0064) |
+| Concern | Reused | New (DEC-85-01) |
 |---|---|---|
 | Internal model | `exelearning_attempt`, `exelearning_grade_item` | `exelearning_tracking_events` (`statementid` UNIQUE — audit/idempotency) |
 | Routing / grading | `track::apply_item_scores`, `attempts::*`, `grade_update` | `\local\xapi\statement_normalizer` + `\local\xapi\ingestor` (thin `statement → itemscores`; overall from the package statement) |
@@ -161,7 +161,7 @@ systemic (origin/CSP, a proxy dropping the unload POST, a package not emitting t
 
 Both channels feed the same gradebook through the same pipeline; they differ in *how the
 package talks to Moodle* and *how much it can say*. This plugin uses **exactly one** channel
-per package — xAPI when the package emits it, SCORM otherwise (DEC-0064).
+per package — xAPI when the package emits it, SCORM otherwise (DEC-85-01).
 
 | Dimension | SCORM 1.2 (legacy path) | xAPI (this layer) | Edge |
 |---|---|---|---|
@@ -173,7 +173,7 @@ per package — xAPI when the package emits it, SCORM otherwise (DEC-0064).
 | Identity / trust | package asserts nothing; server uses `$USER` | actor is anonymous by design; server uses `$USER` | **tie** — both fully server-trusted |
 | Idempotency | none (the attempt upsert absorbs repeats) | de-duplicated by `statement.id` (`exelearning_tracking_events`) | **xAPI** — exactly-once auditing |
 | Offline / mobile / non-browser | no (needs the SCORM runtime in a browser) | yes (the same statements can also reach an LRS) | **xAPI** — portable beyond the embedded iframe |
-| Coupling to the producer | needs pipwerks injected + the `form`/`scrambled-list` save-guard patch (DEC-0042) | none — the emitter is always-on in every export | **xAPI** — fewer serve-time mutations |
+| Coupling to the producer | needs pipwerks injected + the `form`/`scrambled-list` save-guard patch (DEC-13-11) | none — the emitter is always-on in every export | **xAPI** — fewer serve-time mutations |
 | Standard status | legacy (SCORM 1.2, 2004-era) | current (xAPI 1.0.3, forward-compatible with 2.0) | **xAPI** — modern, actively maintained |
 | LMS / tooling ubiquity | near-universal, decades of support | modern standard, growing adoption | **SCORM** — widest compatibility |
 | Maturity in this plugin | productive, the default since DEC-0003 | new in this layer | **SCORM** — battle-tested |
@@ -187,7 +187,7 @@ per package — xAPI when the package emits it, SCORM otherwise (DEC-0064).
 - **xAPI is better at** structured per-interaction granularity, dropping the fragile
   `suspend_data` regex and the pipwerks dependency, idempotent auditing, portability
   (mobile/offline/LRS), and being the modern, future-proof standard. It is the primary
-  channel for packages that emit it (DEC-0064).
+  channel for packages that emit it (DEC-85-01).
 
 ## Scope
 

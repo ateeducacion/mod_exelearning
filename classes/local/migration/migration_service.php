@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Site-wide sibling-to-eXeLearning migration orchestrator (issue #13 #3, DEC-0026, DEC-0050).
+ * Site-wide sibling-to-eXeLearning migration orchestrator (issue #13 #3, DEC-13-05, DEC-13-12).
  *
  * @package    mod_exelearning
  * @copyright  2026 ATE (Área de Tecnología Educativa)
@@ -162,7 +162,7 @@ final class migration_service {
 
         // 4. Create + install + grades + mapping, compensating on failure. No DB
         // transaction on purpose: file writes are not transactional and
-        // course_delete_module() cannot run inside one (DEC-0050).
+        // course_delete_module() cannot run inside one (DEC-13-12).
         $targetcmid = null;
         try {
             $target = activity_builder::create_from_source($source, $src->get_target_grademodel());
