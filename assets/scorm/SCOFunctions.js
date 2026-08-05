@@ -417,7 +417,8 @@
  * cmi.core.lesson_status is the single status element — there is no
  * completion/success separation in this layer.
  *
- * Policy (see doc/development/scorm12-runtime-contract.md and ADR-0001):
+ * Policy (see doc/development/scorm12-runtime-contract.md and ADR-2209-01,
+ * both in exelearning/exelearning):
  * - Entry: an empty or "not attempted" status becomes "incomplete";
  *   any other stored status is preserved — a status is never downgraded.
  * - Exit: when the page recorded no terminal status ("completed", "passed",
