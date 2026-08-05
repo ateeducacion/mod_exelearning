@@ -22,9 +22,15 @@ cumpla debe rechazarse o corregirse antes de integrarse.
    evidencias (FTE/REPO/AN/EXP). Cada `EXP` registra comando, commit, entorno, métricas,
    limitaciones.
 5. **Append-only.** `status.yaml`, ADRs y diario nunca se reescriben. Para invalidar un
-   ADR se publica otro que lo supersede (`supersede: DEC-NNNN`).
-6. **IDs estables y map-keyed.** `REPO-NNN`, `FTE-NNN`, `AN-NNN`, `DEC-NNNN`, `EXP-NNN`,
-   `TAREA-NNN`, `PREG-NNN`, `RIE-NNN`. Numeración monotónica, no se reutilizan.
+   ADR se publica otro que lo supersede (`supersede: DEC-<nº>-<NN>`, y el antiguo pasa a
+   `estado: Superseded` con `reemplazada_por:`).
+6. **IDs estables.** `REPO-NNN`, `FTE-NNN`, `AN-NNN`, `EXP-NNN`, `TAREA-NNN`, `PREG-NNN`,
+   `RIE-NNN` usan numeración monotónica y no se reutilizan. Las decisiones **no** llevan
+   contador global: se identifican por el número de seguimiento de GitHub del cambio
+   (issue, o PR si no hay issue) más una secuencia local de dos dígitos,
+   `DEC-<nº-seguimiento>-<NN>`. Nunca se abre un issue sólo para obtener un número. Ver
+   [`decisiones/README.md`](./decisiones/README.md) y
+   [`decisiones/mapa-migracion-ids.md`](./decisiones/mapa-migracion-ids.md).
 7. **Política de clones externos.** No se vendoran repositorios. Se enlazan por ruta
    local absoluta (zona de clones de referencia documentada en `DEC-0002`) y por URL +
    commit upstream. Carpeta convencional para clones: `../_repos/` (no se crea
