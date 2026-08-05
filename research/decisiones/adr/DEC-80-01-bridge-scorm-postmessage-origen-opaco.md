@@ -1,31 +1,34 @@
 ---
-id: DEC-0059
-titulo: "Bridge SCORM por postMessage + iframe de origen opaco (modo seguro configurable): implementación de RIE-001 Tier 2"
-estado: Aceptada
-fecha: 2026-06-13
-agentes:
+id: DEC-80-01
+title: "Bridge SCORM por postMessage + iframe de origen opaco (modo seguro configurable): implementación de RIE-001 Tier 2"
+status: Accepted
+date: 2026-06-13
+tracking_issue: 80
+legacy_id: DEC-0059
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-002
   - REPO-004
   - REPO-005
-experimentos: []
-relacionados:
+experiments: []
+related:
+  adrs: [DEC-0-16, DEC-5-01, DEC-13-11]
+see_also:
   - RIE-001
   - AN-008
-  - DEC-0019
-  - DEC-0017
-  - DEC-0042
   - TAREA-017
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
+
+# DEC-80-01: Bridge SCORM por postMessage + iframe de origen opaco (modo seguro configurable): implementación de RIE-001 Tier 2
 
 ## Contexto
 
-`DEC-0019` cerró la investigación de RIE-001 (XSS cross-component desde un `.elpx`
+`DEC-0-16` cerró la investigación de RIE-001 (XSS cross-component desde un `.elpx`
 malicioso) y dejó dos tiers documentados pero **sin implementar por decisión del
 usuario**. Su roadmap fijaba explícitamente que el aislamiento real (Tier 2) iría en
 **"su propio ADR"**: `M6 — reescribir el bridge a postMessage → M7 — origen opaco`.
@@ -34,16 +37,16 @@ Esta ADR es ese ADR. El usuario priorizó implementar el **bridge seguro** compl
 (no sólo el endurecimiento Tier 1), configurable y con valor por defecto seguro, tras
 confirmar que es la única alternativa que cumple los objetivos de aislamiento (el
 contenido NO puede leer ni modificar el DOM/cookies/sesión/JS del marco padre de
-Moodle). **No supersede a DEC-0019**: la implementa/avanza.
+Moodle). **No supersede a DEC-0-16**: la implementa/avanza.
 
-El problema de fondo (ya documentado en DEC-0019) es que el SCORM era 100%
+El problema de fondo (ya documentado en DEC-0-16) es que el SCORM era 100%
 same-origin, con **tres dependencias duras** que hacían que quitar `allow-same-origin`
 matase el tracking en silencio:
 
 1. el **padre** inyectaba `window.API` y el hijo (pipwerks) lo buscaba recorriendo
    `window.parent`;
 2. el **padre** leía `iframe.contentDocument` para mapear el `objectid` de cada
-   iDevice (DEC-0017);
+   iDevice (DEC-5-01);
 3. el **teacher-mode hider** inyectaba `<style>` en el `contentDocument`.
 
 ## Problema
@@ -77,7 +80,7 @@ y compatible hacia atrás?
    `sessionStorage` en memoria** antes de que corra el contenido, o esos scripts
    rompen. (Verificación de uso: `rg "localStorage|sessionStorage"` sobre
    `/Users/ernesto/Downloads/git/exelearning`.)
-4. **Comparación con core (re-verificada, coherente con DEC-0019):**
+4. **Comparación con core (re-verificada, coherente con DEC-0-16):**
    - `core_h5p` valida `postMessage` por `event.source === window.parent` + un token
      de contexto (`event.data.context === 'h5p'`), pero **sin** validar `event.origin`
      y con contenido **curado** (`public/h5p/js/embed.js:38-46`). Patrón de
@@ -133,7 +136,7 @@ por actividad (no se toca BD/upgrade/backup).
   presente, sustituye al XHR directo (el modo legacy y los tests siguen usando el XHR).
 - **Modo `legacy`**: idéntico a hoy (same-origin, `window.API` en el padre, hider por
   `contentDocument`). El shim baked queda dormido (origen no opaco).
-- **Permissions-Policy** (DEC-0019 M2, limpio): se mantiene como follow-up recomendado
+- **Permissions-Policy** (DEC-0-16 M2, limpio): se mantiene como follow-up recomendado
   para `exelearning_pluginfile()` (no incluido aún en este cambio para acotar el PR).
 
 ### Protocolo del bridge
@@ -158,13 +161,13 @@ inválidos se ignoran en silencio. El flush al cerrar pestaña lo hace el **padr
 
 - **Positivas:** RIE-001 pasa a `mitigado` por defecto. El contenido no puede leer
   `parent.document`/`document.cookie`/sesión ni forjar peticiones con el `sesskey`
-  (que se queda en el padre). El ruteo por `objectid` (DEC-0017) y el guard de
-  form/scrambled (DEC-0042) se preservan. El flush por `sendBeacon` es más fiable que
+  (que se queda en el padre). El ruteo por `objectid` (DEC-5-01) y el guard de
+  form/scrambled (DEC-13-11) se preservan. El flush por `sendBeacon` es más fiable que
   el XHR síncrono en `beforeunload`.
 - **Negativas / coste:** mayor superficie JS (shim + relevo, ambos con tests Vitest);
   el almacenamiento web del contenido pasa a ser por-sesión (no persiste entre
   recargas) en modo seguro; al quitar `allow-popups-to-escape-sandbox` se pierde el
-  `window.print()` del popup de la rúbrica (regresión conocida de DEC-0019 M1). El
+  `window.print()` del popup de la rúbrica (regresión conocida de DEC-0-16 M1). El
   modo `legacy` cubre cualquier paquete que falle bajo origen opaco.
 - **Cambios que dispara:** RIE-001 → `mitigado`; abre TAREA-017 (implementación) y deja
   como follow-up opcional M2 (Permissions-Policy) y M3 (CSP de red con toggle).
@@ -212,20 +215,20 @@ modo `secure` por defecto funciona; la limitación es exclusiva de los hosts WAS
 
 - **Teacher-mode ya no depende del bridge.** Esta ADR ocultaba el conmutador de profesor en `secure`
   con el **flag del handshake** (`teachermodevisible` en `config`, líneas 124/131/145) porque en opaco
-  el padre no puede inyectar CSS. Desde [[DEC-0070]] (PR 86) la **revelación** del contenido de profesor
+  el padre no puede inyectar CSS. Desde [[DEC-80-06]] (PR 86) la **revelación** del contenido de profesor
   la gobierna el **parámetro core `?exe-teacher`** que viaja en el `src` y el paquete lee desde dentro
   del iframe — compatible con origen opaco y **sin** inyección. La ocultación vía flag del bridge (y el
   hider `contentDocument` de legacy) quedan **superseded** para ese fin; el flag puede mantenerse por
   compatibilidad pero la fuente de verdad es el parámetro de URL.
 - **Dos handshakes distintos.** El bridge **SCORM** de esta ADR (`type:'scorm'`) y el de **medios
-  externos / embeds** ([[DEC-0061]], `type:'exe-embed'`) son **canales independientes** (no se pisan;
-  tipos de mensaje distintos, relés separados). [[DEC-0071]] **alinea ambos** al patrón endurecido
+  externos / embeds** ([[DEC-80-03]], `type:'exe-embed'`) son **canales independientes** (no se pisan;
+  tipos de mensaje distintos, relés separados). [[DEC-80-07]] **alinea ambos** al patrón endurecido
   **nonce por vista + `MessagePort` con capability** (el de SCORM ya usa nonce; el de embeds lo
-  incorporará), y el de xAPI ([[DEC-0069]]) sigue la misma disciplina de identidad de ventana.
+  incorporará), y el de xAPI ([[DEC-80-05]]) sigue la misma disciplina de identidad de ventana.
 
 ## Seguimiento
 
 - **TAREA-017**: implementación del bridge seguro (esta ADR).
 - Follow-up opcional: **M2** Permissions-Policy y **M3** CSP de red estricta-con-toggle
-  en `exelearning_pluginfile()` (DEC-0019); **M8** sandboxing de JS en cliente
+  en `exelearning_pluginfile()` (DEC-0-16); **M8** sandboxing de JS en cliente
   (TAREA-013) sigue pendiente como capa extra.

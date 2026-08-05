@@ -398,14 +398,14 @@ decisiones_bloqueantes:
       las vías (el editor pasa de irrecuperable a recuperable). Resuelve RIE-019. Promueve maturity
       BETA->STABLE (consecuencia, no decisión aparte; version sentinel intacto, DEC-13-08). 263 tests
       verdes (make test). Tests nuevos: 6 en package_manager_extract_test, 2 en lib_test.
-  DEC-0059:
+  DEC-80-01:
     titulo: "Bridge SCORM por postMessage + iframe de origen opaco (modo seguro configurable): RIE-001 Tier 2"
     estado: Aceptada
-    ruta: decisiones/adr/DEC-0059-bridge-scorm-postmessage-origen-opaco.md
+    ruta: decisiones/adr/DEC-80-01-bridge-scorm-postmessage-origen-opaco.md
     fecha: 2026-06-13
-    relacionados: [DEC-0019, RIE-001, AN-008, DEC-0017, DEC-0042]
+    relacionados: [DEC-0-16, RIE-001, AN-008, DEC-5-01, DEC-13-11]
     notas: >-
-      Implementa el Tier 2 que DEC-0019 dejó para "su propio ADR" (no lo supersede). Ajuste
+      Implementa el Tier 2 que DEC-0-16 dejó para "su propio ADR" (no lo supersede). Ajuste
       global mod_exelearning/iframemode (secure por defecto | legacy de respaldo,
       \mod_exelearning\local\ui\player_iframe, fail-safe a secure). Modo secure: iframe sandbox
       sin allow-same-origin (origen opaco) ni allow-popups-to-escape-sandbox; el shim window.API
@@ -419,15 +419,15 @@ decisiones_bloqueantes:
       mira window.API local primero (SCORM_API_wrapper.js:71-106). Legacy = comportamiento actual
       byte-a-byte. phpcs 0/0; Vitest 40/40 (24 nuevos); PHPUnit player_iframe_test + Behat en CI.
       RIE-001 -> mitigado. OJO: su Ruta A (servir el iframe opaco por pluginfile normal) fue
-      REFUTADA en verificación y corregida por DEC-0060.
-  DEC-0060:
-    titulo: "Modo iframe seguro funcional: servir el contenido opaco por tokenpluginfile + CSP + watchdog (corrige Ruta A de DEC-0059)"
+      REFUTADA en verificación y corregida por DEC-80-02.
+  DEC-80-02:
+    titulo: "Modo iframe seguro funcional: servir el contenido opaco por tokenpluginfile + CSP + watchdog (corrige Ruta A de DEC-80-01)"
     estado: Aceptada
-    ruta: decisiones/adr/DEC-0060-iframe-seguro-tokenpluginfile.md
+    ruta: decisiones/adr/DEC-80-02-iframe-seguro-tokenpluginfile.md
     fecha: 2026-06-13
-    relacionados: [DEC-0059, DEC-0019, RIE-001, AN-008, DEC-0017]
+    relacionados: [DEC-80-01, DEC-0-16, RIE-001, AN-008, DEC-5-01]
     notas: >-
-      Verificado en navegador (Chrome DevTools, Moodle real :80): la Ruta A de DEC-0059 (iframe
+      Verificado en navegador (Chrome DevTools, Moodle real :80): la Ruta A de DEC-80-01 (iframe
       opaco servido por pluginfile normal) NO carga los subrecursos: un documento de origen opaco
       no envía la cookie SameSite=Lax (session/manager.php:513-518) y pluginfile exige login -> CSS/
       JS/shim 404. Corrección: servir el iframe por tokenpluginfile (make_pluginfile_url includetoken;
@@ -649,9 +649,9 @@ tareas:
     agente: claude-code
     relacionados:
       - RIE-001
-      - DEC-0059
-      - DEC-0019
-      - DEC-0017
+      - DEC-80-01
+      - DEC-0-16
+      - DEC-5-01
     notas: >-
       Implementado el modo seguro configurable (iframemode secure|legacy, default secure).
       Ficheros: classes/local/ui/player_iframe.php (modo + tokens sandbox), settings.php
@@ -664,15 +664,15 @@ tareas:
       CI/contenedor. Follow-up opcional: M2/M3 (Permissions-Policy/CSP).
   TAREA-018:
     fecha: 2026-06-13
-    titulo: "Corregir la Ruta A: servir el iframe seguro por tokenpluginfile + CSP + watchdog (DEC-0060)"
+    titulo: "Corregir la Ruta A: servir el iframe seguro por tokenpluginfile + CSP + watchdog (DEC-80-02)"
     estado: Done
     agente: claude-code
     relacionados:
       - RIE-001
-      - DEC-0060
-      - DEC-0059
+      - DEC-80-02
+      - DEC-80-01
     notas: >-
-      Verificación en navegador (Chrome DevTools, Moodle real :80) refutó la Ruta A de DEC-0059
+      Verificación en navegador (Chrome DevTools, Moodle real :80) refutó la Ruta A de DEC-80-01
       (subrecursos del iframe opaco 404 por cookie SameSite=Lax). Corregido: view.php sirve el iframe
       por tokenpluginfile (get_user_key core_files TTL corto en la ruta) sin fallback silencioso a
       legacy; exelearning_pluginfile emite CSP + Permissions-Policy (player_iframe::content_security_policy
@@ -692,15 +692,15 @@ riesgos:
       El hardening Tier 1/2 (DEC-0-16) lo implementa la rama feature/secure-iframe-scorm-bridge
       (PR #80, con sus propias decisiones aún no fusionadas), NO como bloqueante. TAREA-013 (sandboxing JS) queda cubierta ahí; no se crea ficha aparte.
     mitigacion: >-
-      MITIGADO (2026-06-13, DEC-0059 + DEC-0060): el modo seguro por defecto (iframemode=secure)
+      MITIGADO (2026-06-13, DEC-80-01 + DEC-80-02): el modo seguro por defecto (iframemode=secure)
       sirve el paquete en un iframe de ORIGEN OPACO (sin allow-same-origin) por tokenpluginfile
-      (DEC-0060 corrige la Ruta A: el opaco no envía la cookie SameSite, así que los assets se
+      (DEC-80-02 corrige la Ruta A: el opaco no envía la cookie SameSite, así que los assets se
       sirven por token en la URL, no por cookie) y releva el scoring SCORM por un canal postMessage
       validado (identidad de ventana + nonce + acción cerrada), con el sesskey sólo en el padre; el
       contenido ya no puede leer DOM/cookies/sesión ni forjar peticiones (solo recibe un token de
       lectura de ficheros, acotado por CSP+TTL). Sin degradación silenciosa a legacy: watchdog que
       avisa si secure no puede renderizar. Verificado en navegador (track.php guarda la nota).
-      legacy queda como respaldo opt-in (vuelve al riesgo same-origin). Contexto previo (DEC-0019,
+      legacy queda como respaldo opt-in (vuelve al riesgo same-origin). Contexto previo (DEC-0-16,
       sin implementar entonces):
       v1 VIGENTE: sandbox del iframe sin allow-top-navigation / allow-modals (AN-008).
       Investigación TAREA-012 completada en DEC-0-16 (2026-06-02): core NO aísla (mod_scorm
@@ -713,11 +713,11 @@ riesgos:
       de M6. v2 (subdominio) sigue requiriendo infra fuera de core.
     relacionados:
       - AN-008
-      - DEC-0003
-      - DEC-0004
-      - DEC-0019
-      - DEC-0059
-      - DEC-0060
+      - DEC-0-03
+      - DEC-0-04
+      - DEC-0-16
+      - DEC-80-01
+      - DEC-80-02
       - TAREA-012
       - TAREA-017
   RIE-007:

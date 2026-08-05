@@ -77,6 +77,13 @@ importaría la numeración de otro repositorio y acabaría colisionando con el P
 | `DEC-0056` | `DEC-74-01` | [#74](https://github.com/exelearning/moodle-mod_exelearning/issues/74) (PR) | [`adr/DEC-74-01-tests-js-tracker-scorm-vitest.md`](./adr/DEC-74-01-tests-js-tracker-scorm-vitest.md) |
 | `DEC-0057` | `DEC-77-01` | [#77](https://github.com/exelearning/moodle-mod_exelearning/issues/77) (PR) | [`adr/DEC-77-01-extraccion-no-destructiva.md`](./adr/DEC-77-01-extraccion-no-destructiva.md) |
 | `DEC-0058` | `DEC-78-01` | [#78](https://github.com/exelearning/moodle-mod_exelearning/issues/78) (PR) | [`adr/DEC-78-01-fijar-editor-tag-en-release.md`](./adr/DEC-78-01-fijar-editor-tag-en-release.md) |
+| `DEC-0059` | `DEC-80-01` | [#80](https://github.com/exelearning/moodle-mod_exelearning/issues/80) (PR) | [`adr/DEC-80-01-bridge-scorm-postmessage-origen-opaco.md`](./adr/DEC-80-01-bridge-scorm-postmessage-origen-opaco.md) |
+| `DEC-0060` | `DEC-80-02` | [#80](https://github.com/exelearning/moodle-mod_exelearning/issues/80) (PR) | [`adr/DEC-80-02-iframe-seguro-tokenpluginfile.md`](./adr/DEC-80-02-iframe-seguro-tokenpluginfile.md) |
+| `DEC-0061` | `DEC-80-03` | [#80](https://github.com/exelearning/moodle-mod_exelearning/issues/80) (PR) | [`adr/DEC-80-03-embeds-externos-promote-to-parent.md`](./adr/DEC-80-03-embeds-externos-promote-to-parent.md) |
+| `DEC-0062` | `DEC-80-04` | [#80](https://github.com/exelearning/moodle-mod_exelearning/issues/80) (PR) | [`adr/DEC-80-04-fix-pipwerks-get-api-local-origen-opaco.md`](./adr/DEC-80-04-fix-pipwerks-get-api-local-origen-opaco.md) |
+| `DEC-0069` | `DEC-80-05` | [#80](https://github.com/exelearning/moodle-mod_exelearning/issues/80) (PR) | [`adr/DEC-80-05-xapi-bridge-seguro-identidad-ventana.md`](./adr/DEC-80-05-xapi-bridge-seguro-identidad-ventana.md) |
+| `DEC-0070` | `DEC-80-06` | [#80](https://github.com/exelearning/moodle-mod_exelearning/issues/80) (PR) | [`adr/DEC-80-06-teacher-mode-parametro-core-exe-teacher.md`](./adr/DEC-80-06-teacher-mode-parametro-core-exe-teacher.md) |
+| `DEC-0071` | `DEC-80-07` | [#80](https://github.com/exelearning/moodle-mod_exelearning/issues/80) (PR) | [`adr/DEC-80-07-estrategia-unificada-media-externo-opaco.md`](./adr/DEC-80-07-estrategia-unificada-media-externo-opaco.md) |
 | `DEC-0064` | `DEC-85-01` | [#85](https://github.com/exelearning/moodle-mod_exelearning/issues/85) (PR) | [`adr/DEC-85-01-implementacion-ingesta-xapi.md`](./adr/DEC-85-01-implementacion-ingesta-xapi.md) |
 | `DEC-0065` | `DEC-106-01` | [#106](https://github.com/exelearning/moodle-mod_exelearning/issues/106) (PR) | [`adr/DEC-106-01-editor-empaquetado-solo-en-release.md`](./adr/DEC-106-01-editor-empaquetado-solo-en-release.md) |
 | `DEC-0066` | `DEC-108-01` | [#108](https://github.com/exelearning/moodle-mod_exelearning/issues/108) (PR) | [`adr/DEC-108-01-interruptor-global-editor-embebido.md`](./adr/DEC-108-01-interruptor-global-editor-embebido.md) |
@@ -157,10 +164,12 @@ La validación permite identificadores retirados en:
 | `research/tareas/diario/2026-06-17-adr-validacion-xapi-y-2.0.yaml` | registro histórico de la colisión `DEC-0059`/`DEC-0-18` que motivó retirar el contador |
 | cualquier línea `legacy_id:` | el campo existe precisamente para eso |
 
-## Identificadores reservados en ramas abiertas
+## Registros migrados en la rama del iframe seguro
 
 El PR [#80](https://github.com/exelearning/moodle-mod_exelearning/pull/80)
-(`feature/secure-iframe-scorm-bridge`) añade siete registros más con la numeración
-retirada y ya ha sobrevivido a una colisión del contador global (sus `DEC-0065`…`DEC-0067`
-se renumeraron a `DEC-0069`…`DEC-0071` cuando `main` reclamó ese rango). Esa rama migra
-sus propios identificadores en su propia rama; aquí no se tocan.
+(`feature/secure-iframe-scorm-bridge`) traía siete registros con la numeración retirada, y
+ya había sobrevivido a una colisión del contador global (sus `DEC-0065`…`DEC-0067` se
+renumeraron a `DEC-0069`…`DEC-0071` cuando `main` reclamó ese rango). Esa rama migró sus
+propios identificadores a `DEC-80-01`…`DEC-80-07`, listados en la tabla de arriba; la
+colisión que sufrieron es justamente lo que la numeración por número de seguimiento
+elimina, porque `80` sólo lo comparten los registros de ese mismo PR.

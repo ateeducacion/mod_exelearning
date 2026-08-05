@@ -1,4 +1,4 @@
-// Playwright config for the cross-browser external-embed e2e (DEC-0061), separate from
+// Playwright config for the cross-browser external-embed e2e (DEC-80-03), separate from
 // any Moodle/Behat setup. Serves the plugin root over a static server so the harness
 // can load the real js/exe_embed_*.js and an opaque-origin sandboxed content iframe,
 // then runs the check in Firefox (proves the promote-to-parent mechanism is not

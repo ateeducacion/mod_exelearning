@@ -7,7 +7,7 @@ rama_consultada: fix/apertura-segura-elpx
 commit_consultado: "18b8d1a4 (clon local 2026-06-19)"
 fecha_consulta: 2026-06-19
 licencia: "[PENDIENTE: confirmar]"
-rol_para_mod_exelearning: "Consumidor/player hermano: renderiza paquetes .elpx no confiables con origen opaco y promociona los embeds de vídeo/PDF al padre (mismo modelo de seguridad que DEC-0061, variante click→modal). Punto de comparación de la solución de embeds."
+rol_para_mod_exelearning: "Consumidor/player hermano: renderiza paquetes .elpx no confiables con origen opaco y promociona los embeds de vídeo/PDF al padre (mismo modelo de seguridad que DEC-80-03, variante click→modal). Punto de comparación de la solución de embeds."
 herramienta_ia:
   interfaz: claude-code
   modelo: claude-opus-4-8
@@ -17,7 +17,8 @@ herramienta_ia:
 
 - **Rol:** plataforma (Astro/React + API) que cataloga y previsualiza recursos `.elpx`. Como
   `mod_exelearning`, es un **consumidor** de paquetes no confiables (no el productor).
-- **Apertura segura del `.elpx` (ADR-0026/0027):** sirve el contenido del autor en un iframe cuyo
+- **Apertura segura del `.elpx`** (decisiones `docs/negocio/decisiones/0026`+`0027` del repo de
+  Procomún, que conserva su propia numeración)**:** sirve el contenido del autor en un iframe cuyo
   `sandbox` **omite `allow-same-origin`** (origen opaco, `origin="null"`); además repite el sandbox
   como **directiva CSP `sandbox`** en la respuesta HTTP (`elpx-content.ts:224-225`), así que la
   opacidad aguanta aunque se abra en pestaña nueva. CSP también fija `frame-src 'self' https:`,
@@ -36,7 +37,7 @@ herramienta_ia:
   el player del modal mantiene `allow-same-origin` (seguro **sólo** porque la URL está garantizada
   cross-origin); PDF sin sandbox (visor nativo); fachada en thumbnails que no monta modal (UI muerta);
   requiere `Access-Control-Allow-Origin: *` + `crossorigin=anonymous` en los `<script>` del paquete;
-  interactive-video roto (misma limitación que DEC-0061).
+  interactive-video roto (misma limitación que DEC-80-03).
 - **Documentación propia:** `docs/negocio/decisiones/0026-apertura-segura-elpx.md`,
   `0027-reproduccion-segura-embeds-elpx.md`. Commits `cda2d108`, `34aadfab`, `18b8d1a4`.
 

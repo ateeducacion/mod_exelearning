@@ -18,7 +18,7 @@
 // The wrapper is normally "out of scope" for these JS suites, but its API lookup is
 // grade-critical: it is what eXeLearning's content calls to record SCORM scores, and a
 // defect there silently lost EVERY score in the secure (opaque-origin) iframe mode
-// (DEC-0059/DEC-0061). The vendored get() had been altered to look only in window.parent
+// (DEC-80-01/DEC-80-03). The vendored get() had been altered to look only in window.parent
 // and skip the current window. In secure mode the SCORM API is provided LOCALLY by the
 // in-iframe bridge shim (js/scorm_bridge_shim.js) as window.API, and the Moodle parent is
 // a cross-origin/opaque frame whose property access throws SecurityError. So the altered

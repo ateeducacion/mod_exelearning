@@ -103,7 +103,7 @@ if ($haspackage) {
             'index.html'
         );
     }
-    // Self-heal the secure-mode bridge client (DEC-0060) into packages extracted
+    // Self-heal the secure-mode bridge client (DEC-80-02) into packages extracted
     // before it existed: if index.html is present but libs/exe_scorm_bridge.js is not,
     // re-extract once so the bridge scripts are copied and injected. Idempotent and
     // bounded (only fires until the file exists).
@@ -234,7 +234,7 @@ if (!$mainfile) {
         );
     }
 } else {
-    // Resolve the iframe security mode once (DEC-0060, corrects DEC-0059's Route A).
+    // Resolve the iframe security mode once (DEC-80-02, corrects DEC-80-01's Route A).
     // Secure mode serves the package through tokenpluginfile.php so the opaque-origin
     // iframe's subresources (CSS/JS/images) carry a per-user file token in the URL and
     // load WITHOUT the SameSite session cookie (an opaque document never sends it).
@@ -445,7 +445,7 @@ if (!$mainfile) {
     }
     // SCORM 1.2 client. eXeLearning v4 iDevices use pipwerks SCORM, which calls
     // findAPI() looking for an `API` object with LMSInitialize. How that API is
-    // provided depends on the configured iframe security mode (DEC-0059). In secure
+    // provided depends on the configured iframe security mode (DEC-80-01). In secure
     // mode (the default) the package runs in an opaque-origin sandboxed iframe and
     // CANNOT reach this page: window.API lives INSIDE the iframe (baked bridge shim,
     // libs/exe_scorm_bridge.js) and scoring is relayed here over a validated postMessage
@@ -455,7 +455,7 @@ if (!$mainfile) {
     // One page-load token groups all of this view's commits into a single attempt,
     // shared by whichever channel grades (DEC-0-07).
     $sessiontoken = random_string(20);
-    // Channel choice (DEC-0064, extended to secure mode by DEC-0069): a package that
+    // Channel choice (DEC-85-01, extended to secure mode by DEC-80-05): a package that
     // bundles the upstream xAPI emitter is graded via xAPI in BOTH iframe modes; the SCORM
     // shim stays alive (so pipwerks finds window.API and the iDevices run and emit their
     // statements) but inert, so the two channels never double-count. In legacy mode the
@@ -477,7 +477,7 @@ if (!$mainfile) {
         (int) $cm->id,
         $mode,
         $sessiontoken,
-        // Inert SCORM shim for xAPI-primary packages (DEC-0064): window.API stays alive
+        // Inert SCORM shim for xAPI-primary packages (DEC-85-01): window.API stays alive
         // so the iDevices run and emit statements, but no score is ever POSTed.
         $emitsxapi
     );
@@ -521,10 +521,10 @@ if (!$mainfile) {
         // pipwerks findAPI() runs — an async AMD load would race the SCO and break
         // grading. Config is passed as JSON to the createScormApi() factory instead of
         // string-substituted placeholders.
-        // disableTracking makes the shim inert for an xAPI-primary package (DEC-0064):
+        // disableTracking makes the shim inert for an xAPI-primary package (DEC-85-01):
         // window.API still answers pipwerks so the iDevices run and emit statements, but
         // it never POSTs to track.php, leaving xAPI as the sole grade channel. The secure
-        // bridge relay above is made inert the same way (DEC-0069); see $emitsxapi.
+        // bridge relay above is made inert the same way (DEC-80-05); see $emitsxapi.
         $emitinlinemodule(
             'scorm_tracker.js',
             $scormcfg,
@@ -537,7 +537,7 @@ if (!$mainfile) {
     // eXeLearning core, replacing the three files this used to inline separately -- the
     // embed relay, the media policy and the media host.
     //
-    // eXeLearning core is canonical (eXe ADR-0021). This plugin holds the BYTES and
+    // eXeLearning core is canonical (eXe ADR-2199-12). This plugin holds the BYTES and
     // verifies them against the shipped manifest rather than holding a copy of the logic
     // that could drift. Do NOT patch it here: a local edit is invisible upstream, is
     // overwritten on the next re-vendor, and fails `node js/exe_external_media/verify.mjs`
@@ -546,7 +546,7 @@ if (!$mainfile) {
     // In secure mode every package is opaque, so whitelisted video iframes and PDFs are
     // promoted to this page and overlaid inline as real players (the child runtime baked
     // into the package reports their geometry), and the interactive-video iDevice drives
-    // playback through the media half of the same bundle (DEC-0071) -- which controls the
+    // playback through the media half of the same bundle (DEC-80-07) -- which controls the
     // provider by RAW postMessage, so this trusted page still never loads the YouTube
     // IFrame API or the Vimeo SDK. Inlined like the SCORM relay so both listeners are
     // installed before the iframe loads. No-op in legacy mode (same-origin: external
@@ -587,7 +587,7 @@ if (!$mainfile) {
         // The media host above is the same bundle; it no longer needs its own injection.
     }
 
-    // The xAPI listener (DEC-0064; secure mode added by DEC-0069): for an xAPI-capable
+    // The xAPI listener (DEC-85-01; secure mode added by DEC-80-05): for an xAPI-capable
     // package, receive the emitter's exe-xapi-statement postMessages in this parent page
     // and forward each to xapi_track.php (the sesskey stays on this trusted side). Same
     // inline single-source-of-truth pattern as the SCORM tracker (js/xapi_listener.js,
@@ -639,7 +639,7 @@ if (!$mainfile) {
     // Hidden notice the relay's watchdog reveals if the secure-mode iframe never
     // signals ready (e.g. an environment that cannot serve an opaque-origin iframe,
     // such as a PHP-WASM service-worker host). Secure mode is never silently
-    // downgraded to the weaker same-origin mode (DEC-0060).
+    // downgraded to the weaker same-origin mode (DEC-80-02).
     if ($securemode) {
         echo html_writer::div(
             get_string('securemodeblocked', 'mod_exelearning'),
@@ -649,7 +649,7 @@ if (!$mainfile) {
     }
 
     // Package iframe. The sandbox token list depends on the configured iframe
-    // security mode (\mod_exelearning\local\ui\player_iframe, DEC-0059). Both modes
+    // security mode (\mod_exelearning\local\ui\player_iframe, DEC-80-01). Both modes
     // omit allow-top-navigation (a package must not change the parent URL) and
     // allow-modals; secure mode also omits allow-same-origin (opaque origin, so the
     // package cannot reach this page) and allow-popups-to-escape-sandbox.

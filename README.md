@@ -170,8 +170,8 @@ editor remains):
   whose service worker can't serve an opaque iframe, such as a PHP-WASM playground), a
   "blocked by security configuration" notice is shown instead of falling back to
   Legacy. See
-  [DEC-0059](./research/decisiones/adr/DEC-0059-bridge-scorm-postmessage-origen-opaco.md)
-  and [DEC-0060](./research/decisiones/adr/DEC-0060-iframe-seguro-tokenpluginfile.md).
+  [DEC-80-01](./research/decisiones/adr/DEC-80-01-bridge-scorm-postmessage-origen-opaco.md)
+  and [DEC-80-02](./research/decisiones/adr/DEC-80-02-iframe-seguro-tokenpluginfile.md).
 
 ### External embeds (YouTube/Vimeo/PDF) in Secure mode
 
@@ -186,7 +186,7 @@ placeholder and reports its geometry to the parent; a relay on the activity page
 player exactly over the placeholder. Local package PDFs always render; any `https` `.pdf`
 renders; a same-origin `.pdf` must belong to the package (served as `application/pdf`).
 This is independent of, and does not affect, the SCORM bridge. See
-[DEC-0061](./research/decisiones/adr/DEC-0061-embeds-externos-promote-to-parent.md).
+[DEC-80-03](./research/decisiones/adr/DEC-80-03-embeds-externos-promote-to-parent.md).
 
 The mechanism has unit tests (`npm run test:js` — Vitest, incl. a SCORM-coexistence
 guard) and a cross-browser end-to-end test in Firefox (`npm run test:e2e:embed` —
@@ -234,7 +234,7 @@ recalculated). Completion can require a passing grade (SCORM-style, see
 
 Grading runtime uses a SCORM 1.2 bridge whose isolation depends on the **package
 iframe security mode**
-([DEC-0059](./research/decisiones/adr/DEC-0059-bridge-scorm-postmessage-origen-opaco.md)).
+([DEC-80-01](./research/decisiones/adr/DEC-80-01-bridge-scorm-postmessage-origen-opaco.md)).
 In the default **Secure** mode the package runs in an opaque-origin sandboxed iframe
 served via `tokenpluginfile.php` (so its assets load without the session cookie): a
 `window.API` shim lives _inside_ the iframe and posts buffered scores to the Moodle page
@@ -242,7 +242,7 @@ over a validated `postMessage` channel; the page (which holds the `sesskey`) for
 them to `track.php`, which calls Moodle's `grade_update()`. In **Legacy** mode the shim
 is installed by `view.php` in the same-origin parent and the iDevice's bundled pipwerks
 wrapper reaches it directly. See
-[DEC-0060](./research/decisiones/adr/DEC-0060-iframe-seguro-tokenpluginfile.md) for the
+[DEC-80-02](./research/decisiones/adr/DEC-80-02-iframe-seguro-tokenpluginfile.md) for the
 secure serving + CSP hardening. xAPI support via `core_xapi` is on the roadmap.
 
 ## Web services (Mobile API)

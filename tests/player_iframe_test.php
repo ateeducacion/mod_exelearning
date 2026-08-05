@@ -20,7 +20,7 @@ use advanced_testcase;
 use mod_exelearning\local\ui\player_iframe;
 
 /**
- * Tests for the package iframe security mode + sandbox policy (DEC-0059).
+ * Tests for the package iframe security mode + sandbox policy (DEC-80-01).
  *
  * @package    mod_exelearning
  * @category   test

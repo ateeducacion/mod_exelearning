@@ -1,29 +1,32 @@
 ---
-id: DEC-0060
-titulo: "Modo iframe seguro funcional: servir el contenido opaco por tokenpluginfile + CSP + watchdog (corrige la Ruta A de DEC-0059)"
-estado: Aceptada
-fecha: 2026-06-13
-agentes:
+id: DEC-80-02
+title: "Modo iframe seguro funcional: servir el contenido opaco por tokenpluginfile + CSP + watchdog (corrige la Ruta A de DEC-80-01)"
+status: Accepted
+date: 2026-06-13
+tracking_issue: 80
+legacy_id: DEC-0060
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-002
   - REPO-004
-relacionados:
-  - DEC-0059
-  - DEC-0019
+related:
+  adrs: [DEC-80-01, DEC-0-16, DEC-5-01]
+see_also:
   - RIE-001
   - AN-008
-  - DEC-0017
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
+
+# DEC-80-02: Modo iframe seguro funcional: servir el contenido opaco por tokenpluginfile + CSP + watchdog (corrige la Ruta A de DEC-80-01)
 
 ## Contexto
 
-DEC-0059 implementó el modo `secure` (iframe de origen opaco + bridge SCORM por
-postMessage) sirviendo el contenido por `pluginfile.php` normal (Ruta A de DEC-0019).
+DEC-80-01 implementó el modo `secure` (iframe de origen opaco + bridge SCORM por
+postMessage) sirviendo el contenido por `pluginfile.php` normal (Ruta A de DEC-0-16).
 La verificación en navegador (Chrome DevTools, Moodle real en `:80`) **refutó esa
 Ruta A**: el `index.html` cargaba pero **todos los subrecursos (CSS/JS, incluido el
 shim) daban 404**, dejando el contenido sin estilos y el SCORM sin `window.API`.
@@ -72,7 +75,7 @@ para un paquete eXeLearning multi-fichero.)
 ## Decisión
 
 Implementar la **Opción A endurecida** como modo `secure` (default), corrigiendo el
-mecanismo de servido de la Ruta A de DEC-0059 (el resto de DEC-0059 —ajuste
+mecanismo de servido de la Ruta A de DEC-80-01 (el resto de DEC-80-01 —ajuste
 `iframemode`, bridge postMessage, sandbox sin same-origin/popups-to-escape— sigue
 vigente):
 
@@ -95,7 +98,7 @@ vigente):
    concede solo una **gracia corta** (~2,5 s) para el handshake; si `load` nunca llega,
    cae a un tope mayor (8 s). Así el aviso aparece justo tras el fallo de carga, no tras
    una ventana de varios segundos en la que el contenido "parecía" cargar.
-4. **Self-heal del bridge:** los paquetes extraídos antes de DEC-0060 no tienen el shim
+4. **Self-heal del bridge:** los paquetes extraídos antes de DEC-80-02 no tienen el shim
    en `libs/`; `view.php` los re-extrae una vez (idempotente) para que secure funcione
    sin re-subir.
 
@@ -110,7 +113,7 @@ vigente):
   `<img>/<script>` a `https:` externo podría sacarlo (mitigado por el TTL; un perfil CSP
   estricto que lo cierre del todo rompería MathJax/YouTube → toggle futuro). El
   Playground (y cualquier host con SW) **no puede** servir secure y muestra el aviso.
-- Dispara: corrige la Ruta A de DEC-0059; RIE-001 → mitigado. Futuro: Ruta B
+- Dispara: corrige la Ruta A de DEC-80-01; RIE-001 → mitigado. Futuro: Ruta B
   (subdominio/infra) para aislamiento máximo; toggle CSP estricto.
 
 ## Riesgos
@@ -147,6 +150,6 @@ vigente):
 - Toggle de admin para un CSP estricto (cerrar exfiltración del token por img/script a
   costa de contenido externo).
 - Ruta B (subdominio dedicado eTLD+1 + reverse-proxy) como aislamiento máximo, fuera del
-  plugin (DEC-0019 M7 Route B).
+  plugin (DEC-0-16 M7 Route B).
 - Confirmar en CI la matriz PHPUnit/Behat y, si procede, un escenario Behat de grading
   en modo secure (entrando al frame del paquete).

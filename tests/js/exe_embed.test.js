@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-// Unit tests for the secure-mode external-embed shim + relay (DEC-0061). The shim
+// Unit tests for the secure-mode external-embed shim + relay (DEC-80-03). The shim
 // (in-iframe) promotes any cross-origin https / .pdf iframe; the relay (parent) is the
 // authoritative gate: in 'open' mode the structural invariant (https + cross-origin to
 // the LMS), in 'strict' mode the maintained host allowlist. Side-effect imports expose
@@ -377,7 +377,7 @@ describe('exe_embed_shim collect() geometry report', () => {
     });
 });
 
-// DEC-0071 option 1: id-only provider channel. For recognized providers the shim sends
+// DEC-80-07 option 1: id-only provider channel. For recognized providers the shim sends
 // {provider, objectId} (not the author URL) and the parent reconstructs the canonical URL
 // from a fixed template after re-checking the object id against a strict regex, so a
 // malicious id cannot inject a path/query and escape the canonical embed path. The

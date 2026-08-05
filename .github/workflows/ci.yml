@@ -278,7 +278,7 @@ jobs:
         run: npm ci
 
       - name: Verify the vendored external-media artifact
-        # eXeLearning core is canonical (eXe ADR-0021): this repo holds the BYTES and
+        # eXeLearning core is canonical (eXe ADR-2199-12): this repo holds the BYTES and
         # verifies them against the manifest core published, rather than a copy of the
         # logic that could drift. --build-hash makes it a PROVENANCE check and not merely
         # an integrity one: without it a locally rebuilt-and-resigned copy would pass.

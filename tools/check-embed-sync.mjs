@@ -55,7 +55,7 @@ const DUAL_LICENCE_INVARIANT = 'SPDX-License-Identifier: AGPL-3.0-or-later OR GP
 // Logic invariants every RELAY copy must contain (normalised: whitespace + quote style
 // are ignored, so tabs-vs-spaces and the IIFE wrapper do not count as drift).
 const RELAY_INVARIANTS = [
-    'isCrossOriginHttps',                  // open-mode structural invariant (DEC-0061)
+    'isCrossOriginHttps',                  // open-mode structural invariant (DEC-80-03)
     'normalizeHost',                       // trailing-dot FQDN-root normalisation (no host. bypass)
     'url.origin === window.location.origin', // cross-origin gate (rejects same-origin)
     'allow-scripts allow-same-origin allow-popups allow-forms allow-presentation', // video sandbox
@@ -64,7 +64,7 @@ const RELAY_INVARIANTS = [
     'data-exe-embed-src',                 // the page-navigation (id-reuse) fix
     'Math.min(embed.w, rect.width)',      // overlay clamp (clickjacking defence)
     'youtube-nocookie.com/embed/',        // strict-mode per-provider reconstruction
-    'reconstructProvider',                // id-only provider channel (DEC-0067)
+    'reconstructProvider',                // id-only provider channel (DEC-110-01)
     "action: 'welcome'",                  // answers the shim's hello: without it no copy ever promotes
     DUAL_LICENCE_INVARIANT,
 ];
@@ -75,7 +75,7 @@ const SHIM_INVARIANTS = [
     'data-exe-embed-id',
     'data-exe-embed-url',
     '.pdf$',                              // the PDF detector (promote PDFs too)
-    'extractProvider',                    // id-only provider channel (DEC-0067)
+    'extractProvider',                    // id-only provider channel (DEC-110-01)
     "action: 'hello'",                    // announces itself instead of promoting on its own authority
     'activated',                          // the gate: no promotion until a host welcomes this document
     DUAL_LICENCE_INVARIANT,
@@ -86,7 +86,7 @@ const PHP_INVARIANTS = [
     'www.dailymotion.com',
     'mediateca.educa.madrid.org',
     'allow-scripts allow-popups allow-forms', // secure tokens (normalised, order matters)
-    'embedmode',                          // the open/strict embed policy setting (DEC-0061)
+    'embedmode',                          // the open/strict embed policy setting (DEC-80-03)
 ];
 
 // Invariants every MODAL-bridge policy copy must contain (exe_media_policy.js). Shared by eXe

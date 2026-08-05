@@ -58,7 +58,7 @@ if (isset($exelearninginstalledmods['exeweb']) || isset($exelearninginstalledmod
 }
 
 if ($ADMIN->fulltree) {
-    // The package iframe is ALWAYS rendered in a sandboxed, opaque-origin iframe (DEC-0059):
+    // The package iframe is ALWAYS rendered in a sandboxed, opaque-origin iframe (DEC-80-01):
     // the historical same-origin 'legacy' mode was removed, so there is no production setting
     // that re-enables allow-same-origin for untrusted package content.
 
@@ -79,7 +79,7 @@ if ($ADMIN->fulltree) {
         ]
     ));
 
-    // External-embed policy (DEC-0061). External videos/PDFs are promoted to the parent and
+    // External-embed policy (DEC-80-03). External videos/PDFs are promoted to the parent and
     // rendered as a sandboxed, cross-origin player, which SOP isolates from Moodle. 'strict'
     // (default) restricts promotion to the maintained provider allowlist with canonical URL
     // reconstruction; 'open' is an explicit opt-in that promotes any cross-origin https iframe.
@@ -97,8 +97,8 @@ if ($ADMIN->fulltree) {
         ]
     ));
 
-    // Embedded editor (DEC-0066): a single site-wide toggle. The editor itself
-    // ships inside the release package (DEC-0065) and has no runtime management;
+    // Embedded editor (DEC-108-01): a single site-wide toggle. The editor itself
+    // ships inside the release package (DEC-106-01) and has no runtime management;
     // this switch lets a site use the plugin as a pure .elpx player — uploads
     // keep working, only in-place editing is hidden and refused. The checkbox is
     // negative (disable) on purpose: unset config and unticked box then agree,

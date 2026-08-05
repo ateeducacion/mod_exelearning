@@ -7,9 +7,9 @@ fuentes:
   - REPO-010
   - REPO-011
 relacionados:
-  - DEC-0061
-  - DEC-0059
-  - DEC-0060
+  - DEC-80-03
+  - DEC-80-01
+  - DEC-80-02
   - AN-008
 herramienta_ia:
   interfaz: claude-code
@@ -49,7 +49,7 @@ El paper lo nombra literalmente «el modelo de confianza que Moodle ya usa para 
 
 ## El problema común
 
-DEC-0059/DEC-0060 sirven el paquete en origen opaco para cerrar RIE-001 (que el paquete alcance la
+DEC-80-01/DEC-80-02 sirven el paquete en origen opaco para cerrar RIE-001 (que el paquete alcance la
 sesión/sesskey del padre). Efecto colateral (el «dilema central» del paper, `:249`): los flags
 `sandbox` se propagan a los iframes anidados → el player de YouTube/Vimeo hereda el origen opaco,
 pierde el suyo (cookies/storage) y queda en blanco. Las tres implementaciones responden con
@@ -57,7 +57,7 @@ pierde el suyo (cookies/storage) y queda en blanco. Las tres implementaciones re
 
 ## Hechos citados
 
-### mod_exelearning (DEC-0061) — consumidor, overlay inline
+### mod_exelearning (DEC-80-03) — consumidor, overlay inline
 
 - **Shim en el contenido** `js/exe_embed_shim.js` (horneado como `libs/exe_embed_shim.js` por
   `package_manager.php:256-259`, inyectado al inicio del `<head>` por `scorm_injector.php:108-123`),
@@ -84,7 +84,7 @@ pierde el suyo (cookies/storage) y queda en blanco. Las tres implementaciones re
 - **Validación:** Vitest + **e2e Playwright en Firefox en sandbox opaco real** (`tests/e2e/embed.spec.cjs`)
   + `tools/check-embed-sync.mjs` (anti-drift entre mod/wp/omeka).
 
-### procomún (ADR-0026/0027) — consumidor, click→modal
+### procomún (`docs/negocio/decisiones/0026`+`0027` en su repo) — consumidor, click→modal
 
 - Mismo modelo, **simplificado a click→modal**: shim `apps/api/static/elpx/embed-shim.js` (fachada +
   postMessage), relay `use-elpx-embed-relay.ts:34-54` (identidad de ventana), `classifyEmbed`
@@ -184,7 +184,7 @@ pierde el suyo (cookies/storage) y queda en blanco. Las tres implementaciones re
    cierra el residuo de exfil por pixel GET del token de sólo lectura (off por defecto para no romper
    imágenes externas/MathJax/CDN).
 
-## Actualización (2026-06-28): marco de los dos problemas + decisión ([[DEC-0070]] + [[DEC-0071]])
+## Actualización (2026-06-28): marco de los dos problemas + decisión ([[DEC-80-06]] + [[DEC-80-07]])
 
 **Dos problemas ortogonales (no confundir).** Esta nota cubre bien el **Problema A** (propagación del
 sandbox → player en blanco → promote-to-parent). Conviene añadir explícitamente el **Problema B —
@@ -192,22 +192,22 @@ Error 153 / referrer**, **independiente** del sandbox: ocurre incluso en embebid
 envía `Referrer-Policy: no-referrer`/`same-origin` y el player no lleva `referrerpolicy`. Lo arregla el
 **atributo `referrerpolicy`** (precedencia element-level sobre la cabecera). Caso real (red Medusa,
 Humberto ATE): la infra fijaba `no-referrer` **y Jetpack eliminaba el atributo**. mod ya pone
-`strict-origin-when-cross-origin` en el player (`DEC-0061:69-70`), así que resuelve A **y** B; el vídeo
+`strict-origin-when-cross-origin` en el player (`DEC-80-03:69-70`), así que resuelve A **y** B; el vídeo
 simple **ya se ve** en opaco. `referrerpolicy` **no** sustituye al promote-to-parent (no arregla A).
 
 **Decisión tomada (cierra el `[PENDIENTE]` #1 de abajo).** El usuario eligió **mantener el overlay
 inline** de mod (no migrar a modal) y **endurecer** el trust model (nonce + `MessageChannel`, cruzar
 sólo `{provider, videoId}`), y **arreglar el vídeo interactivo modificando el iDevice** de eXeLearning
-(autorizado). Registrado en **[[DEC-0071]]**. Matiz respecto a la recomendación #3 de esta nota: en vez
+(autorizado). Registrado en **[[DEC-80-07]]**. Matiz respecto a la recomendación #3 de esta nota: en vez
 de delegar los cue-points al **modal** del bridge de eXe, el iDevice (modificado) conduce el control por
 el bridge endurecido mientras el **overlay mantiene el player en la geometría del `#player`** → la layout
 queda en el hijo, sin la reconstrucción en el padre que hizo frágil el prototipo revertido. El
-teacher-mode pasó a `?exe-teacher` ([[DEC-0070]]), lo que desbloqueó reanudar este trabajo en opaco.
+teacher-mode pasó a `?exe-teacher` ([[DEC-80-06]]), lo que desbloqueó reanudar este trabajo en opaco.
 
 ## [PENDIENTE]
 
 - ~~ADR de seguimiento si se decide la integración complementaria con el bridge productor de eXeLearning
-  para interactive-video~~ → **decidido en [[DEC-0071]]** (overlay inline endurecido + arreglo del vídeo
+  para interactive-video~~ → **decidido en [[DEC-80-07]]** (overlay inline endurecido + arreglo del vídeo
   interactivo en el iDevice; el sandbox lo sigue imponiendo mod).
 - Toggle CSP estricto (cierre del residuo de confidencialidad; eco de `anexos-tecnicos.md:181`).
 - Validación cross-engine del **camino de promoción de embeds** específicamente (el aislamiento opaco se

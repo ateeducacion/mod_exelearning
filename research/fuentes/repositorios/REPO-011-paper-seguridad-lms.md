@@ -7,7 +7,7 @@ rama_consultada: main
 commit_consultado: "bb8fbc1 (clon local 2026-06-19)"
 fecha_consulta: 2026-06-19
 licencia: "CC-BY + MIT (dual)"
-rol_para_mod_exelearning: "Marco teórico (SoK) del problema que DEC-0059/0061 implementan: ejecutar JS de autor no confiable en el MISMO origen que la sesión LMS es el peligro; la mitigación es origen opaco + CSP sandbox + bridge postMessage validado. Nombra el modelo promote-to-parent para vídeo."
+rol_para_mod_exelearning: "Marco teórico (SoK) del problema que DEC-80-01/0061 implementan: ejecutar JS de autor no confiable en el MISMO origen que la sesión LMS es el peligro; la mitigación es origen opaco + CSP sandbox + bridge postMessage validado. Nombra el modelo promote-to-parent para vídeo."
 herramienta_ia:
   interfaz: claude-code
   modelo: claude-opus-4-8
@@ -39,4 +39,4 @@ herramienta_ia:
 - Fuentes: `seguridad-html-js-recursos-educativos.md` (ES) + `security-html-js-educational-resources.en.md`
   (EN) + `anexos-tecnicos.md`. Verificación adversarial del bridge 7/7 (`:280`).
 
-Es el marco del que parten DEC-0059/DEC-0060/DEC-0061. Comparado en **AN-015**.
+Es el marco del que parten DEC-80-01/DEC-80-02/DEC-80-03. Comparado en **AN-015**.

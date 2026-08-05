@@ -32,7 +32,7 @@
  * Unknown or invalid messages are ignored silently.
  *
  * Exposed two ways from a single body: window.exeScormBridge (browser bootstrap) and
- * module.exports (Vitest). See research ADR DEC-0059.
+ * module.exports (Vitest). See research ADR DEC-80-01.
  */
 (function () {
     'use strict';
@@ -99,7 +99,7 @@
         var sesskey = config.sesskey;
         var nonce = config.nonce;
         var blockedid = config.blockedid;
-        // xAPI-primary (DEC-0069): keep the bridge fully live (handshake, window.API,
+        // xAPI-primary (DEC-80-05): keep the bridge fully live (handshake, window.API,
         // watchdog) but forward NO SCORM score, because the package is graded
         // via xAPI. The decision lives here, on the trusted parent, not in the baked-in
         // shim — so it holds even for a package whose shim predates this flag.
@@ -116,7 +116,7 @@
         // iframe the environment cannot serve, like a PHP-WASM service-worker host that
         // does not control opaque subframes, so the token URL falls through to a 404),
         // reveal the "blocked by security configuration" notice instead of silently
-        // degrading to the weaker same-origin mode (DEC-0060).
+        // degrading to the weaker same-origin mode (DEC-80-02).
         function showBlocked() {
             var b = (doc && blockedid) ? doc.getElementById(blockedid) : null;
             if (b) { b.style.display = ''; }

@@ -22,7 +22,7 @@
  * postMessages its geometry here; this relay (the trusted half) validates each URL and
  * overlays the real player inline over the placeholder.
  *
- * Trust model (DEC-0061): the promoted player is rendered cross-origin and SANDBOXED, so
+ * Trust model (DEC-80-03): the promoted player is rendered cross-origin and SANDBOXED, so
  * the same-origin policy isolates it from this LMS page (it cannot read the DOM, cookies,
  * session or file token). Two modes:
  *  - 'open' (default): promote any iframe whose src is https AND cross-origin to the LMS
@@ -30,14 +30,14 @@
  *    userinfo). No host list. The host is irrelevant to escape; the residual is
  *    phishing/tracking, bounded to the content's own box (the overlay is clamped).
  *  - 'strict': only a maintained host allowlist with per-provider canonical-URL
- *    reconstruction (the pre-DEC-0061 behaviour), for high-security deployments.
+ *    reconstruction (the pre-DEC-80-03 behaviour), for high-security deployments.
  * "Any https .pdf" is always allowed (same-origin only for this package's own files).
  *
  * Messages are authenticated by window identity (event.source === a known CONTENT
  * iframe, never a promoted player); the opaque origin has no useful event.origin.
  *
  * Exposed two ways from a single body: window.exeEmbedRelay (browser bootstrap) and
- * module.exports (Vitest). See research ADR DEC-0061.
+ * module.exports (Vitest). See research ADR DEC-80-03.
  *
  * MIRROR of the canonical eXeLearning embedder source in eXe core
  * (public/app/common/exe_embed_bridge/exe_embed_relay.js). Keep in sync with core;
@@ -179,7 +179,7 @@
         return true;
     }
 
-    // Provider templates for the id-only channel (DEC-0071): the parent rebuilds the canonical
+    // Provider templates for the id-only channel (DEC-80-07): the parent rebuilds the canonical
     // embed URL from {provider, objectId} reported by the shim, re-checking the object id
     // against a strict per-provider regex so it cannot carry a path/query/fragment and escape
     // the template (e.g. '../../x' or 'a/b?c'). The reconstructed URL still runs through
@@ -449,7 +449,7 @@
                 if (!isFinite(embed.x) || !isFinite(embed.y) || !isFinite(embed.w) || !isFinite(embed.h)) {
                     return;
                 }
-                // id-only channel (DEC-0071): for recognised providers the shim reports
+                // id-only channel (DEC-80-07): for recognised providers the shim reports
                 // {provider, objectId} and the parent rebuilds the canonical URL from a
                 // fixed template (the author URL never crosses for these). Unknown embeds
                 // keep the URL path. Either way validate() runs the structural invariant.

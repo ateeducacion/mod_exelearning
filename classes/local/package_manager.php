@@ -246,7 +246,7 @@ final class package_manager {
         // but not in the web/elpx export, and without them gradable iDevices show "this
         // page is not part of a SCORM package". A bundled copy is never overwritten
         // ($refresh = false). The bridge client (scorm_tracker + exe_scorm_bridge) powers
-        // the secure opaque-origin iframe mode (DEC-0059); it runs INSIDE the iframe so it
+        // the secure opaque-origin iframe mode (DEC-80-01); it runs INSIDE the iframe so it
         // must be served from the package, and being plugin-owned it is refreshed on every
         // extract so a shim update reaches existing packages ($refresh = true).
         $clientassets = [
@@ -255,10 +255,10 @@ final class package_manager {
             ['scorm_tracker.js', __DIR__ . '/../../js/scorm_tracker.js', true],
             ['exe_scorm_bridge.js', __DIR__ . '/../../js/scorm_bridge_shim.js', true],
             // External-media CHILD bundle, vendored from eXeLearning core and verified
-            // against its manifest (eXe ADR-0021). Promotes whitelisted/PDF iframes to the
+            // against its manifest (eXe ADR-2199-12). Promotes whitelisted/PDF iframes to the
             // parent in secure mode and carries the media bridge the interactive-video
             // iDevice drives; dormant until the parent host answers its handshake, so a
-            // package served without one is left exactly as authored (eXe ADR-0017).
+            // package served without one is left exactly as authored (eXe ADR-2199-08).
             // Plugin-owned, refreshed on every extract, so a re-vendor reaches existing
             // packages. Keeps the historical filename: the injected <script> tag lives in
             // packages that were extracted before this change.

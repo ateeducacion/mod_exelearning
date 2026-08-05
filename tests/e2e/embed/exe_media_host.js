@@ -18,7 +18,7 @@
  *
  * Classic browser script (no ES module syntax); depends on the shared `exeMediaPolicy`.
  *
- * mod_exelearning VARIANT (DEC-0071): vendored from eXeLearning's exe-media-host.js, but the
+ * mod_exelearning VARIANT (DEC-80-07): vendored from eXeLearning's exe-media-host.js, but the
  * provider adapters drive the player by RAW postMessage (YouTube enablejsapi=1, Vimeo api=1)
  * instead of the YouTube IFrame Player API / Vimeo Player SDK, so the trusted Moodle page
  * never loads third-party player script (erseco). The handshake, accessible modal and the
@@ -73,7 +73,7 @@
     // ---- Raw-postMessage provider adapters (NO YouTube IFrame API / Vimeo SDK) ----------
     // mod_exelearning controls the promoted player by posting the providers' documented
     // postMessage commands straight to the player iframe and parsing its event messages, so
-    // the trusted Moodle page never loads third-party player SDK script (erseco, DEC-0071).
+    // the trusted Moodle page never loads third-party player SDK script (erseco, DEC-80-07).
     // Both providers use JSON-STRING messages. The host polls getCurrentTime()/getDuration()
     // every 250ms to emit timeupdate; these adapters keep those values fresh from the
     // player's pushed infoDelivery (YouTube) / timeupdate (Vimeo) events. Adapters are still

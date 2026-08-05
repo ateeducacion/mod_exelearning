@@ -361,7 +361,7 @@ describe('relay watchdog (no silent legacy fallback)', () => {
     // Fast path: an iframe element fires 'load' even when its navigation ended in an
     // error page (e.g. an opaque token URL that 404s on a service-worker host that does
     // not control opaque subframes). The relay then only grants a short grace before the
-    // notice, so it never sits behind the long flat watchdog (DEC-0060 / Playground).
+    // notice, so it never sits behind the long flat watchdog (DEC-80-02 / Playground).
     function setupLoadWatchdog() {
         let loadHandler = null;
         const timers = [];

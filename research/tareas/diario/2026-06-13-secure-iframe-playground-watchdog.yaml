@@ -12,7 +12,7 @@ resumen: >-
   fallo de carga.
 acciones:
   - "Verificación empírica (Playground, recorrido recursivo del DOM por los iframes anidados site-frame>remote-frame): el iframe del paquete se construye en secure (src=tokenpluginfile.php/<token>/15/mod_exelearning/content/1/index.html, sandbox='allow-scripts allow-popups allow-forms', origen opaco -> SecurityError al leer contentWindow); el relay está presente (exeScormBridge=object); el aviso securemodeblocked queda VISIBLE y el iframe oculto (display:none) -> el watchdog SÍ saltó."
-  - "Red (Chrome DevTools): la petición tokenpluginfile.php/.../content/1/index.html devuelve 404 en el Playground (el service worker no controla subframes opacos; la URL cae a GitHub Pages estático). El token NO ayuda aquí: el bloqueo es el SW, no la cookie. Coherente con la limitación documentada en DEC-0060."
+  - "Red (Chrome DevTools): la petición tokenpluginfile.php/.../content/1/index.html devuelve 404 en el Playground (el service worker no controla subframes opacos; la URL cae a GitHub Pages estático). El token NO ayuda aquí: el bloqueo es el SW, no la cookie. Coherente con la limitación documentada en DEC-80-02."
   - "Diagnóstico de la 'sensación de que funciona': el watchdog era un temporizador plano de 8 s y el aviso quedaba a top~734 (bajo el pliegue). Durante esos 8 s el iframe estaba en blanco sin aviso -> parecía cargar."
   - "Mejora (js/scorm_bridge_relay.js): el watchdog ahora usa dos señales. Engancha el evento 'load' del elemento iframe (que dispara también con la página de error 404) y concede solo una gracia corta (gracems, 2,5 s) para el handshake; si 'load' nunca llega cae al tope plano (watchdogms, 8 s). El listener se adjunta al iframe si ya existe o en DOMContentLoaded (el relay se inyecta inline antes del elemento iframe)."
   - "Tests (tests/js/scorm_bridge.test.js): dos casos nuevos para la ruta rápida -- el aviso sale por el temporizador de gracia tras 'load' (no por el plano), y no se arma la gracia si el iframe ya está ready. Vitest 52/52. Los tests previos del watchdog usan un iframe sin addEventListener, así que siguen ejercitando la ruta plana."
@@ -21,6 +21,6 @@ verificacion_navegador:
 pendientes:
   - "Re-verificar en el Playground tras pushear (el proxy/CDN puede cachear el blueprint y el zip de la rama unos minutos) para ver el aviso aparecer ya tras el 'load' del 404 (~2,5 s) en vez de a los 8 s."
 relacionados:
-  - DEC-0060
-  - DEC-0059
+  - DEC-80-02
+  - DEC-80-01
   - RIE-001

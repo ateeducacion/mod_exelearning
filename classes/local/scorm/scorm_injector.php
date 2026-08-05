@@ -40,7 +40,7 @@ final class scorm_injector {
      *  - The bridge client (libs/scorm_tracker.js + libs/exe_scorm_bridge.js) at the
      *    TOP of <head>, so its in-memory storage polyfill and local window.API are in
      *    place before any package script runs. It self-activates only in the secure
-     *    opaque-origin iframe mode and is dormant otherwise (DEC-0059).
+     *    opaque-origin iframe mode and is dormant otherwise (DEC-80-01).
      *  - The pipwerks SCORM wrapper (libs/SCORM_API_wrapper.js + libs/SCOFunctions.js)
      *    plus an init kick, just before </head>, used by both iframe modes.
      *
@@ -101,7 +101,7 @@ final class scorm_injector {
             // window.exeScormTracker.createScormApi) and the external-embed shim both go
             // at the TOP of <head>; the pipwerks SCORM wrapper + init kick go just before
             // </head>. No host list is baked for the embed shim: it promotes any candidate
-            // and the parent relay is the authoritative gate (open vs strict, DEC-0061).
+            // and the parent relay is the authoritative gate (open vs strict, DEC-80-03).
             $bridge = $bridgemarker .
                     "\n    <script src=\"{$libs}scorm_tracker.js\"></script>" .
                     "\n    <script src=\"{$libs}exe_scorm_bridge.js\"></script>\n";

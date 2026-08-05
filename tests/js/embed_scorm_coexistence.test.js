@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-// Regression guard (DEC-0061 + DEC-0059): in secure mode the package now loads BOTH
+// Regression guard (DEC-80-03 + DEC-80-01): in secure mode the package now loads BOTH
 // the SCORM bridge (scoring) AND the external-embed shim/relay. They must coexist —
 // the embed feature must not break SCORM score saving. Side-effect imports in the
 // same load order as production (tracker → scorm shim → scorm relay → embed shim →

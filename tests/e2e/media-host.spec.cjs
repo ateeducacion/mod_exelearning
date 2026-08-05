@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-// Cross-browser e2e for the interactive-video / video-quiz media bridge (DEC-0067), run in
+// Cross-browser e2e for the interactive-video / video-quiz media bridge (DEC-110-01), run in
 // Firefox via playwright-embed.config.cjs. A self-contained harness (no Moodle needed): the
 // opaque-origin sandboxed content runs the real eXeLearning child runtime
 // (exe_media_bridge.js) and calls window.exeMediaBridge.openMedia() — exactly what the

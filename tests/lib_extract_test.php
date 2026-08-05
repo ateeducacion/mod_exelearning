@@ -77,7 +77,7 @@ final class lib_extract_test extends advanced_testcase {
         $this->assertStringContainsString('libs/SCORM_API_wrapper.js', $html);
 
         // The secure-mode bridge client was shipped under libs/ and injected at the top
-        // of <head> (DEC-0060).
+        // of <head> (DEC-80-02).
         foreach (['scorm_tracker.js', 'exe_scorm_bridge.js'] as $bridgefile) {
             $f = $fs->get_file($context->id, 'mod_exelearning', 'content', $revision, '/libs/', $bridgefile);
             $this->assertInstanceOf(\stored_file::class, $f);
@@ -89,7 +89,7 @@ final class lib_extract_test extends advanced_testcase {
     /**
      * Re-extracting the same revision refreshes the plugin-owned bridge client
      * (scorm_tracker.js / exe_scorm_bridge.js) under libs/ — exercises the $present +
-     * refresh delete-and-recreate branch of package_manager::extract_stored() (DEC-0060).
+     * refresh delete-and-recreate branch of package_manager::extract_stored() (DEC-80-02).
      * Idempotent: it must not error and the files must remain.
      */
     public function test_reextract_refreshes_bridge_client(): void {
@@ -154,7 +154,7 @@ final class lib_extract_test extends advanced_testcase {
         $source = $file->get_content();
         // A symbol only the canonical bundle defines.
         $this->assertStringContainsString('exeExternalMediaChild', $source);
-        // And it must carry the dual-licence grant into the package (eXe ADR-0018): these
+        // And it must carry the dual-licence grant into the package (eXe ADR-2199-09): these
         // bytes are redistributed to every learner who downloads the course.
         $this->assertStringContainsString('AGPL-3.0-or-later OR GPL-3.0-or-later', $source);
     }
@@ -163,7 +163,7 @@ final class lib_extract_test extends advanced_testcase {
      * The vendored copy is byte-identical to what eXeLearning core published.
      *
      * This plugin holds the BYTES and verifies them, rather than a copy of the logic that
-     * could drift (eXe ADR-0021). CI runs the same check with a build hash pinned in the
+     * could drift (eXe ADR-2199-12). CI runs the same check with a build hash pinned in the
      * workflow -- out of band, because a hash read from the copy under test cannot vouch
      * for that copy. This test is the fast local half.
      */

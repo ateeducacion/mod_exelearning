@@ -28,11 +28,11 @@
  *
  * There is no host list here: the shim promotes any cross-origin https (or .pdf) iframe
  * as a candidate and the parent relay is the authoritative gate (open vs strict mode,
- * DEC-0061). postMessage targetOrigin is '*' because the opaque origin has no stable
+ * DEC-80-03). postMessage targetOrigin is '*' because the opaque origin has no stable
  * value; the parent authenticates messages by event.source instead.
  *
  * Exposed two ways from a single body: window.exeEmbedShim (browser bootstrap) and
- * module.exports (Vitest). See research ADR DEC-0059.
+ * module.exports (Vitest). See research ADR DEC-80-01.
  *
  * MIRROR of the canonical eXeLearning embedder source in eXe core
  * (public/app/common/exe_embed_bridge/exe_embed_shim.js). Keep in sync with core;
@@ -117,7 +117,7 @@
      * (served) host -- i.e. a cross-origin external embed. The opaque document is still
      * served from the platform, so the content location's hostname is the platform host
      * and the comparison is reliable. The parent relay re-validates authoritatively
-     * (DEC-0061); this is only a candidate filter so same-origin content iframes are
+     * (DEC-80-03); this is only a candidate filter so same-origin content iframes are
      * left untouched.
      *
      * The own-host side is derived by PARSING the base rather than reading
@@ -158,7 +158,7 @@
 
     /**
      * Recognise a known video provider from an embed src and extract its object id, so the
-     * shim can report {provider, objectId} instead of the author URL (DEC-0071 id-only
+     * shim can report {provider, objectId} instead of the author URL (DEC-80-07 id-only
      * channel). The parent rebuilds the canonical URL from a fixed template; this avoids
      * passing the author's URL across the boundary for recognised providers. Returns null
      * for unknown hosts or unexpected paths (the caller then falls back to URL mode). The
@@ -255,7 +255,7 @@
             }
             placeholder.setAttribute('data-exe-embed-url', absoluteUrl);
             // For recognised providers also stamp {provider, objectId} so the parent can
-            // rebuild the canonical URL from a fixed template (DEC-0071 id-only channel)
+            // rebuild the canonical URL from a fixed template (DEC-80-07 id-only channel)
             // instead of trusting the author URL. Unknown hosts keep URL-only mode.
             var provider = extractProvider(absoluteUrl);
             if (provider) {

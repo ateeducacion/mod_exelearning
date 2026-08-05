@@ -1,24 +1,27 @@
 ---
-id: DEC-0061
-titulo: "Embeds externos en modo seguro: promover YouTube/Vimeo/PDF al padre (overlay inline) — standalone, sin subdominio"
-estado: Aceptada
-fecha: 2026-06-14
-agentes:
+id: DEC-80-03
+title: "Embeds externos en modo seguro: promover YouTube/Vimeo/PDF al padre (overlay inline) — standalone, sin subdominio"
+status: Accepted
+date: 2026-06-14
+tracking_issue: 80
+legacy_id: DEC-0061
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - RIE-001
-relacionados:
-  - DEC-0059
-  - DEC-0060
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-80-01, DEC-80-02]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
+
+# DEC-80-03: Embeds externos en modo seguro: promover YouTube/Vimeo/PDF al padre (overlay inline) — standalone, sin subdominio
 
 ## Contexto
 
-El modo seguro ([[DEC-0059]] + [[DEC-0060]]) sirve el `.elpx` en un iframe de **origen opaco**
+El modo seguro ([[DEC-80-01]] + [[DEC-80-02]]) sirve el `.elpx` en un iframe de **origen opaco**
 (`sandbox` sin `allow-same-origin`, servido por `tokenpluginfile`), de modo que el HTML/JS no
 confiable del autor no puede leer la sesión/DOM de Moodle. El precio es que **el contenido externo
 embebido deja de funcionar**:
@@ -52,7 +55,7 @@ blanca + la validación estricta impiden que el contenido haga al padre cargar u
 | `js/exe_embed_shim.js` (nuevo) | Corre DENTRO del iframe. Se **auto-activa solo en origen opaco** (`isOpaqueOrigin()`: `document.cookie` lanza / `window.origin==='null'`), así que el mismo fichero horneado queda **dormido en modo legacy**. Reemplaza iframes whitelisted/`.pdf` por un placeholder (`data-exe-embed-id` + url **absoluta**, resuelta contra la ubicación del contenido, mismo w/h) y reporta `{id,url,x,y,w,h}` en load/scroll/resize/mutation (rAF). Dual-export `window.exeEmbedShim` + `module.exports` (Vitest). |
 | `js/exe_embed_relay.js` (nuevo) | Corre en el padre. Valida cada URL reportada: `new URL()`, rechaza userinfo (`@`), host exacto contra la lista, exige patrón de id (`/embed/{id}` YT, `/video/{id}` Vimeo) y **reconstruye** la URL canónica (nunca pasa la del contenido tal cual). Crea/posiciona un `<iframe>` player overlay clampado al iframe de contenido. Autentica por `event.source === iframe.contentWindow` (el origen opaco no da `event.origin` útil). |
 | `classes/local/package_manager.php` | Copia `js/exe_embed_shim.js` a `libs/exe_embed_shim.js` del paquete (plugin-owned, refrescado en cada extracción). |
-| `classes/local/scorm/scorm_injector.php` | Hornea `<script>window.__exeEmbedWhitelist=…</script>` + `<script src="libs/exe_embed_shim.js">` al inicio del `<head>` de **todo** HTML del paquete (marker `embed-shim`, idempotente). Independiente del bridge SCORM (reusa la misma iteración de extracción, [[DEC-0054]]). |
+| `classes/local/scorm/scorm_injector.php` | Hornea `<script>window.__exeEmbedWhitelist=…</script>` + `<script src="libs/exe_embed_shim.js">` al inicio del `<head>` de **todo** HTML del paquete (marker `embed-shim`, idempotente). Independiente del bridge SCORM (reusa la misma iteración de extracción, [[DEC-71-01]]). |
 | `classes/local/ui/player_iframe.php` | `embed_whitelist()` + `DEFAULT_EMBED_HOSTS` (YouTube/Vimeo). La CSP ya permitía `frame-src 'self' $siteorigin https:`. |
 | `view.php` | Inyecta el relay **inline** en el bloque `if ($securemode)` (independiente de SCORM, para todo paquete seguro), igual que el relay del bridge, para que su listener esté instalado antes de que cargue el iframe. |
 
@@ -83,7 +86,7 @@ Lista blanca por defecto: `www.youtube.com`, `youtube.com`, `www.youtube-nocooki
 - La feature pertenece a la **familia eXeLearning**: el mismo JS (shim + relay, misma lógica) está en
   wp-exelearning (PR #56) y omeka-s-exelearning (PR #21). Diferencia de cableado: **mod hornea** el
   shim en la extracción y **inlina** el relay en `view.php`; wp/omeka lo inyectan a la hora de servir.
-- El bridge SCORM ([[DEC-0059]]) no se ve afectado: usa otro tipo de mensaje (`scorm` vs `exe-embed`)
+- El bridge SCORM ([[DEC-80-01]]) no se ve afectado: usa otro tipo de mensaje (`scorm` vs `exe-embed`)
   y su relay sigue independiente.
 
 ## Riesgos
@@ -247,7 +250,7 @@ Plan, read-only): **"SÍ, con condiciones"**.
   excluyen → un player sandboxeado no puede forjar un mensaje `sync` y hacerse pasar por contenido.
 - **PDF SIN sandbox**: el visor PDF del navegador **no funciona dentro de un iframe sandbox** (icono de
   error; verificado), así que se deja **sin sandbox** (y por tanto sin `allow-same-origin`) como antes
-  de DEC-0061 (los PDF ya eran "cualquier https .pdf"). El guard D1 sigue aplicando a PDFs cross-origin.
+  de DEC-80-03 (los PDF ya eran "cualquier https .pdf"). El guard D1 sigue aplicando a PDFs cross-origin.
   Residual documentado: un servidor que sirva HTML en una ruta `.pdf` podría ejecutar scripts ahí
   (pre-existente, bajo). **pdf.js** (que eXe empaqueta) NO es viable en el contenido opaco (su `fetch`
   desde origen `null` está bloqueado por CORS, incl. `tokenpluginfile`); queda como mejora futura para
@@ -262,7 +265,7 @@ Plan, read-only): **"SÍ, con condiciones"**.
 - En vivo (mod localhost:80, modo `open`): YouTube/Vimeo/EducaMadrid/PDF renderizan, el player lleva el
   sandbox correcto (`data-exe-embed-player`), y navegar entre páginas cambia el player (fix de nav).
 
-## Actualización (2026-06-28): dos problemas ortogonales + evolución a [[DEC-0071]]
+## Actualización (2026-06-28): dos problemas ortogonales + evolución a [[DEC-80-07]]
 
 Al reanudar el trabajo de medios externos conviene **separar con claridad dos problemas** que se
 confunden a menudo (una síntesis automática los mezcló como si `referrerpolicy` arreglara el opaco):
@@ -279,7 +282,7 @@ confunden a menudo (una síntesis automática los mezcló como si `referrerpolic
   esa función de Jetpack lo resolvía. Lección host: no dejar que un sanitizador elimine `referrerpolicy`.
 
 Es decir: este ADR ya resuelve **A** (overlay) y **B** (referrerpolicy), por lo que el **vídeo simple ya
-se ve en opaco**. Lo que queda abierto se decide en **[[DEC-0071]]**: (i) **endurecer el trust model** del
+se ve en opaco**. Lo que queda abierto se decide en **[[DEC-80-07]]**: (i) **endurecer el trust model** del
 relay (nonce por vista + `MessageChannel` con capability + cruzar sólo `{provider, videoId}`), alineándolo
 al bridge de eXeLearning sin abandonar el overlay inline; (ii) **arreglar el vídeo interactivo remoto**
 —la **limitación** documentada arriba (líneas 187-210)— **modificando el iDevice** de eXeLearning para que,
@@ -290,7 +293,7 @@ hijo** y no se reconstruye en el padre (que es lo que hizo frágil el prototipo 
 Notas: **Vimeo por dominio** valida el host del Referer; con el player en el padre (origen del LMS) +
 `referrerpolicy=strict-origin-when-cross-origin`, la privacidad por dominio funciona **si** el dominio del
 LMS está en la lista blanca de Vimeo. El **teacher-mode** ya no se oculta por inyección sino por el
-parámetro core `?exe-teacher` ([[DEC-0070]]), compatible con el origen opaco.
+parámetro core `?exe-teacher` ([[DEC-80-06]]), compatible con el origen opaco.
 
 ## Seguimiento
 

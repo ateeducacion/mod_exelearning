@@ -135,7 +135,7 @@ pipwerks.SCORM.API.get = function () {
 
   // Check the CURRENT window's frame hierarchy first (standard pipwerks order). In
   // the secure (opaque-origin) package mode the SCORM API is provided locally by the
-  // in-iframe bridge shim (js/scorm_bridge_shim.js, DEC-0059) as window.API, and the
+  // in-iframe bridge shim (js/scorm_bridge_shim.js, DEC-80-01) as window.API, and the
   // Moodle parent is a cross-origin/opaque frame that throws SecurityError on access.
   // Starting at win.parent (as the prior build did) made init() throw there and the
   // connection never went active, so no score was ever saved in secure mode. find(win)

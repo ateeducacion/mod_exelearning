@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Package iframe security mode and sandbox policy (DEC-0059).
+ * Package iframe security mode and sandbox policy (DEC-80-01).
  *
  * @package    mod_exelearning
  * @copyright  2026 ATE (Área de Tecnología Educativa)
@@ -25,7 +25,7 @@
 namespace mod_exelearning\local\ui;
 
 /**
- * Centralises the package iframe sandbox policy, CSP and headers (DEC-0059).
+ * Centralises the package iframe sandbox policy, CSP and headers (DEC-80-01).
  *
  * The arbitrary author HTML/JS of an `.elpx` package is always embedded in view.php in a
  * sandboxed, opaque-origin iframe: the iframe drops allow-same-origin, so the package runs
@@ -38,7 +38,7 @@ namespace mod_exelearning\local\ui;
  * serve an opaque subframe (the php-wasm Moodle Playground), and defaults off.
  *
  * Centralised here so the policy is unit-testable without rendering view.php.
- * See research ADR DEC-0059 (advances the Tier 2 roadmap of DEC-0019).
+ * See research ADR DEC-80-01 (advances the Tier 2 roadmap of DEC-0-16).
  */
 final class player_iframe {
     /** @var string Secure mode: opaque-origin iframe + postMessage SCORM bridge (the production mode). */
@@ -53,7 +53,7 @@ final class player_iframe {
      */
     public const MODE_LEGACY = 'legacy';
 
-    /** @var string Open embeds: promote any cross-origin https iframe (DEC-0061). */
+    /** @var string Open embeds: promote any cross-origin https iframe (DEC-80-03). */
     public const EMBED_OPEN = 'open';
 
     /** @var string Strict embeds: only the maintained host allowlist (the default). */
@@ -134,7 +134,7 @@ final class player_iframe {
      * allow-popups-to-escape-sandbox (an escaped popup would reopen at Moodle's real origin
      * without the sandbox). allow-scripts/allow-popups/allow-forms are kept because
      * eXeLearning v4 iDevices need jQuery + scripts, popups (interactive-video, hidden-image)
-     * and forms (quick-questions, form, scrambled-list). See ADR DEC-0059 / DEC-0019 / AN-008.
+     * and forms (quick-questions, form, scrambled-list). See ADR DEC-80-01 / DEC-0-16 / AN-008.
      *
      * @return string Space-separated sandbox token list.
      */
@@ -148,7 +148,7 @@ final class player_iframe {
     }
 
     /**
-     * Resolve the external-embed policy (DEC-0061). Default 'strict' restricts promotion to
+     * Resolve the external-embed policy (DEC-80-03). Default 'strict' restricts promotion to
      * the maintained provider allowlist with canonical URL reconstruction; 'open' is an
      * explicit opt-in that promotes any cross-origin https iframe (the player is sandboxed +
      * cross-origin, so SOP isolates it from Moodle). Any unset or unrecognised value fails
@@ -193,7 +193,7 @@ final class player_iframe {
     }
 
     /**
-     * Permissions-Policy header value for the embedded package (DEC-0060).
+     * Permissions-Policy header value for the embedded package (DEC-80-02).
      *
      * Denies hardware/sensor features the package never needs. `fullscreen` is
      * intentionally NOT denied: the iframe grants it via its allow= attribute and
@@ -208,7 +208,7 @@ final class player_iframe {
     }
 
     /**
-     * Content-Security-Policy header value for the embedded package (DEC-0060).
+     * Content-Security-Policy header value for the embedded package (DEC-80-02).
      *
      * Strict (default): object-src/base-uri closed, frame-ancestors 'self', connect-src
      * limited to this site, and NO bare https: in script/img/media-src so the per-user file
@@ -259,7 +259,7 @@ final class player_iframe {
     }
 
     /**
-     * Defense-in-depth response headers for a served package file (DEC-0060).
+     * Defense-in-depth response headers for a served package file (DEC-80-02).
      *
      * In secure mode EVERY served file gets Referrer-Policy: no-referrer and
      * X-Content-Type-Options: nosniff. The per-user file token lives in the URL path, so

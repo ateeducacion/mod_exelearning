@@ -112,7 +112,7 @@
         var allowed = config.allowedOrigin
             || ((typeof window !== 'undefined' && window.location) ? window.location.origin : '');
         // Trust gate. Legacy (same-origin) trusts a statement by event.origin === host
-        // origin (RIE-013). Secure mode (DEC-0069) serves the package in an opaque origin
+        // origin (RIE-013). Secure mode (DEC-80-05) serves the package in an opaque origin
         // where event.origin is the string "null", so origin can never authenticate; there
         // the anchor is WINDOW IDENTITY — event.source === the package iframe's
         // contentWindow, exactly like the SCORM bridge relay (js/scorm_bridge_relay.js).
@@ -193,7 +193,7 @@
         // Whether an event may be forwarded: window identity in secure mode (the opaque
         // "null" origin is ignored), or an exact host origin in legacy mode. event.source
         // is set by the browser to the posting window and cannot be forged by page script,
-        // so it is a sound anchor when the origin is unusable (DEC-0069).
+        // so it is a sound anchor when the origin is unusable (DEC-80-05).
         function isTrusted(event) {
             if (!event) { return false; }
             if (usewindowidentity) {

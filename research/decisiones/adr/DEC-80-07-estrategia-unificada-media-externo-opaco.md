@@ -1,29 +1,30 @@
 ---
-id: DEC-0071
-titulo: "Estrategia unificada de medios externos en origen opaco: overlay inline + canal id-only + control del vídeo interactivo por MessagePort (sin nonce-como-auth)"
-estado: Aceptada
-fecha: 2026-06-28
-agentes:
+id: DEC-80-07
+title: "Estrategia unificada de medios externos en origen opaco: overlay inline + canal id-only + control del vídeo interactivo por MessagePort (sin nonce-como-auth)"
+status: Accepted
+date: 2026-06-28
+tracking_issue: 80
+legacy_id: DEC-0071
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-005
   - REPO-010
   - REPO-011
-relacionados:
-  - DEC-0059
-  - DEC-0060
-  - DEC-0061
-  - DEC-0070
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-80-01, DEC-80-02, DEC-80-03, DEC-80-06]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
+
+# DEC-80-07: Estrategia unificada de medios externos en origen opaco: overlay inline + canal id-only + control del vídeo interactivo por MessagePort (sin nonce-como-auth)
 
 ## Contexto
 
-Con el teacher-mode ya resuelto sin inyección ([[DEC-0070]]), se reanuda el trabajo de **medios
-externos en origen opaco**. [[DEC-0061]] dejó el vídeo YouTube/Vimeo y el PDF **funcionando** en modo
+Con el teacher-mode ya resuelto sin inyección ([[DEC-80-06]]), se reanuda el trabajo de **medios
+externos en origen opaco**. [[DEC-80-03]] dejó el vídeo YouTube/Vimeo y el PDF **funcionando** en modo
 seguro mediante *promote-to-parent* con **overlay inline**, pero con una limitación documentada (sus
 líneas 187-210): el **iDevice de vídeo interactivo** con fuente **remota** no funciona en opaco, y el
 prototipo de puente de control se **revirtió por frágil**. La comparativa [[AN-015]] dejó como
@@ -38,7 +39,7 @@ automática los mezcló):
   (`youtube.com`/`vimeo.com`), no acceden a su storage y quedan **en blanco**. Lo arregla **únicamente**
   promover el player a un contexto no-opaco (overlay/modal en el padre) o `allow-same-origin` (prohibido
   en el iframe de contenido). **`referrerpolicy` NO lo arregla** (W3C Referrer Policy: "if document's
-  origin is an opaque origin, return no referrer"). Es lo que verificó empíricamente [[DEC-0061]].
+  origin is an opaque origin, return no referrer"). Es lo que verificó empíricamente [[DEC-80-03]].
 - **Problema B — Error 153 / referrer.** Independiente del sandbox: ocurre **incluso sin** sandbox,
   cuando el host envía `Referrer-Policy: no-referrer`/`same-origin` y el `<iframe>` del player **no**
   lleva `referrerpolicy`. YouTube responde `Error 153 (embedder.identity.missing.referrer)`. Lo arregla
@@ -49,15 +50,15 @@ automática los mezcló):
   resolvía. Lección para los embebedores: no dejar que un sanitizador/plugin elimine `referrerpolicy`.
 
 **mod_exelearning ya resuelve ambos**: A con el overlay promote-to-parent y B con
-`referrerpolicy=strict-origin-when-cross-origin` en el player promovido (`DEC-0061:69-70`). Por tanto
-**el vídeo simple ya se ve en opaco** (verificado en vivo en [[DEC-0061]]). Lo que queda abierto es (i)
+`referrerpolicy=strict-origin-when-cross-origin` en el player promovido (`DEC-80-03:69-70`). Por tanto
+**el vídeo simple ya se ve en opaco** (verificado en vivo en [[DEC-80-03]]). Lo que queda abierto es (i)
 **endurecer el trust model** del relay de mod y (ii) **recuperar el vídeo interactivo** sin abandonar la
 UX de overlay inline elegida por erseco.
 
 ## Decisión
 
 **Overlay inline endurecido + arreglo del vídeo interactivo en el iDevice.** Se conserva la UX y la
-frontera de seguridad de [[DEC-0061]] (el player lo monta y sandboxea el **host**, no el productor) y se
+frontera de seguridad de [[DEC-80-03]] (el player lo monta y sandboxea el **host**, no el productor) y se
 incorpora la disciplina de canal del bridge de eXeLearning **sin** cambiar a modal.
 
 1. **Mantener el overlay inline** (`js/exe_embed_relay.js`) como frontera canónica: el player se ve en
@@ -78,7 +79,7 @@ incorpora la disciplina de canal del bridge de eXeLearning **sin** cambiar a mod
      hoy vigila `tools/check-embed-sync.mjs`.
 
 3. **Arreglar el vídeo interactivo modificando el iDevice de eXeLearning** (autorizado por erseco; es el
-   "arreglo correcto upstream" que [[DEC-0061]]:207-210 ya señalaba que debía vivir en el iDevice):
+   "arreglo correcto upstream" que [[DEC-80-03]]:207-210 ya señalaba que debía vivir en el iDevice):
    - El iDevice **detecta origen opaco** (`window.origin === 'null'`) y, en ese caso, **enruta su control
      de reproducción** (play/pause/seek/getCurrentTime/getDuration + eventos `timeupdate`/`ended`/`ready`,
      más `hide`/`show` para las preguntas cronometradas) por el **canal del bridge endurecido**, en lugar
@@ -87,7 +88,7 @@ incorpora la disciplina de canal del bridge de eXeLearning **sin** cambiar a mod
      geometría del `#player` del iDevice, así que **la layout del iDevice (portada/`Inicio`, `float:left`
      de `#player` al activar, posición de cada slide) permanece en el hijo** y **no** se reconstruye en el
      padre. El padre sólo ejecuta los comandos de control sobre el player que ya está superpuesto en su
-     sitio. Esto supera la limitación de [[DEC-0061]] (el prototipo se revirtió porque intentaba
+     sitio. Esto supera la limitación de [[DEC-80-03]] (el prototipo se revirtió porque intentaba
      reconstruir la layout en el padre).
    - **Degradación grácil:** sin bridge cooperante (o paquete antiguo), el iDevice degrada a embed simple
      (lo promociona el shim, sin interactividad) o muestra aviso — nunca un frame en blanco.
@@ -109,7 +110,7 @@ incorpora la disciplina de canal del bridge de eXeLearning **sin** cambiar a mod
 
 ### Condiciones de seguridad (invariantes a preservar)
 
-Recogidas de [[DEC-0061]] (§2026-06-14b) y de la verificación adversaria de este diseño:
+Recogidas de [[DEC-80-03]] (§2026-06-14b) y de la verificación adversaria de este diseño:
 
 - El iframe de **contenido** sigue **sin `allow-same-origin`** (origen opaco; invariante de RIE-001).
 - El **player promovido** es cross-origin y va `sandbox="allow-scripts allow-same-origin allow-popups
@@ -119,7 +120,7 @@ Recogidas de [[DEC-0061]] (§2026-06-14b) y de la verificación adversaria de es
 - **Guarda D1** (elimina el player si aterriza same-origin al LMS) y **D2** (los players se excluyen de la
   autenticación por identidad de ventana, no pueden forjar `sync`) se mantienen.
 - **Default `open` vs `strict`** (`mod_exelearning/embedmode`): se mantiene `open` por defecto, con el
-  razonamiento ya registrado en [[DEC-0061]] §2026-06-14b (el player es cross-origin + sandboxeado → el
+  razonamiento ya registrado en [[DEC-80-03]] §2026-06-14b (el player es cross-origin + sandboxeado → el
   SOP lo aísla con independencia del host; la lista blanca sólo mitiga phishing/tracking, que el
   contenido sandboxeado ya puede hacer por otras vías). El **clickjacking del overlay** es un **riesgo
   residual aceptado** (overlay controlado por el padre, clampado a la caja de contenido, player
@@ -136,7 +137,7 @@ puntos del apartado **Decisión** y erseco confirma el rumbo:
 opaco con código de autor NO confiable**, y el relay le **entrega el nonce** en el handshake; por tanto
 ese código no confiable lo conoce y puede incluirlo en cualquier mensaje. El autenticador real ya es
 **`event.source === iframe.contentWindow`** (infalsificable por SOP) en los mensajes de ventana, y la
-**posesión del `MessagePort`** transferido en el canal de control. El bridge actual de mod ([[DEC-0061]]:
+**posesión del `MessagePort`** transferido en el canal de control. El bridge actual de mod ([[DEC-80-03]]:
 event.source + validación de URL + D1/D2 + player cross-origin sandboxeado) **ya era sólido**; el punto 2
 sobrevaloraba el nonce. **Decisión (erseco): sin nonce-como-auth.** El endurecimiento genuino que queda:
 - (a) **canal id-only** `{provider, objectId}` para proveedores reconocidos → el padre reconstruye la URL
@@ -175,7 +176,7 @@ se hará al cerrar la implementación.
   control del player por raw `postMessage`; cambios en el iDevice de vídeo interactivo de eXeLearning;
   paridad en `wp-exelearning`/`omeka-s-exelearning` como seguimiento.
 - **Recupera el vídeo interactivo remoto en secure** sin renunciar al overlay inline, cerrando la
-  limitación de [[DEC-0061]] y el `[PENDIENTE]` #1 de [[AN-015]].
+  limitación de [[DEC-80-03]] y el `[PENDIENTE]` #1 de [[AN-015]].
 - **Reduce la triplicación** mod/wp/omeka al compartir el módulo de política + el relay reutilizable;
   `tools/check-embed-sync.mjs` sigue como anti-drift mientras no haya infra compartida.
 - **No reabre** los vectores cerrados por el modo opaco: el endurecimiento sólo añade defensa
@@ -196,5 +197,5 @@ se hará al cerrar la implementación.
   interactivo cuando aterricen en mod (mantener paridad). Añadir la nota operativa Jetpack/Referrer-Policy
   del Problema B en su documentación.
 - **Lenguaje/ajustes:** si la implementación añade strings o ajustes, respetar el namespace `exelearning`
-  (no `mod_`), prefijo `~` para traducción automática pendiente ([[DEC-0020]]), orden alfabético y paridad
+  (no `mod_`), prefijo `~` para traducción automática pendiente ([[DEC-11-01]]), orden alfabético y paridad
   de idiomas.

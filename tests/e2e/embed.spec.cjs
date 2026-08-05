@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-// Cross-browser e2e for the secure-mode external-embed mechanism (DEC-0061), run in
+// Cross-browser e2e for the secure-mode external-embed mechanism (DEC-80-03), run in
 // Firefox via playwright-embed.config.cjs. It loads the REAL shim + relay against a
 // self-contained harness (no Moodle needed): an opaque-origin sandboxed iframe whose
 // content has cross-origin video iframes, a RELATIVE local PDF and an arbitrary
@@ -33,7 +33,7 @@ test('promotes every cross-origin/PDF iframe to a sandboxed inline player (open 
     // Open mode: cross-origin https iframes are promoted VERBATIM (no host list, no rebuild).
     expect(srcs.some((s) => /^https:\/\/www\.youtube-nocookie\.com\/embed\/aqz-KE-bpKQ\b/.test(s))).toBe(true);
     expect(srcs.some((s) => /^https:\/\/www\.dailymotion\.com\/embed\/video\/x8abc12$/.test(s))).toBe(true);
-    // Vimeo cross-origin embed is promoted too (DEC-0067 e2e coverage).
+    // Vimeo cross-origin embed is promoted too (DEC-110-01 e2e coverage).
     expect(srcs.some((s) => /^https:\/\/player\.vimeo\.com\/video\/76979871\b/.test(s))).toBe(true);
     // An arbitrary cross-origin provider is promoted too (the structural invariant).
     expect(srcs.some((s) => /^https:\/\/example\.com\//.test(s))).toBe(true);

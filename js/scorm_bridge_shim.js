@@ -40,7 +40,7 @@
  *
  * Exposed two ways from a single body: window.exeScormBridgeShim (browser, with an
  * auto-boot that is a no-op outside an opaque sandbox) and module.exports (Vitest).
- * See research ADR DEC-0059.
+ * See research ADR DEC-80-01.
  */
 (function () {
     'use strict';
