@@ -1,25 +1,22 @@
 ---
 id: DEC-5-01
-titulo: "Ruteo de calificaciones por objectid estable (mis-ruteo N→itemnumber, RIE-007)"
-estado: Aceptada
-fecha: 2026-06-01
+title: "Ruteo de calificaciones por objectid estable (mis-ruteo N→itemnumber, RIE-007)"
+status: Accepted
+date: 2026-06-01
 tracking_issue: 5
 legacy_id: DEC-0017
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-005
   - FTE-006
   - FTE-008
-relacionados:
-  - DEC-0003
-  - DEC-0008
-  - DEC-0012
-  - DEC-4-01
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-0-03, DEC-0-08, DEC-0-12, DEC-4-01]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-5-01: Ruteo de calificaciones por objectid estable (mis-ruteo N→itemnumber, RIE-007)
@@ -30,7 +27,7 @@ DEC-4-01 confirmó pero **difirió** el hallazgo RIE-007: `track.php` usaba el
 entero `N` parseado de `cmi.suspend_data`
 (`{N}. "{título}"; Score…%; Weight…%`) **directamente** como el `itemnumber` del
 grade item de Moodle. El productor de `N` es el `common.js` **vendorado** de
-eXeLearning v4 (fuera de alcance editar, DEC-0002), mientras que nuestro
+eXeLearning v4 (fuera de alcance editar, DEC-0-02), mientras que nuestro
 `itemnumber` lo asigna `exelearning_sync_grade_items()` (`lib.php`) como un
 contador **secuencial global sólo sobre iDevices calificables**. DEC-4-01 dejó
 explícito que merecía ADR propio y verificación e2e del `N` real.
@@ -67,7 +64,7 @@ Análisis del productor vendorado y de los fixtures de exportación:
   página con todos los iDevices calificables.
 
 [INTERPRETACION] El productor vendorado es, en rigor, también defectuoso aguas
-arriba para su propio SCORM multipágina; no lo corregimos (DEC-0002), pero
+arriba para su propio SCORM multipágina; no lo corregimos (DEC-0-02), pero
 podemos hacerlo mejor en el plugin sin tocarlo.
 
 ## Opciones consideradas
@@ -107,7 +104,7 @@ podemos hacerlo mejor en el plugin sin tocarlo.
   (`exelearning_grade_item`, índices UNIQUE) y `lib.php::exelearning_sync_grade_items`.
 - Estabilidad del `objectid` aguas arriba: PR `exelearning/exelearning#1791`
   (merge 2026-05-19) preserva `<odeIdeviceId>` verbatim — el mismo resultado que
-  cerró RIE-006 en **DEC-0012**. Esto sostiene que rutear por `objectid` es
+  cerró RIE-006 en **DEC-0-12**. Esto sostiene que rutear por `objectid` es
   estable entre exports.
 - Contrato Moodle: los grade items se identifican por `itemnumber`; rutear a un
   `itemnumber` inexistente descarta la nota en silencio (Grade API). [FTE-006]
@@ -139,7 +136,7 @@ podemos hacerlo mejor en el plugin sin tocarlo.
 
 - Positivas: per-iDevice correcto en paquetes multipágina; colisión resuelta en el
   único punto donde la identidad es recuperable (cliente, en el instante del
-  scoring); cero cambios vendorados (DEC-0002) y sin migración de esquema; el
+  scoring); cero cambios vendorados (DEC-0-02) y sin migración de esquema; el
   fallback preserva el comportamiento verificado para single-page.
 - Negativas / coste: el shim crece (~50 líneas JS, validado con `node --check`);
   depende del acceso mismo-origen al iframe (ya disponible). Si el
@@ -157,7 +154,7 @@ podemos hacerlo mejor en el plugin sin tocarlo.
   multipágina) se acota arriba.
 - RIE-009 (nuevo, bajo): si una versión del editor **anterior a #1791** reasigna
   `odeIdeviceId` al re-exportar, un re-sync podría re-mapear `objectid`; mismo
-  supuesto que RIE-006, ya cerrado para editores post-#1791 (DEC-0012).
+  supuesto que RIE-006, ya cerrado para editores post-#1791 (DEC-0-12).
 
 ## Validación
 

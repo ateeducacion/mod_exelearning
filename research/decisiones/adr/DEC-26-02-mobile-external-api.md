@@ -1,23 +1,22 @@
 ---
 id: DEC-26-02
-titulo: "API externa / móvil (servicios MOODLE_OFFICIAL_MOBILE_SERVICE + save_track)"
-estado: Aceptada
-fecha: 2026-06-09
+title: "API externa / móvil (servicios MOODLE_OFFICIAL_MOBILE_SERVICE + save_track)"
+status: Accepted
+date: 2026-06-09
 tracking_issue: 26
 legacy_id: DEC-0040
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-001
   - REPO-002
   - REPO-004
-relacionados:
-  - DEC-5-01
-  - DEC-6-01
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-5-01, DEC-6-01]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-26-02: API externa / móvil (servicios MOODLE_OFFICIAL_MOBILE_SERVICE + save_track)
@@ -75,7 +74,7 @@ la app móvil pasa por **exactamente** los mismos controles que el endpoint web:
 - No se ofrece renderizado del contenido navegable vía WS (requeriría un remote
   add-on de la app): fuera de alcance; el contenido se sirve por `pluginfile`.
 - **Límite documentado**: `save_track` ingiere SCORM 1.2 (score por iDevice +
-  overall); xAPI sigue en hoja de ruta (DEC-0014/DEC-17-01). El contrato de `itemscores`
+  overall); xAPI sigue en hoja de ruta (DEC-0-14/DEC-17-01). El contrato de `itemscores`
   (objectid ⇒ scorepct/weighted) es estable y reutilizable por una futura ingesta xAPI.
 
 ## Implementación

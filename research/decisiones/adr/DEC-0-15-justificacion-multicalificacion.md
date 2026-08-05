@@ -1,12 +1,14 @@
 ---
-id: DEC-0015
-titulo: "¿Merece la pena la multicalificación (N grade items por iDevice)? Justificación, DAFO y comparativa"
-estado: Aceptada
-fecha: 2026-05-29
-agentes:
+id: DEC-0-15
+tracking_issue: 0
+legacy_id: DEC-0015
+title: "¿Merece la pena la multicalificación (N grade items por iDevice)? Justificación, DAFO y comparativa"
+status: Accepted
+date: 2026-05-29
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-001
   - REPO-002
   - REPO-004
@@ -16,19 +18,16 @@ fuentes:
   - FTE-007
   - FTE-008
   - FTE-009
-relacionados:
-  - DEC-0003
-  - DEC-0007
-  - DEC-0008
-  - DEC-0010
-  - DEC-0014
+related:
+  adrs: [DEC-0-03, DEC-0-07, DEC-0-08, DEC-0-10, DEC-0-14]
+see_also:
   - AN-010
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
-# DEC-0015: ¿Merece la pena la multicalificación (N grade items por iDevice)? Justificación, DAFO y comparativa
+# DEC-0-15: ¿Merece la pena la multicalificación (N grade items por iDevice)? Justificación, DAFO y comparativa
 
 ## Contexto y motivación
 
@@ -56,9 +55,9 @@ El plugin extrae `content.xml` del `.elpx`, detecta los iDevices calificables
 (`GRADABLE_IDEVICE_TYPES`), mapea cada `odeIdeviceId` estable a un `itemnumber`
 y registra N grade items con `grade_update(..., itemnumber=$n, ...)` (FTE-006).
 El tracking llega por un **puente SCORM 1.2** (shim `window.API` + pipwerks
-inyectado) que `track.php` parsea y reparte por `itemnumber` (DEC-0003). Los
-intentos viven en una tabla propia con `grademethod` (DEC-0007) y la
-finalización es la nativa `completionpassgrade` (DEC-0010).
+inyectado) que `track.php` parsea y reparte por `itemnumber` (DEC-0-03). Los
+intentos viven en una tabla propia con `grademethod` (DEC-0-07) y la
+finalización es la nativa `completionpassgrade` (DEC-0-10).
 
 ## Ventajas
 
@@ -73,7 +72,7 @@ finalización es la nativa `completionpassgrade` (DEC-0010).
 - **Sidebar nativa** de eXeLearning en lugar del TOC de SCORM (mejor UX y
   coherencia con cómo se diseñó el contenido).
 - Modelo de **intentos propio** con método configurable (highest/average/…)
-  y `grademodel` (por iDevice / global) — DEC-0007, DEC-0008.
+  y `grademodel` (por iDevice / global) — DEC-0-07, DEC-0-08.
 - No obliga a re-exportar a SCORM: trabaja sobre el `.elpx` v4 directamente.
 
 ## Inconvenientes y complejidad
@@ -89,11 +88,11 @@ finalización es la nativa `completionpassgrade` (DEC-0010).
   post-#1791 **no duplica columnas**. (Sólo persiste como limitación con editores
   anteriores a #1791.)
 - El puente **SCORM 1.2 es un shim**, no tracking nativo: eXeLearning no emite
-  xAPI hoy (FTE-007/DEC-0014). Es pragmático y funciona, pero es deuda técnica.
+  xAPI hoy (FTE-007/DEC-0-14). Es pragmático y funciona, pero es deuda técnica.
 - Detalles frágiles ya domados: `itemnumber_mapping` (MAX=100), inyección
   pipwerks, self-heal de subidas programáticas, re-sync tras editar.
 - Riesgo de **saturar el libro** con muchas columnas (mitigado: `grademodel`
-  por defecto por iDevice, conmutable a global — DEC-0008 rev.).
+  por defecto por iDevice, conmutable a global — DEC-0-08 rev.).
 
 **¿Más simple o más complicado? Complejidad MEDIA y acotada, no "alta"**
 (desglose en **AN-010**). Matices importantes para no exagerar:
@@ -147,7 +146,7 @@ el shim reaprovecha el canal que el contenido ya sabe usar sin tocar el paquete.
 - Verificado end-to-end (Docker + navegador) y CI verde en Moodle 4.5/5.0/5.1.
 
 **Oportunidades (externas)**
-- Hoja de ruta **xAPI nativo** (DEC-0014) cuando eXeLearning emita statements
+- Hoja de ruta **xAPI nativo** (DEC-0-14) cuando eXeLearning emita statements
   → analítica de aprendizaje fina vía LRS.
 - Impulso de eXeLearning v4 e interés institucional (ATE/INTEF).
 - Posible aportación upstream (ids estables, manifiesto de gradeitems).
@@ -186,11 +185,11 @@ gradebook** que H5P — ese es el diferencial. El precio es no tener xAPI nativo
   plugin: es una propiedad heredada de `mod_exeweb`, no el diferencial.)*
 - **Con matices**: la complejidad y la dependencia del shim SCORM 1.2 + formato
   `content.xml` son deuda técnica reconocida. La evolución sana es **xAPI nativo**
-  (DEC-0014) cuando eXeLearning emita statements; mientras, el enfoque actual es
+  (DEC-0-14) cuando eXeLearning emita statements; mientras, el enfoque actual es
   pragmático, funciona y se apoya en estándares vigentes.
 
 En resumen: la multicalificación es la **razón de ser** del plugin y justifica
-su coste; el camino de reducción de deuda está trazado (DEC-0014) y condicionado
+su coste; el camino de reducción de deuda está trazado (DEC-0-14) y condicionado
 a upstream.
 
 ## Hoja de ruta de tracking: ¿xAPI o cmi5? (ver FTE-009)
@@ -256,7 +255,7 @@ transporte (shim → statements).
 **Pasos a futuro (resumen):** (1) seguir/empujar en upstream la emisión de xAPI por
 iDevice; (2) cuando exista, implementar `handler` + `xapi_bridge.js` reusando el
 modelo de intentos/notas actual; (3) decidir versión mínima y si el shim SCORM se
-mantiene como fallback. Detallado en DEC-0014.
+mantiene como fallback. Detallado en DEC-0-14.
 
 ## Consecuencias
 

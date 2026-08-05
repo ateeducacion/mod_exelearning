@@ -1,20 +1,22 @@
 ---
-id: DEC-0001
-titulo: "Metodología de evidencia y ADRs para mod_exelearning"
-estado: Aceptada
-fecha: 2026-05-28
-agentes:
+id: DEC-0-01
+tracking_issue: 0
+legacy_id: DEC-0001
+title: "Metodología de evidencia y ADRs para mod_exelearning"
+status: Accepted
+date: 2026-05-28
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
-experimentos: []
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-7
+experiments: []
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-7
 ---
 
-# DEC-0001: Metodología de evidencia y ADRs para mod_exelearning
+# DEC-0-01: Metodología de evidencia y ADRs para mod_exelearning
 
 ## Contexto
 
@@ -73,5 +75,5 @@ Negativas:
 
 ## Seguimiento
 
-- DEC-0002 (política de clones).
-- DEC-0003 (estándar de tracking).
+- DEC-0-02 (política de clones).
+- DEC-0-03 (estándar de tracking).

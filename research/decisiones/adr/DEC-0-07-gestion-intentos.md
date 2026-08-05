@@ -1,24 +1,26 @@
 ---
-id: DEC-0007
-titulo: "Gestión de intentos: tabla propia + modelo h5pactivity (no SCORM)"
-estado: Aceptada
-fecha: 2026-05-28
-agentes:
+id: DEC-0-07
+tracking_issue: 0
+legacy_id: DEC-0007
+title: "Gestión de intentos: tabla propia + modelo h5pactivity (no SCORM)"
+status: Accepted
+date: 2026-05-28
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
   - FTE-001
   - FTE-003
   - FTE-004
   - FTE-006
-experimentos: []
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-7
+experiments: []
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-7
 ---
 
-# DEC-0007: Gestión de intentos: tabla propia + modelo h5pactivity (no SCORM)
+# DEC-0-07: Gestión de intentos: tabla propia + modelo h5pactivity (no SCORM)
 
 ## Contexto
 
@@ -59,7 +61,7 @@ a multi-itemnumber**, no la de SCORM. Razones:
 
 1. Ya tenemos `mdl_exelearning_grade_item` (mapa objectid → itemnumber).
    Reusarlo en `mdl_exelearning_attempt_item` es natural.
-2. El modelo xAPI (DEC-0003) es de granularidad fina por statement; encaja con
+2. El modelo xAPI (DEC-0-03) es de granularidad fina por statement; encaja con
    "una fila por iDevice por intento", no con "un blob CMI por SCO".
 3. Evitamos arrastrar el data model CMI de SCORM (255-char strings, glosario de
    `cmi.suspend_data`, etc.).
@@ -139,7 +141,7 @@ Nueva página `report.php?id=<cmid>` con:
 - Filtros por estado (incompleto/completado/aprobado/suspendido).
 - Botón "Borrar intento" (capability `mod/exelearning:deleteresponses`).
 
-### Modos (extensión de DEC-0006)
+### Modos (extensión de DEC-0-06)
 
 - `mode=grading` → crea/incrementa intento.
 - `mode=preview` → NO toca la tabla `attempt` (igual que ahora con
@@ -201,7 +203,7 @@ Ficheros: `classes/local/attempts.php`, `db/{install.xml,upgrade.php}`
 (`exelearning_attempt` + `gradepass` + `grademethod`), `track.php`, `view.php`,
 `mod_form.php`, `report.php`, `classes/privacy/provider.php`,
 `backup/moodle2/*`, `lang/en/exelearning.php`. Finalización por aprobado en
-[[DEC-0010]].
+[[DEC-0-10]].
 
 **Fase 2 (misma sesión)**: implementados `maxattempt` (límite de intentos,
 0=ilimitado, enforced en `track.php`), `reviewmode`

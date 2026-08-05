@@ -1,22 +1,20 @@
 ---
 id: DEC-13-11
-titulo: "Parchear al servir el guard de guardado de form/scrambled-list (embebedor-side de exelearning#1925)"
-estado: Aceptada
-fecha: 2026-06-09
+title: "Parchear al servir el guard de guardado de form/scrambled-list (embebedor-side de exelearning#1925)"
+status: Accepted
+date: 2026-06-09
 tracking_issue: 13
 legacy_id: DEC-0042
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
-relacionados:
-  - DEC-13-10
-  - DEC-13-01
-  - DEC-5-01
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-13-10, DEC-13-01, DEC-5-01]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-13-11: Parchear al servir el guard de guardado de form/scrambled-list (embebedor-side de exelearning#1925)

@@ -1,32 +1,26 @@
 ---
 id: DEC-17-01
-titulo: "Ingesta dual de tracking: shim SCORM 1.2 + xAPI (exe_xapi.js) sobre una tubería común"
-estado: Propuesta
-fecha: 2026-06-04
+title: "Ingesta dual de tracking: shim SCORM 1.2 + xAPI (exe_xapi.js) sobre una tubería común"
+status: Proposed
+date: 2026-06-04
 tracking_issue: 17
 legacy_id: DEC-0032
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
   - REPO-005
   - FTE-003
   - FTE-007
   - FTE-011
-experimentos:
+experiments:
   - EXP-004
-relacionados:
-  - DEC-0003
-  - DEC-0007
-  - DEC-0014
-  - DEC-5-01
-  - DEC-6-01
-  - DEC-13-05
-  - DEC-13-07
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-0-03, DEC-0-07, DEC-0-14, DEC-5-01, DEC-6-01, DEC-13-05, DEC-13-07]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-17-01: Ingesta dual de tracking: shim SCORM 1.2 + xAPI (exe_xapi.js) sobre una tubería común
@@ -34,9 +28,9 @@ herramienta_ia:
 ## Contexto
 
 El tracking vigente de `mod_exelearning` es **exclusivamente** un bridge SCORM 1.2
-(DEC-0003): el shim `window.API` de `view.php` reenvía a `track.php`, que reusa el mapa
+(DEC-0-03): el shim `window.API` de `view.php` reenvía a `track.php`, que reusa el mapa
 `objectid → itemnumber` (DEC-5-01), recalcula el overall (DEC-6-01), graba intentos
-(DEC-0007) y publica con `grade_update()`. DEC-0014 dejó el soporte xAPI como **diseño de
+(DEC-0-07) y publica con `grade_update()`. DEC-0-14 dejó el soporte xAPI como **diseño de
 referencia diferido** porque su prerrequisito —que eXeLearning emita statements— no se
 cumplía ("eXeLearning upstream NO emite xAPI hoy", 2026-05-29).
 
@@ -45,7 +39,7 @@ cumplía ("eXeLearning upstream NO emite xAPI hoy", 2026-05-29).
 (draft) añade `public/app/common/xapi/exe_xapi.js`, un emisor xAPI siempre-activo en
 **todos** los formatos de export, que publica statements por `postMessage` al host
 (`{ type: 'exe-xapi-statement', statement }`) y/o a un LRS por launch (FTE-011). Esto
-**reactiva** la opción C de DEC-0014.
+**reactiva** la opción C de DEC-0-14.
 
 Este ADR es **documental** (PR1): fija la arquitectura de ingesta dual y su modelo de
 confianza. La implementación (listener + endpoint + normalizador + handler/eventos + tests)
@@ -66,14 +60,14 @@ pertenencia (cmid/instancia) y objectid en el servidor (no en el cliente)?
    mucho **una** tabla `exelearning_tracking_events` (`statementid` UNIQUE) para
    auditoría/idempotencia.
    - ✔ Cero duplicación de lógica; SCORM y xAPI convergen en un único punto ya probado.
-   - ✔ Honra DEC-0007 (tabla plana) y DEC-5-01 (ruteo por objectid).
-   - ✔ El camino SCORM queda intacto (compatibilidad, DEC-0003).
+   - ✔ Honra DEC-0-07 (tabla plana) y DEC-5-01 (ruteo por objectid).
+   - ✔ El camino SCORM queda intacto (compatibilidad, DEC-0-03).
    - ✘ El "modelo neutro" es implícito (la estructura `itemscores` + `exelearning_attempt`),
      no una capa nueva explícita.
 2. **Modelo neutro nuevo + tablas cabecera/detalle.** Crear `classes/local/tracking/` con
    un evento interno y tablas `exelearning_attempts` + `exelearning_attempt_items`.
-   - ✘ **Contradice DEC-0007**, que evaluó exactamente este diseño (su opción 4) y lo
-     **descartó** al implementar, eligiendo una tabla plana (DEC-0007:176-186).
+   - ✘ **Contradice DEC-0-07**, que evaluó exactamente este diseño (su opción 4) y lo
+     **descartó** al implementar, eligiendo una tabla plana (DEC-0-07:176-186).
    - ✘ Duplica lógica que ya funciona y obliga a migrar datos.
 3. **Esperar al merge de #1867.** No documentar ni diseñar hasta que upstream cierre.
    - ✘ Pierde la ventana para alinear el consumidor con el contrato mientras se puede
@@ -87,8 +81,8 @@ pertenencia (cmid/instancia) y objectid en el servidor (no en el cliente)?
   `object.id = {baseIri}/idevice/{ideviceId}`, `result.score.scaled`, actor anónimo,
   `parentOrigin` configurable. Cobertura `exe_xapi.test.js`.
 - La tubería actual es ya inyectable en un punto único: `track.php:177-281`,
-  `classes/local/track.php`, `classes/local/attempts.php` (DEC-5-01, DEC-6-01, DEC-0007).
-- `exelearning_attempt` es plano por decisión y pensado para xAPI: **DEC-0007:154,176-186**.
+  `classes/local/track.php`, `classes/local/attempts.php` (DEC-5-01, DEC-6-01, DEC-0-07).
+- `exelearning_attempt` es plano por decisión y pensado para xAPI: **DEC-0-07:154,176-186**.
 - Patrón consumidor Moodle: **FTE-007** (`core_xapi_statement_post` + handler) y **AN-003**
   (h5pactivity). Mapeo statement→tubería y modelo de confianza: **AN-012**.
 - Conformidad con la spec xAPI 1.0.3: **FTE-003** + Context7 `/adlnet/xapi-spec`
@@ -101,7 +95,7 @@ a la estructura `itemscores` existente y reutiliza `apply_item_scores` /
 `record_item` / `grade_update`. Principios fijados:
 
 1. **Modelo común = el que ya existe** (`exelearning_attempt` plano + `exelearning_grade_item`).
-   Sin cabecera/detalle (DEC-0007). Persistencia de statement crudo sólo para
+   Sin cabecera/detalle (DEC-0-07). Persistencia de statement crudo sólo para
    auditoría/idempotencia, opcional, en **una** tabla `exelearning_tracking_events`.
 2. **Confianza cero en el cliente** (AN-012): ignorar `actor` → `$USER`; validar sesión,
    `sesskey`, cmid/instancia, capability `mod/exelearning:savetrack`, y `object.id →
@@ -112,14 +106,14 @@ a la estructura `itemscores` existente y reutiliza `apply_item_scores` /
 4. **Transporte seguro:** el host inyecta `window.exeXapi.parentOrigin = <origen Moodle>`
    (simetría con `exelearning_inject_scorm_loader`) y el listener valida `event.origin`
    contra el origen del iframe (`pluginfile.php`); rechazar `'*'`/mismatch.
-5. **SCORM 1.2 permanece** como compatibilidad (DEC-0003); xAPI no lo elimina.
+5. **SCORM 1.2 permanece** como compatibilidad (DEC-0-03); xAPI no lo elimina.
 6. **Fuera de alcance:** cmi5 (FTE-004/009) y dependencia de LRS externo. El emisor también
    los excluye (FTE-011).
 7. **Vía de ingestión servidor** (endpoint propio que ignora actor vs `core_xapi`): se
    detalla y recomienda en `docs/xapi-integration-plan.md` (lean: endpoint propio para
    nota + handler `core_xapi` opcional para eventos), a confirmar en PR2.
 
-Relación con DEC-0014: este ADR **complementa** (no supersede) DEC-0014; ejecuta su opción
+Relación con DEC-0-14: este ADR **complementa** (no supersede) DEC-0-14; ejecuta su opción
 C ahora que el prerrequisito upstream existe.
 
 ## Consecuencias
@@ -130,7 +124,7 @@ C ahora que el prerrequisito upstream existe.
 - Negativas / coste: se consume un contrato **draft** (riesgo de churn, RIE-013); el
   "modelo neutro" queda implícito en la estructura `itemscores` (documentado, no reificado).
 - Cambios que dispara: abre **TAREA-015** (implementación PR2); actualiza la hoja de ruta de
-  DEC-0014; reformula la "Trampas/Pendiente" de `AGENTS.md` cuando se implemente.
+  DEC-0-14; reformula la "Trampas/Pendiente" de `AGENTS.md` cuando se implemente.
 
 ## Riesgos
 

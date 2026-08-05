@@ -1,24 +1,21 @@
 ---
 id: DEC-74-01
-titulo: "Tests JS del tracker SCORM con Vitest; extracción del shim de view.php a js/scorm_tracker.js (fuente única, inyección inline)"
-estado: Aceptada
-fecha: 2026-06-12
+title: "Tests JS del tracker SCORM con Vitest; extracción del shim de view.php a js/scorm_tracker.js (fuente única, inyección inline)"
+status: Accepted
+date: 2026-06-12
 tracking_issue: 74
 legacy_id: DEC-0056
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-001
   - REPO-004
-relacionados:
-  - DEC-66-01
-  - DEC-5-01
-  - DEC-6-01
-  - DEC-17-01
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-66-01, DEC-5-01, DEC-6-01, DEC-17-01]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-74-01: Tests JS del tracker SCORM con Vitest; extracción del shim de view.php a js/scorm_tracker.js (fuente única, inyección inline)
@@ -90,7 +87,7 @@ cobertura natural es Behat e2e.
 | Fichero / módulo | ¿Se testea? | Motivo |
 |---|---|---|
 | `js/scorm_tracker.js` (tracker SCORM) | **Sí — Vitest** | Lógica crítica de **notas**: parseo `cmi.suspend_data`, ruteo por `objectid` ([[DEC-5-01]]), máquina `send`/`dirty` (no perder notas). Funciones puras + inyección de dependencias → testeable sin Moodle. |
-| `assets/scorm/SCORM_API_wrapper.js`, `SCOFunctions.js` (pipwerks) | **No** | Third-party vendorizado (`thirdpartylibs.xml`); las normas prohíben tocarlo. **No lo ejecuta el plugin**: corre dentro del iframe del paquete (SCO), inyectado por `exelearning_inject_scorm_loader` ([[DEC-36-01]]), acoplado a DOM/jQuery y a `window.parent` ([[DEC-0019]]). Su contrato (que `window.API` responda síncrono) ya lo cubren los tests del tracker + Behat e2e. |
+| `assets/scorm/SCORM_API_wrapper.js`, `SCOFunctions.js` (pipwerks) | **No** | Third-party vendorizado (`thirdpartylibs.xml`); las normas prohíben tocarlo. **No lo ejecuta el plugin**: corre dentro del iframe del paquete (SCO), inyectado por `exelearning_inject_scorm_loader` ([[DEC-36-01]]), acoplado a DOM/jQuery y a `window.parent` ([[DEC-0-16]]). Su contrato (que `window.API` responda síncrono) ya lo cubren los tests del tracker + Behat e2e. |
 | `amd/src/fullscreen.js`, `amd/src/resize.js` | **No** | UI pura (Fullscreen API / Mutation·ResizeObserver). Sin lógica de negocio ni impacto en notas; el riesgo lo cubre la prueba manual/visual. |
 | `amd/src/modform.js` | **No** | Cambia labels de botones del form según el origen. UX glue, sin transformación de datos. |
 | `amd/src/admin_embedded_editor.js` | **No** | Polling AJAX de instalación del editor (`define` + jQuery + `core/ajax`). Coste de mock alto, valor bajo; mejor test de integración de la página admin. |

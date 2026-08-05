@@ -9,8 +9,8 @@ fuentes:
   - FTE-007
   - FTE-011
 relacionados:
-  - DEC-0007
-  - DEC-0014
+  - DEC-0-07
+  - DEC-0-14
   - DEC-5-01
   - DEC-6-01
   - DEC-17-01
@@ -35,13 +35,13 @@ SCORM ya produce y se inyecta en `track::apply_item_scores()` / `attempts::recor
   `objectid → itemnumber` (`track::apply_item_scores`, DEC-5-01), recalcula el overall
   (`track::recompute_overall_pct`, DEC-6-01), graba intentos
   (`attempts::record_item`), agrega por `grademethod` (`attempts::aggregate_scaled`,
-  DEC-0007) y publica con `grade_update(... itemnumber ...)`. El shim de `view.php:498-528`
+  DEC-0-07) y publica con `grade_update(... itemnumber ...)`. El shim de `view.php:498-528`
   sólo **construye** ese `itemscores` leyendo el DOM del iframe (`captureItemScores`,
   `view.php:449-461`).
-- **`exelearning_attempt` es plano por decisión.** DEC-0007 (líneas 176-186): se
+- **`exelearning_attempt` es plano por decisión.** DEC-0-07 (líneas 176-186): se
   implementó "una sola tabla plana `exelearning_attempt` (no cabecera + detalle)", con
   `itemnumber=0` overall y `>0` por iDevice, reusando el mismo eje que
-  `exelearning_grade_item`. DEC-0007:154 ya anticipaba xAPI: "cada `attempt_item` es un
+  `exelearning_grade_item`. DEC-0-07:154 ya anticipaba xAPI: "cada `attempt_item` es un
   statement traducido".
 - **El statement xAPI trae lo necesario para ese mapeo** (FTE-011): `object.id =
   {baseIri}/idevice/{ideviceId}` con `ideviceId == objectid`; `result.score.scaled`
@@ -76,7 +76,7 @@ exponen `result.score.scaled` (0..1), que es la forma canónica para `scorepct =
 
 1. Sesión Moodle + `sesskey`.
 2. Resolver `cmid → cm/instancia` en servidor; `require_capability('mod/exelearning:savetrack')`
-   (o regla preview, DEC-0006).
+   (o regla preview, DEC-0-06).
 3. **Ignorar `actor`** del cliente → usar `$USER` (paridad con la confianza nula del shim
    SCORM, que tampoco recibe identidad del paquete).
 4. `object.id` debe resolver a un `objectid` **de esta instancia** (`exelearning_grade_item`,
@@ -122,8 +122,8 @@ exponen `result.score.scaled` (0..1), que es la forma canónica para `scorepct =
 - xAPI entra como **fuente de ingestión adicional**, no como modelo nuevo: un normalizador
   fino (`statement → itemscores`) + el endpoint, ambos PR2.
 - Cero cambios de esquema obligatorios; como mucho **una** tabla `exelearning_tracking_events`
-  (`statementid` UNIQUE) para auditoría/idempotencia. NO cabecera+detalle (DEC-0007).
-- El camino SCORM 1.2 queda **intacto** como compatibilidad (DEC-0003).
+  (`statementid` UNIQUE) para auditoría/idempotencia. NO cabecera+detalle (DEC-0-07).
+- El camino SCORM 1.2 queda **intacto** como compatibilidad (DEC-0-03).
 
 ## [PENDIENTE]
 

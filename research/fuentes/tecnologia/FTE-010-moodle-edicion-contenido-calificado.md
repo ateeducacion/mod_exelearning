@@ -109,4 +109,4 @@ correcta/puntuación. Foco en qué les pasa a los **intentos** y a las **notas**
 
 - Cierra parcialmente la pregunta abierta de FTE-006 ("política de re-upload: preservar
   `itemnumber` por `objectid` estable vs renumerar"): mod_exelearning preserva por
-  `objectid` (DEC-0012/DEC-5-01) y ahora avisa de la nota obsoleta (DEC-12-01).
+  `objectid` (DEC-0-12/DEC-5-01) y ahora avisa de la nota obsoleta (DEC-12-01).

@@ -15,20 +15,20 @@ metadata:
 # NOTA (2026-06-17, erseco): el índice navegable COMPLETO de los 59 ADRs es docs/indices/adrs.yaml
 # (autogenerado). Esta sección lista solo decisiones bloqueantes/estructurales; NO es exhaustiva por diseño.
 decisiones_bloqueantes:
-  DEC-0001:
+  DEC-0-01:
     titulo: "Metodología de evidencia y ADRs"
     estado: Aceptada
-    ruta: decisiones/adr/DEC-0001-metodologia-evidencia.md
+    ruta: decisiones/adr/DEC-0-01-metodologia-evidencia.md
     fecha: 2026-05-28
-  DEC-0002:
+  DEC-0-02:
     titulo: "Política de clones externos y licencias"
     estado: Aceptada
-    ruta: decisiones/adr/DEC-0002-politica-clones-externos.md
+    ruta: decisiones/adr/DEC-0-02-politica-clones-externos.md
     fecha: 2026-05-28
-  DEC-0003:
+  DEC-0-03:
     titulo: "Estándar de tracking y multi-grade-items"
     estado: Aceptada
-    ruta: decisiones/adr/DEC-0003-estandar-tracking-y-multi-grade-items.md
+    ruta: decisiones/adr/DEC-0-03-estandar-tracking-y-multi-grade-items.md
     fecha: 2026-05-28
     fecha_aceptacion: 2026-05-29
     notas: >-
@@ -36,10 +36,10 @@ decisiones_bloqueantes:
       (parseo content.xml + N grade_update por itemnumber) y tracking vigente vía
       bridge SCORM 1.2 (shim window.API → track.php). xAPI nativo (core_xapi) es
       trabajo futuro en su propio ADR.
-  DEC-0004:
+  DEC-0-04:
     titulo: "Build, empaquetado y CI con matriz Moodle/PHP/DB"
     estado: Aceptada
-    ruta: decisiones/adr/DEC-0004-build-empaquetado-ci-tests.md
+    ruta: decisiones/adr/DEC-0-04-build-empaquetado-ci-tests.md
     fecha: 2026-05-28
     fecha_aceptacion: 2026-05-29
     notas: >-
@@ -48,53 +48,53 @@ decisiones_bloqueantes:
       de cada rama; `version.php` declara [405, 502]. Trampa: no declarar
       dist/static en thirdpartylibs.xml (gitignored → grunt ignorefiles aborta
       install). phpcs/phpdoc/grunt en verde.
-  DEC-0005:
+  DEC-0-05:
     titulo: "Editor embebido eXeLearning heredado de mod_exeweb"
     estado: Superseded
-    ruta: decisiones/adr/DEC-0005-editor-embebido-exelearning.md
+    ruta: decisiones/adr/DEC-0-05-editor-embebido-exelearning.md
     fecha: 2026-05-28
-    supersede: DEC-0009
-    notas: "Superseded por DEC-0009: sólo modo embebido (sin eXeLearning Online)."
-  DEC-0009:
+    supersede: DEC-0-09
+    notas: "Superseded por DEC-0-09: sólo modo embebido (sin eXeLearning Online)."
+  DEC-0-09:
     titulo: "Sólo editor embebido (sin integración eXeLearning Online)"
     estado: Aceptada
-    ruta: decisiones/adr/DEC-0009-solo-editor-embebido.md
+    ruta: decisiones/adr/DEC-0-09-solo-editor-embebido.md
     fecha: 2026-05-28
-    notas: "Supersede DEC-0005. Quita editormode, exeonlinebaseuri, hmackey1. Toggle único + página Manage embedded editor. REVISADO a fondo por DEC-0013 (2026-05-29)."
-  DEC-0013:
+    notas: "Supersede DEC-0-05. Quita editormode, exeonlinebaseuri, hmackey1. Toggle único + página Manage embedded editor. REVISADO a fondo por DEC-0-13 (2026-05-29)."
+  DEC-0-13:
     titulo: "¿Editor eXeLearning Online vs solo embebido?"
     estado: Aceptada
-    ruta: decisiones/adr/DEC-0013-editor-online-vs-embebido.md
+    ruta: decisiones/adr/DEC-0-13-editor-online-vs-embebido.md
     fecha: 2026-05-29
     fecha_aceptacion: 2026-05-29
-    revisa: DEC-0009
+    revisa: DEC-0-09
     notas: >-
-      Aceptada opción A (solo embebido), confirmando DEC-0009 con análisis de
+      Aceptada opción A (solo embebido), confirmando DEC-0-09 con análisis de
       fondo (4 ejes: auth HMAC, flujo, datos, permisos+colab). Vigente-revisable:
       co-edición sólo hipotética; ATE SÍ tiene instancia Online (no cambia hoy la
       decisión); GDPR a consultar (bloquea B/C hasta aclarar). Reapertura futura
       iría por opción D (enlace a Online sin integrar datos), no por HMAC.
-  DEC-0014:
+  DEC-0-14:
     titulo: "Soporte xAPI: requisitos en eXeLearning y plugin"
     estado: Aceptada
-    ruta: decisiones/adr/DEC-0014-soporte-xapi.md
+    ruta: decisiones/adr/DEC-0-14-soporte-xapi.md
     fecha: 2026-05-29
-    relacionados: [DEC-0003, DEC-0007]
+    relacionados: [DEC-0-03, DEC-0-07]
     notas: >-
       eXeLearning NO emite xAPI hoy (verificado: 0 hits xapi/tincan/cmi5 en
       upstream). Para soportarlo haría falta: upstream emita statements por
       iDevice (desbloqueo), + plugin con xapi_bridge.js + handler core_xapi
       (modelo mod_h5pactivity). Recomienda A (SCORM 1.2 vigente) + C (hoja de
       ruta xAPI condicionada a upstream). Aceptada el 2026-05-29.
-  DEC-0015:
+  DEC-0-15:
     titulo: "Justificación de la multicalificación"
     estado: Aceptada
-    ruta: decisiones/adr/DEC-0015-justificacion-multicalificacion.md
+    ruta: decisiones/adr/DEC-0-15-justificacion-multicalificacion.md
     fecha: 2026-05-29
     notas: >-
       Veredicto: la multicalificación merece la pena con matices. La deuda real
       queda acotada al shim SCORM 1.2, content.xml, estabilidad de objectid y
-      MAX=100; xAPI permanece como hoja de ruta (DEC-0014).
+      MAX=100; xAPI permanece como hoja de ruta (DEC-0-14).
   DEC-4-01:
     titulo: "Auditoría de seguridad y corrección multi-agente"
     estado: Aceptada
@@ -119,16 +119,16 @@ decisiones_bloqueantes:
     notas: >-
       Cierra el residuo de RIE-007 recalculando overall desde itemscores; añade
       soporte de coma decimal, límites de entrada y validación de rangos de nota.
-  DEC-0006:
+  DEC-0-06:
     titulo: "Modos preview (test) y grading (calificar)"
     estado: Aceptada
-    ruta: decisiones/adr/DEC-0006-modos-preview-grading.md
+    ruta: decisiones/adr/DEC-0-06-modos-preview-grading.md
     fecha: 2026-05-28
     notas: "Verificado end-to-end: track.php?mode=preview no toca gradebook; switch-to-student cae a grading silenciosamente."
-  DEC-0007:
+  DEC-0-07:
     titulo: "Gestión de intentos: tabla propia + modelo h5pactivity"
     estado: Aceptada
-    ruta: decisiones/adr/DEC-0007-gestion-intentos.md
+    ruta: decisiones/adr/DEC-0-07-gestion-intentos.md
     fecha: 2026-05-28
     fecha_aceptacion: 2026-05-29
     notas: >-
@@ -136,10 +136,10 @@ decisiones_bloqueantes:
       grademethod (highest/average/first/last/lowest) por sessiontoken, report.php,
       privacy provider, backup/restore. Fase 2 también: maxattempt, reviewmode y
       borrar intento (cap mod/exelearning:deleteattempt) con recálculo.
-  DEC-0008:
+  DEC-0-08:
     titulo: "Agregación de grade items y retroalimentación"
     estado: Aceptada
-    ruta: decisiones/adr/DEC-0008-grade-aggregation-y-feedback.md
+    ruta: decisiones/adr/DEC-0-08-grade-aggregation-y-feedback.md
     fecha: 2026-05-28
     fecha_aceptacion: 2026-05-29
     notas: >-
@@ -147,29 +147,29 @@ decisiones_bloqueantes:
       modo both fue eliminado en la revisión de 2026-05-29 para evitar
       doble-contabilidad. Borrar un iDevice quita su columna del libro
       (grade_update deleted). Feedback lesson_status eliminado.
-  DEC-0010:
+  DEC-0-10:
     titulo: "Finalización estilo SCORM (aprobar para completar)"
     estado: Aceptada
-    ruta: decisiones/adr/DEC-0010-finalizacion-estilo-scorm.md
+    ruta: decisiones/adr/DEC-0-10-finalizacion-estilo-scorm.md
     fecha: 2026-05-28
     notas: >-
       gradepass + condición core completionpassgrade. track.php refuerza
       completion->update_state tras grabar nota. Demo con 3 actividades
       (exelearning+scorm+h5p) con pass-to-complete.
-  DEC-0011:
+  DEC-0-11:
     titulo: "Presentación de intentos en la portada"
     estado: Aceptada
-    ruta: decisiones/adr/DEC-0011-presentacion-intentos-portada.md
+    ruta: decisiones/adr/DEC-0-11-presentacion-intentos-portada.md
     fecha: 2026-05-28
     fecha_aceptacion: 2026-05-29
     notas: >-
       No clonar la tabla SCORM (portada con contenido inline, como H5P). Resumen
       de participación al profesor estilo Tarea (participation_summary, respeta
       grupos) + línea método/nota al alumno. Detalle en report.php.
-  DEC-0012:
+  DEC-0-12:
     titulo: "Re-escaneo del libro tras guardar en el editor embebido"
     estado: Aceptada
-    ruta: decisiones/adr/DEC-0012-resync-libro-tras-guardar-editor.md
+    ruta: decisiones/adr/DEC-0-12-resync-libro-tras-guardar-editor.md
     fecha: 2026-05-29
     notas: >-
       editor/save.php re-extrae el paquete + re-sincroniza grade items tras subir
@@ -181,17 +181,17 @@ decisiones_bloqueantes:
     estado: Propuesta
     ruta: decisiones/adr/DEC-17-01-ingesta-dual-scorm-xapi.md
     fecha: 2026-06-04
-    relacionados: [DEC-0014, DEC-0003, DEC-0007, DEC-5-01, DEC-13-07]
+    relacionados: [DEC-0-14, DEC-0-03, DEC-0-07, DEC-5-01, DEC-13-07]
     notas: >-
       PR1 documental. xAPI (exe_xapi.js, upstream #1867) ingiere reutilizando la tubería
       existente (exelearning_attempt plano + objectid→itemnumber), sin tablas
-      cabecera/detalle (respeta DEC-0007). Implementación en TAREA-015.
-  DEC-0063:
+      cabecera/detalle (respeta DEC-0-07). Implementación en TAREA-015.
+  DEC-0-18:
     titulo: "Reglas de validación canónica del endpoint xAPI y política de versión (1.0.3 con tolerancia a 2.0)"
     estado: Propuesta
-    ruta: decisiones/adr/DEC-0063-validacion-canonica-endpoint-xapi-y-version.md
+    ruta: decisiones/adr/DEC-0-18-validacion-canonica-endpoint-xapi-y-version.md
     fecha: 2026-06-17
-    relacionados: [DEC-17-01, DEC-0014, DEC-0003, DEC-5-01, DEC-0007, DEC-13-07]
+    relacionados: [DEC-17-01, DEC-0-14, DEC-0-03, DEC-5-01, DEC-0-07, DEC-13-07]
     notas: >-
       Complementa DEC-17-01 (no supersede). Acepta como diseño vinculante para PR2/TAREA-015
       las reglas de validación canónica del endpoint submit_xapi_statement (rangos score
@@ -206,7 +206,7 @@ decisiones_bloqueantes:
     estado: Propuesta
     ruta: decisiones/adr/DEC-18-01-actualizacion-paquete-y-origen-url.md
     fecha: 2026-06-04
-    relacionados: [DEC-12-01, DEC-13-03, DEC-16-01, DEC-0019]
+    relacionados: [DEC-12-01, DEC-13-03, DEC-16-01, DEC-0-16]
     notas: >-
       P1 (reemplazo): YA soportado por exelearning_update_instance (revision++, re-extrae,
       re-sync, warn_if_grades_stale/DEC-12-01); decisión = confirmarlo + acción visible
@@ -222,7 +222,7 @@ decisiones_bloqueantes:
     estado: Aceptada
     ruta: decisiones/adr/DEC-19-01-categoria-de-calificacion.md
     fecha: 2026-06-04
-    relacionados: [DEC-0008, DEC-13-07, DEC-13-09, FTE-012]
+    relacionados: [DEC-0-08, DEC-13-07, DEC-13-09, FTE-012]
     notas: >-
       Petición usabilidad INTEF #1: faltaba la opción "Categoría" en el formulario.
       Columna nueva exelearning.gradecat + selector estándar (strings core
@@ -236,11 +236,11 @@ decisiones_bloqueantes:
     supersede_by: DEC-25-01
     ruta: decisiones/adr/DEC-19-02-visibilidad-notas-alumno-peritem.md
     fecha: 2026-06-04
-    relacionados: [DEC-0008, DEC-0010, DEC-5-01, DEC-6-01, FTE-012]
+    relacionados: [DEC-0-08, DEC-0-10, DEC-5-01, DEC-6-01, FTE-012]
     notas: >-
       Petición usabilidad INTEF #2: profesor y alumno veían items distintos y al alumno
       "no le aparecían" las notas. Causa: el overall oculto (peritem, para
-      completionpassgrade/DEC-0010) seguía agregando y Moodle vaciaba el total del alumno
+      completionpassgrade/DEC-0-10) seguía agregando y Moodle vaciaba el total del alumno
       (grade_report_user_showtotalsifcontainhidden default 0). Fix (opción A): excluir la
       nota overall de la agregación con grade_grade::set_excluded (exelearning_exclude_overall_grade
       desde track.php y recalculate_user_grades) + migración en upgrade. get_hiding_affected
@@ -282,7 +282,7 @@ decisiones_bloqueantes:
     estado: Aceptada
     ruta: decisiones/adr/DEC-26-03-eventos-selectivos.md
     fecha: 2026-06-09
-    relacionados: [DEC-0007, REPO-001, REPO-002]
+    relacionados: [DEC-0-07, REPO-001, REPO-002]
     notas: >-
       De 1 evento a 4: se añaden attempt_deleted (borrado de intento, TEACHING),
       report_viewed (acceso del docente al informe, TEACHING) y
@@ -325,7 +325,7 @@ decisiones_bloqueantes:
     estado: Aceptada
     ruta: decisiones/adr/DEC-71-01-extraccion-lib-php.md
     fecha: 2026-06-12
-    relacionados: [DEC-67-01, DEC-36-01, DEC-25-01, DEC-0007, DEC-4-01]
+    relacionados: [DEC-67-01, DEC-36-01, DEC-25-01, DEC-0-07, DEC-4-01]
     notas: >-
       Selecciona el hallazgo "descomposición de lib.php" diferido en DEC-67-01. Refactor
       mecánico sin cambio de comportamiento: lib.php 1751 → 956 líneas; los cuerpos de
@@ -344,7 +344,7 @@ decisiones_bloqueantes:
     estado: Aceptada
     ruta: decisiones/adr/DEC-68-01-eventos-ciclo-de-vida-intento.md
     fecha: 2026-06-12
-    relacionados: [DEC-26-03, DEC-0007, DEC-26-02, DEC-34-01]
+    relacionados: [DEC-26-03, DEC-0-07, DEC-26-02, DEC-34-01]
     notas: >-
       Extiende DEC-26-03 (no la supersede): añade 2 eventos de ciclo de vida del alumno,
       uno por intento — attempt_started (creación del intento) y attempt_completed (1ª
@@ -367,7 +367,7 @@ decisiones_bloqueantes:
       nullable + upgrade stage 17 (2026061202), exelearning_get_coursemodule_info,
       add_completion_rules/completion_rule_enabled/data_postprocessing en mod_form, subclase
       classes/completion/custom_completion.php (get_state). Descartado completionscorerequired
-      (solapa con completion-by-grade DEC-25-01/DEC-0010) y completionstatusallscos (multi-SCO
+      (solapa con completion-by-grade DEC-25-01/DEC-0-10) y completionstatusallscos (multi-SCO
       ajeno a eXe). No conflictúa con DEC-67-01 (que rechazó completion per-iDevice): esta regla
       es un estado por módulo. Backup conserva el campo. Riesgos RIE-014/RIE-015.
   DEC-72-01:
@@ -375,7 +375,7 @@ decisiones_bloqueantes:
     estado: Aceptada
     ruta: decisiones/adr/DEC-72-01-auditoria-followup-post-refactor.md
     fecha: 2026-06-12
-    relacionados: [DEC-71-01, DEC-4-01, DEC-0019, DEC-6-01, DEC-13-12]
+    relacionados: [DEC-71-01, DEC-4-01, DEC-0-16, DEC-6-01, DEC-13-12]
     notas: >-
       Seguimiento de la auditoría tras fusionar DEC-68-01, DEC-69-01, DEC-70-01 y DEC-71-01. 8 mejoras: validar entrada .elpx en
       migración exescorm (zip_utils), guard central de extracción servible (package_manager lanza
@@ -427,23 +427,23 @@ tareas:
     relacionados: [AN-002, FTE-006]
   TAREA-005:
     fecha: 2026-05-28
-    titulo: "Cerrar DEC-0003 con matriz cuantificada"
+    titulo: "Cerrar DEC-0-03 con matriz cuantificada"
     estado: Done
     agente: claude-code
     relacionados:
-      - DEC-0003
+      - DEC-0-03
       - analisis/matrices/matriz-estandar-tracking.yaml
       - TAREA-002
       - TAREA-003
       - TAREA-004
-    notas: "Matriz cuantificada el 2026-06-01; DEC-0003 ya estaba aceptada desde 2026-05-29."
+    notas: "Matriz cuantificada el 2026-06-01; DEC-0-03 ya estaba aceptada desde 2026-05-29."
   TAREA-006:
     fecha: 2026-05-28
     titulo: "Redactar ci.yml con matriz moodle-plugin-ci"
     estado: Done
     agente: claude-code
     relacionados:
-      - DEC-0004
+      - DEC-0-04
       - AN-006
       - REPO-001
       - REPO-002
@@ -453,12 +453,12 @@ tareas:
     estado: Done
     agente: claude-code
     relacionados:
-      - DEC-0015
-      - DEC-0003
-      - DEC-0007
-      - DEC-0008
-      - DEC-0014
-    notas: "Cerrada con DEC-0015."
+      - DEC-0-15
+      - DEC-0-03
+      - DEC-0-07
+      - DEC-0-08
+      - DEC-0-14
+    notas: "Cerrada con DEC-0-15."
   TAREA-008:
     fecha: 2026-06-01
     titulo: "RIE-010: aplicar guard de origen al puente legacy postMessage"
@@ -476,7 +476,7 @@ tareas:
     agente: claude-code
     relacionados:
       - RIE-011
-      - DEC-0007
+      - DEC-0-07
       - DEC-6-01
     notas: >-
       Cerrada ACEPTANDO el riesgo (DEC-6-01, revisión 2026-06-01). Comparado con core:
@@ -501,10 +501,10 @@ tareas:
     estado: Done
     agente: codex
     relacionados:
-      - DEC-0007
-      - DEC-0008
-      - DEC-0010
-      - DEC-0011
+      - DEC-0-07
+      - DEC-0-08
+      - DEC-0-10
+      - DEC-0-11
     notas: "E2E real con Docker + Google Chrome: completado tras aprobar, grademodel peritem/overall, libro, maxattempt, reviewmode y puente iframe/SCORM. Evidencia en research/evidencias/2026-06-01-tarea-011-e2e/."
   TAREA-012:
     fecha: 2026-06-01
@@ -514,10 +514,10 @@ tareas:
     relacionados:
       - RIE-001
       - AN-008
-      - DEC-0003
-      - DEC-0019
+      - DEC-0-03
+      - DEC-0-16
     notas: >-
-      Investigación completada el 2026-06-02 (DEC-0019). Comparado con core: mod_scorm
+      Investigación completada el 2026-06-02 (DEC-0-16). Comparado con core: mod_scorm
       embebe HTML no confiable SIN sandbox (más débil); core_h5p tampoco usa sandbox pero
       su contenido son librerías curadas por el admin (otro modelo de amenaza). mod_exelearning
       ya es el mejor aislado de los tres (sandbox parcial). Hechos verificados: core NO ofrece
@@ -525,7 +525,7 @@ tareas:
       same-origin (3 dependencias: contentDocument objectid DEC-5-01, window.parent.API,
       teacher-mode hider) y CSP/Permissions-Policy SÍ se pueden emitir desde exelearning_pluginfile.
       Decisión (erseco): documentar pros/contras + roadmap, NO implementar ahora. Roadmap en
-      DEC-0019: Tier 1 (M2 Permissions-Policy + M3 CSP estricto-con-toggle + M1) → Tier 2
+      DEC-0-16: Tier 1 (M2 Permissions-Policy + M3 CSP estricto-con-toggle + M1) → Tier 2
       (M6 postMessage bridge → M7 origen opaco/subdominio).
   TAREA-013:
     fecha: 2026-06-02
@@ -534,7 +534,7 @@ tareas:
     agente: pendiente
     relacionados:
       - RIE-001
-      - DEC-0019
+      - DEC-0-16
       - AN-008
     notas: >-
       Investigar técnicas de sandboxing de JS en el cliente como alternativa/complemento al
@@ -543,7 +543,7 @@ tareas:
       AMP), intérprete JS en WASM (QuickJS estilo plugins de Figma) y librerías tipo sandboxjs
       (Proxy sobre globalThis). Evaluar viabilidad real con el motor eXeLearning v4 (asume DOM
       real + jQuery + pipwerks → un realm/worker sin DOM probablemente no lo ejecuta sin un shim
-      costoso) y coste/beneficio frente a M6+M7. Documentado como M8 en DEC-0019.
+      costoso) y coste/beneficio frente a M6+M7. Documentado como M8 en DEC-0-16.
   TAREA-014:
     fecha: 2026-06-02
     titulo: "RIE-012: observar falsos positivos del contenthash al editar contenido calificable"
@@ -552,7 +552,7 @@ tareas:
     relacionados:
       - RIE-012
       - DEC-12-01
-      - DEC-0012
+      - DEC-0-12
       - FTE-010
     notas: >-
       DEC-12-01 implementa snapshot + aviso estilo SCORM al editar un .elpx calificable
@@ -568,8 +568,8 @@ tareas:
     agente: pendiente
     relacionados:
       - DEC-17-01
-      - DEC-0014
-      - DEC-0007
+      - DEC-0-14
+      - DEC-0-07
       - DEC-5-01
       - DEC-13-07
       - FTE-011
@@ -589,7 +589,7 @@ tareas:
       - DEC-12-01
       - DEC-13-03
       - DEC-16-01
-      - DEC-0019
+      - DEC-0-16
     notas: >-
       PR de implementación de DEC-18-01. Fase 1: reemplazo visible ('Reemplazar paquete')
       + origen URL estilo mod_scorm (selector packagesource + columna reference +
@@ -604,11 +604,11 @@ riesgos:
     estado: aceptado
     aceptacion: >-
       ACEPTADO 2026-06-17 (erseco): riesgo media/baja aceptado con la mitigación v1 (sandbox del iframe).
-      El hardening Tier 1/2 (DEC-0019) lo implementa la rama feature/secure-iframe-scorm-bridge
+      El hardening Tier 1/2 (DEC-0-16) lo implementa la rama feature/secure-iframe-scorm-bridge
       (PR #80, con sus propias decisiones aún no fusionadas), NO como bloqueante. TAREA-013 (sandboxing JS) queda cubierta ahí; no se crea ficha aparte.
     mitigacion: >-
       v1 VIGENTE: sandbox del iframe sin allow-top-navigation / allow-modals (AN-008).
-      Investigación TAREA-012 completada en DEC-0019 (2026-06-02): core NO aísla (mod_scorm
+      Investigación TAREA-012 completada en DEC-0-16 (2026-06-02): core NO aísla (mod_scorm
       sin sandbox; core_h5p curado), mod_exelearning ya es el mejor aislado de los tres, y
       no hay origen separado en core (requiere infra). Roadmap documentado de hardening
       (NO implementado por decisión): Tier 1 = M2 Permissions-Policy (limpio) + M3 CSP de red
@@ -618,9 +618,9 @@ riesgos:
       de M6. v2 (subdominio) sigue requiriendo infra fuera de core.
     relacionados:
       - AN-008
-      - DEC-0003
-      - DEC-0004
-      - DEC-0019
+      - DEC-0-03
+      - DEC-0-04
+      - DEC-0-16
       - TAREA-012
   RIE-007:
     titulo: "suspend_data N (índice local de página) tratado como itemnumber → mis-ruteo y colisión de notas"
@@ -638,7 +638,7 @@ riesgos:
       - DEC-4-01
       - DEC-5-01
       - DEC-6-01
-      - DEC-0008
+      - DEC-0-08
   RIE-008:
     titulo: "Sin verificación de integridad (checksum/firma) del ZIP del editor descargado"
     severidad: media
@@ -679,7 +679,7 @@ riesgos:
       concurrentes; el cierre robusto sería un lock \core\lock confinado a !sessionknown,
       dejado como mitigación futura opcional. Riesgo baja/baja.
     relacionados:
-      - DEC-0007
+      - DEC-0-07
       - DEC-6-01
       - TAREA-009
   RIE-012:
@@ -701,7 +701,7 @@ riesgos:
       TAREA-014.
     relacionados:
       - DEC-12-01
-      - DEC-0012
+      - DEC-0-12
       - FTE-010
       - TAREA-014
   RIE-013:
@@ -711,14 +711,14 @@ riesgos:
     estado: aceptado
     mitigacion: >-
       mod_exelearning (actividad) y contenttype_exelearning (banco de contenidos, REPO-006) son
-      plugins separados por necesidad arquitectónica (DEC-0036, FTE-013) y replican la misma
+      plugins separados por necesidad arquitectónica (DEC-0-17, FTE-013) y replican la misma
       extracción de ZIP .elpx y la misma política sandbox del iframe sin compartir código
       (mirroring intencional). Riesgo de deriva si una corrige un fallo de seguridad/render y la
       otra no. ACEPTADO: duplicación menor y acotada; mitigación futura OPCIONAL = extraer una
       librería .elpx común (parser/extracción/sandbox) consumida por ambos plugins (seguimiento
-      D3a de DEC-0036). No se aborda ahora por no acoplar ciclos de release (STABLE vs ALPHA).
+      D3a de DEC-0-17). No se aborda ahora por no acoplar ciclos de release (STABLE vs ALPHA).
     relacionados:
-      - DEC-0036
+      - DEC-0-17
       - REPO-006
       - FTE-013
   RIE-017:
@@ -743,14 +743,14 @@ riesgos:
     probabilidad: media
     estado: aceptado
     mitigacion: >-
-      Un commit con nota pero sin cmi.core.lesson_status normaliza a 'completed' (DEC-0007),
+      Un commit con nota pero sin cmi.core.lesson_status normaliza a 'completed' (DEC-0-07),
       así que attempt_completed se emitiría en ese primer commit. ACEPTADO: sigue siendo una
       vez por intento (el siguiente commit ve el estado previo ya terminal y no re-emite), sin
       flood; el flujo incompleto→completo real se cubre por la transición de estado.
     relacionados:
       - DEC-68-01
       - DEC-26-03
-      - DEC-0007
+      - DEC-0-07
   RIE-014:
     titulo: "Cambio del estado requerido de completion con intentos ya registrados"
     severidad: baja

@@ -23,7 +23,7 @@ namespace mod_exelearning\local\xapi;
  * `e3b1bd13`) posts xAPI 1.0.3 statements to the host. This class turns one decoded
  * statement into the same `itemscores` shape the SCORM shim produces, so the existing
  * scoring pipeline can ingest it unchanged (DEC-17-01). It performs the canonical,
- * citable validation fixed in DEC-0063 *before* any grading happens, and it never
+ * citable validation fixed in DEC-0-18 *before* any grading happens, and it never
  * trusts the client: the actor, authority, stored and timestamp are ignored by the
  * caller; this class only reads `verb`, `object.id`, `result.score` and the stable
  * `idevice-id` extension.
@@ -53,14 +53,14 @@ class statement_normalizer {
      *
      * Outcomes:
      *  - reject (`ok=false`, `error`): the statement is malformed or out of the
-     *    eXeLearning domain (DEC-0063): non-UUID id, a null outside `extensions`,
+     *    eXeLearning domain (DEC-0-18): non-UUID id, a null outside `extensions`,
      *    `result.score.scaled` ∉ [0,1], `raw` ∉ [min,max], or an `answered` with no
      *    resolvable iDevice id.
      *  - ignore (`ok=true`, `ignored=true`): a verb outside the whitelist (per the
      *    spec, an unknown verb is ignored, not an error).
      *  - accept: a normalised map the {@see ingestor} can act on.
      *
-     * Version is validated permissively (DEC-0063 §8): a `version` is never a reason
+     * Version is validated permissively (DEC-0-18 §8): a `version` is never a reason
      * to reject (the consumed fields `object.id` and `result.score` are identical in
      * xAPI 1.0.3 and 2.0.0).
      *
@@ -74,12 +74,12 @@ class statement_normalizer {
      */
     public static function normalize(array $statement): array {
         // A null anywhere outside an `extensions` subtree marks a malformed/foreign
-        // statement (the emitter omits absent keys, never nulls them) — DEC-0063 §5.
+        // statement (the emitter omits absent keys, never nulls them) — DEC-0-18 §5.
         if (self::has_null_outside_extensions($statement)) {
             return ['ok' => false, 'error' => 'invalidstatement'];
         }
 
-        // Statement id must be a UUID so it can key idempotency (DEC-0063 §5/§7).
+        // Statement id must be a UUID so it can key idempotency (DEC-0-18 §5/§7).
         $statementid = isset($statement['id']) ? (string) $statement['id'] : '';
         if (!self::is_uuid($statementid)) {
             return ['ok' => false, 'error' => 'invalidstatementid'];
@@ -186,7 +186,7 @@ class statement_normalizer {
      * Validates result.score and returns it, or null when out of the accepted domain.
      *
      * Rejects `scaled` ∉ [0,1] (the eXeLearning domain; the spec's wider [-1,1] is a
-     * superset, DEC-0063 §1) and `raw` ∉ [min,max] when both bounds are present.
+     * superset, DEC-0-18 §1) and `raw` ∉ [min,max] when both bounds are present.
      *
      * @param array $statement
      * @return array|null The score sub-array, or null to signal rejection.
@@ -275,7 +275,7 @@ class statement_normalizer {
     /**
      * Recursively reports whether any null value exists outside an `extensions` subtree.
      *
-     * xAPI permits null only inside `extensions` (DEC-0063 §5, FTE-015 §4.4); a null
+     * xAPI permits null only inside `extensions` (DEC-0-18 §5, FTE-015 §4.4); a null
      * anywhere else is a syntax error and the statement is rejected.
      *
      * @param mixed $data Decoded JSON node.

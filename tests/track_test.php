@@ -417,7 +417,7 @@ final class track_test extends advanced_testcase {
     }
 
     /**
-     * Preview mode acknowledges the score without touching the gradebook (DEC-0006).
+     * Preview mode acknowledges the score without touching the gradebook (DEC-0-06).
      */
     public function test_ingest_preview_does_not_grade(): void {
         global $DB;

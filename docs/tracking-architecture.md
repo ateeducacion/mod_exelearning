@@ -29,7 +29,7 @@ internal pipeline**. They are two ingestion *sources*, not two parallel models.
 The "common internal model" the dual layer needs **already exists** and is reused as-is:
 
 - `exelearning_attempt` — **flat** attempt table, axis `itemnumber` 0..N + `sessiontoken`
-  (DEC-0007; the original header+detail design was evaluated and rejected — DEC-0007:176-186).
+  (DEC-0-07; the original header+detail design was evaluated and rejected — DEC-0-07:176-186).
 - `exelearning_grade_item` — stable `objectid → itemnumber` map (DEC-5-01).
 - `classes/local/track.php` + `attempts.php` — routing, overall recompute (DEC-6-01),
   attempt recording, `grademethod` aggregation, `grade_update()`. The orchestration is the
@@ -52,7 +52,7 @@ flowchart TD
   SCORM -->|"LMSSetValue → window.API (legacy pkgs only; INERT stub for xAPI pkgs)"| ITEMS
   XAPI -->|"postMessage {type:'exe-xapi-statement', statement}"| LIS["js/xapi_listener.js (inline IIFE)"]
   LIS -->|"validate event.origin; POST sesskey + cmid + registration"| EP["xapi_track.php (plain AJAX, like track.php)"]
-  EP -->|"statement_normalizer (validate, DEC-0063) → ingestor; ignore actor → \$USER"| ITEMS
+  EP -->|"statement_normalizer (validate, DEC-0-18) → ingestor; ignore actor → \$USER"| ITEMS
 
   ITEMS["itemscores { objectid: { scorepct, weighted, title } }"] --> TR["track::apply_item_scores (+ overall from package statement)"]
   TR --> AT["attempts::record_item / aggregate_scaled  (exelearning_attempt, flat)"]
@@ -176,14 +176,14 @@ per package — xAPI when the package emits it, SCORM otherwise (DEC-85-01).
 | Coupling to the producer | needs pipwerks injected + the `form`/`scrambled-list` save-guard patch (DEC-13-11) | none — the emitter is always-on in every export | **xAPI** — fewer serve-time mutations |
 | Standard status | legacy (SCORM 1.2, 2004-era) | current (xAPI 1.0.3, forward-compatible with 2.0) | **xAPI** — modern, actively maintained |
 | LMS / tooling ubiquity | near-universal, decades of support | modern standard, growing adoption | **SCORM** — widest compatibility |
-| Maturity in this plugin | productive, the default since DEC-0003 | new in this layer | **SCORM** — battle-tested |
+| Maturity in this plugin | productive, the default since DEC-0-03 | new in this layer | **SCORM** — battle-tested |
 | Analytics / LRS readiness | none (data stays as Moodle grades) | statements are LRS-shaped (future `core_xapi` handler, deferred) | **xAPI** — a path to learning analytics |
 
 **In short**
 
 - **SCORM 1.2 is better at** ubiquity and maturity, and carries per-iDevice weights inline so
   the weighted overall needs no separate signal. It stays as the compatibility path for
-  packages that predate the xAPI emitter (DEC-0003).
+  packages that predate the xAPI emitter (DEC-0-03).
 - **xAPI is better at** structured per-interaction granularity, dropping the fragile
   `suspend_data` regex and the pipwerks dependency, idempotent auditing, portability
   (mobile/offline/LRS), and being the modern, future-proof standard. It is the primary
@@ -194,7 +194,7 @@ per package — xAPI when the package emits it, SCORM otherwise (DEC-85-01).
 In scope: consuming `exe_xapi.js` statements via `postMessage` and grading through the
 existing pipeline. **Out of scope** (documented as such, consistent with the emitter):
 **cmi5** (FTE-004/009) and any dependency on an **external LRS**. SCORM 1.2 remains as the
-compatibility path (DEC-0003).
+compatibility path (DEC-0-03).
 
 **This is not a full Moodle xAPI integration.** `xapi_track.php` is a *custom grading endpoint*
 that ignores the statement actor and reuses the SCORM grade pipeline — it is deliberately **not**

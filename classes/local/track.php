@@ -53,7 +53,7 @@ class track {
      * @param \stdClass $cm        The course_module record (for completion).
      * @param int       $userid    The grading user.
      * @param array     $payload   Decoded payload: {cmi:{...}, session?:string, itemscores?:array}.
-     * @param bool      $ispreview When true, acknowledge the score without grading (DEC-0006).
+     * @param bool      $ispreview When true, acknowledge the score without grading (DEC-0-06).
      * @return array Result map: always has 'ok'. May add noop|mode|error|attempt|rawscore|status|peritem.
      */
     public static function ingest(
@@ -69,7 +69,7 @@ class track {
         require_once($CFG->libdir . '/completionlib.php');
 
         $cmi = (isset($payload['cmi']) && is_array($payload['cmi'])) ? $payload['cmi'] : [];
-        // Page-load session token (DEC-0007): groups auto-commits into one attempt.
+        // Page-load session token (DEC-0-07): groups auto-commits into one attempt.
         $sessiontoken = isset($payload['session'])
                 ? substr(clean_param((string) $payload['session'], PARAM_ALPHANUMEXT), 0, 255) : '';
         $rawscore = $cmi['cmi.core.score.raw'] ?? $cmi['cmi.score.raw'] ?? null;
@@ -92,7 +92,7 @@ class track {
         }
         $score = max($grademin, min($grademax, $score));
 
-        // Preview mode: do NOT update the gradebook; only acknowledge (DEC-0006).
+        // Preview mode: do NOT update the gradebook; only acknowledge (DEC-0-06).
         if ($ispreview) {
             return ['ok' => true, 'mode' => 'preview', 'rawscore' => $score, 'status' => $status];
         }
@@ -174,7 +174,7 @@ class track {
                 'itemnumber'    => 0,
             ]) : false;
 
-            // Attempt limit (DEC-0007 phase 2): a fresh session over the cap is rejected.
+            // Attempt limit (DEC-0-07 phase 2): a fresh session over the cap is rejected.
             $maxattempt = (int) ($exe->maxattempt ?? 0);
             if ($maxattempt > 0) {
                 $sessionknown = ($sessiontoken !== '') && $DB->record_exists(
@@ -655,7 +655,7 @@ class track {
         // Gradebook grade = aggregation of attempts according to grademethod.
         $scaled = attempts::aggregate_scaled($exe->id, $userid, $itemnumber, $ctx['grademethod']);
         $finalitem = ($scaled === null) ? $rawitem : ($scaled * $grademax);
-        // In "overall only" mode per-iDevice columns are not published (DEC-0008),
+        // In "overall only" mode per-iDevice columns are not published (DEC-0-08),
         // but the attempt IS recorded for the report.
         if ($ctx['grademodel'] !== EXELEARNING_GRADEMODEL_OVERALL) {
             grade_update(

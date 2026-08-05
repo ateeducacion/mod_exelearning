@@ -1,24 +1,22 @@
 ---
 id: DEC-78-01
-titulo: "Build de release reproducible: fijar el editor al tag homónimo (semver-match), no a la rama main"
-estado: Aceptada
-fecha: 2026-06-13
+title: "Build de release reproducible: fijar el editor al tag homónimo (semver-match), no a la rama main"
+status: Accepted
+date: 2026-06-13
 tracking_issue: 78
 legacy_id: DEC-0058
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-002
   - REPO-001
   - REPO-005
-relacionados:
-  - DEC-72-01
-  - DEC-13-08
-  - DEC-0002
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-72-01, DEC-13-08, DEC-0-02]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-78-01: Build de release reproducible: fijar el editor al tag homónimo (semver-match), no a la rama main
@@ -93,7 +91,7 @@ deliberadas.
 
 - Publicar una release con un esquema de tag propio (no homólogo del editor) rompería el build de
   release. Mitigación: invariante documentado + el lockstep del ecosistema (la 1ª release es `v4.0.1`).
-- El editor no se vendora ([[DEC-0002]]): se clona en build. El pin por tag no cambia esa política,
+- El editor no se vendora ([[DEC-0-02]]): se clona en build. El pin por tag no cambia esa política,
   solo la hace reproducible (antes, `main` la hacía no determinista).
 
 ## Validación

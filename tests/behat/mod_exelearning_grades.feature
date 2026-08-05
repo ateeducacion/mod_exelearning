@@ -19,7 +19,7 @@ Feature: mod_exelearning grades reach the course gradebook
 
   # Adapted from mod/h5pactivity h5pactivity_grade_settings.feature (its
   # "user-grades table" gradebook assertion). The default grade model is per-iDevice
-  # (DEC-0008), so apply_item_scores() publishes one grade_update per gradable
+  # (DEC-0-08), so apply_item_scores() publishes one grade_update per gradable
   # iDevice; seeding both iDevices of the multi-page fixture at the same value makes
   # that value appear in the grader report regardless of column order. This is the
   # only behat case that crosses from the attempts report into Moodle's gradebook.

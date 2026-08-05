@@ -15,7 +15,7 @@ pasos:
 relacionados:
   - RIE-012
   - DEC-12-01
-  - DEC-0012
+  - DEC-0-12
   - FTE-010
 criterios_aceptacion:
   - "Editar las opciones de una tarea dispara el aviso; re-guardar sin cambios no lo dispara."

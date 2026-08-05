@@ -1,25 +1,22 @@
 ---
 id: DEC-25-01
-titulo: "Sin columna overall en peritem: el libro muestra solo las columnas por-iDevice (modelo workshop para la finalización)"
-estado: Aceptada
-fecha: 2026-06-08
+title: "Sin columna overall en peritem: el libro muestra solo las columnas por-iDevice (modelo workshop para la finalización)"
+status: Accepted
+date: 2026-06-08
 tracking_issue: 25
 legacy_id: DEC-0038
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
   - FTE-014
-relacionados:
-  - DEC-0008
-  - DEC-0010
-  - DEC-19-01
-  - DEC-19-02
-supersede: DEC-19-02
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-0-08, DEC-0-10, DEC-19-01, DEC-19-02]
+supersedes: DEC-19-02
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-25-01: Sin columna overall en peritem: el libro muestra solo las columnas por-iDevice (modelo workshop para la finalización)
@@ -31,10 +28,10 @@ evaluables**, el libro de calificaciones **confunde al docente**: junto a las
 columnas por-iDevice aparece una columna **«overall»** (la nota agregada) que **no se
 usa** y se percibe como «otra nota» sin sentido.
 
-Estado del código (DEC-0008, DEC-19-02): en el modelo `peritem` (por defecto),
+Estado del código (DEC-0-08, DEC-19-02): en el modelo `peritem` (por defecto),
 `exelearning_sync_grade_items()` crea el item overall `itemnumber=0` **oculto**
 (`hidden=1`) y lo mantiene **solo** para que la finalización por nota del core
-(`completionpassgrade`, DEC-0010) tenga un `grade_item` con `gradepass`. Pero
+(`completionpassgrade`, DEC-0-10) tenga un `grade_item` con `gradepass`. Pero
 `hidden=1` **no quita la columna**: el profesor (con `moodle/grade:viewhidden`) la
 sigue viendo en gris. DEC-19-02 ya lo dejó documentado como coste asumido en sus
 consecuencias negativas («la igualdad total de columnas sería la opción B, no
@@ -43,7 +40,7 @@ elegida»). Esto es justo lo que ahora se reporta.
 ## Problema
 
 ¿Cómo eliminar la columna overall que confunde al docente en `peritem`, sin perder la
-finalización por nota estilo SCORM (DEC-0010), que hoy depende de ese item oculto?
+finalización por nota estilo SCORM (DEC-0-10), que hoy depende de ese item oculto?
 
 ## Hallazgo
 
@@ -113,7 +110,7 @@ la causa de raíz** y hace innecesario ese parche.
 - **D3.** Se **elimina** `exelearning_exclude_overall_grade()` (DEC-19-02): sin overall
   oculto no hay nada que excluir. Migración en `db/upgrade.php` stage `2026060800`:
   borra el overall heredado de las instancias `peritem` existentes.
-- **D4.** La finalización «estilo SCORM = aprobar» (DEC-0010) pasa a vivir en el modo
+- **D4.** La finalización «estilo SCORM = aprobar» (DEC-0-10) pasa a vivir en el modo
   OVERALL (overall visible con `gradepass`) o sobre un iDevice concreto vía
   `completiongradeitemnumber`. La demo (`blueprint.json`, `scripts/setup_demo.php`)
   **se mantiene en `peritem`** (para mostrar las dos columnas por-iDevice, que es lo
@@ -138,7 +135,7 @@ la causa de raíz** y hace innecesario ese parche.
   hay que usar el modo OVERALL o apuntar la finalización a un iDevice (que carece de
   `gradepass` propio, así que en `peritem` la demo usa `completionusegrade` —«exigir
   nota»— sobre el iDevice 1, no `completionpassgrade`). Revisa el combo
-  `peritem + completionpassgrade-sobre-overall` validado en DEC-0010/TAREA-011.
+  `peritem + completionpassgrade-sobre-overall` validado en DEC-0-10/TAREA-011.
 - Una actividad `peritem` sin iDevices calificables queda sin grade items (antes tenía
   el overall oculto). Es coherente con «no hay nada que calificar».
 

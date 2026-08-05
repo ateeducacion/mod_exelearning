@@ -1,23 +1,21 @@
 ---
 id: DEC-108-01
-titulo: "Interruptor global del editor embebido: modo reproductor puro vía ajuste de sitio"
-estado: Aceptada
-fecha: 2026-07-24
+title: "Interruptor global del editor embebido: modo reproductor puro vía ajuste de sitio"
+status: Accepted
+date: 2026-07-24
 tracking_issue: 108
 legacy_id: DEC-0066
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-002
   - REPO-004
-relacionados:
-  - DEC-0009
-  - DEC-106-01
-  - DEC-13-03
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-fable-5
+related:
+  adrs: [DEC-0-09, DEC-106-01, DEC-13-03]
+ai_assistance:
+  tool: claude-code
+  model: claude-fable-5
 ---
 
 # DEC-108-01: Interruptor global del editor embebido: modo reproductor puro vía ajuste de sitio

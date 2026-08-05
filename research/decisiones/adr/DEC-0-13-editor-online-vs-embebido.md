@@ -1,41 +1,41 @@
 ---
-id: DEC-0013
-titulo: "¿Integrar el editor eXeLearning Online o quedarnos solo con el embebido?"
-estado: Aceptada
-fecha: 2026-05-29
-fecha_aceptacion: 2026-05-29
-agentes:
+id: DEC-0-13
+tracking_issue: 0
+legacy_id: DEC-0013
+title: "¿Integrar el editor eXeLearning Online o quedarnos solo con el embebido?"
+status: Accepted
+date: 2026-05-29
+accepted_date: 2026-05-29
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-002
   - REPO-005
-experimentos: []
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
-relacionados:
-  - DEC-0005
-  - DEC-0009
-  - DEC-0012
-revisa: DEC-0009
+experiments: []
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
+related:
+  adrs: [DEC-0-05, DEC-0-09, DEC-0-12]
+reviews: DEC-0-09
 ---
 
-# DEC-0013: ¿Integrar el editor eXeLearning Online o quedarnos solo con el embebido?
+# DEC-0-13: ¿Integrar el editor eXeLearning Online o quedarnos solo con el embebido?
 
 ## Contexto
 
-`DEC-0009` (Aceptada) decidió **solo editor embebido**, descartando la
+`DEC-0-09` (Aceptada) decidió **solo editor embebido**, descartando la
 integración con **eXeLearning Online**. Esa decisión se tomó sobre todo por
 **simplicidad de UX de administración** (evitar 4 settings interrelacionados:
 toggle + select de modo + URL + clave HMAC) y porque el embebido ya cubre el
 flujo de autoría básico.
 
 El mantenedor reabre la cuestión para **sopesarla a fondo**, porque la decisión
-de DEC-0009 no analizó los problemas de fondo del modo Online, sino la UX. Antes
+de DEC-0-09 no analizó los problemas de fondo del modo Online, sino la UX. Antes
 de cerrar definitivamente conviene tener documentados los pros y contras reales
 de cada arquitectura para poder decidir con criterio (este ADR **revisa**
-DEC-0009; no lo deroga todavía).
+DEC-0-09; no lo deroga todavía).
 
 Recordatorio de qué es cada cosa:
 
@@ -43,7 +43,7 @@ Recordatorio de qué es cada cosa:
   por el propio Moodle (`editor/index.php` + `editor/static.php`). Edita el
   `.elpx` **dentro de un iframe same-origin**, importa el paquete almacenado en
   la filearea de Moodle y, al guardar, **re-sube el `.elpx` a Moodle**
-  (`editor/save.php`) con re-extracción + re-sync del libro (DEC-0012). Todo el
+  (`editor/save.php`) con re-extracción + re-sync del libro (DEC-0-12). Todo el
   estado (ficheros, permisos, versiones) vive **en Moodle**.
 - **eXeLearning Online**: instancia externa del servicio eXeLearning (Symfony +
   almacenamiento propio + cuentas propias) a la que Moodle redirige con un token
@@ -53,7 +53,7 @@ Recordatorio de qué es cada cosa:
 
 ## Problema
 
-¿Mantenemos solo el editor embebido (statu quo DEC-0009) o reintroducimos —como
+¿Mantenemos solo el editor embebido (statu quo DEC-0-09) o reintroducimos —como
 opción adicional configurable— la integración con eXeLearning Online? ¿Qué
 arquitectura sirve mejor al caso de uso de `mod_exelearning` (autoría de
 recursos `.elpx` calificables dentro de un curso Moodle) sin abrir agujeros de
@@ -93,13 +93,13 @@ como ejes de evaluación, más coste/operación y funcionalidad:
 
 ## Opciones consideradas
 
-### A. Solo editor embebido (statu quo, DEC-0009)
+### A. Solo editor embebido (statu quo, DEC-0-09)
 
 | ✔ Pros | ✘ Contras |
 |---|---|
 | **Same-origin**: sin CORS, sin token entre dominios, sin clave HMAC que gestionar. | Sin co-edición en tiempo real (un autor a la vez por revisión). |
 | **Una sola fuente de verdad**: el `.elpx` y su contenido viven en la filearea de Moodle; permisos y versionado los da Moodle. | El editor estático se sirve desde Moodle (bundle ~178 MB en `dist/static/` o instalado en moodledata); peso de despliegue. |
-| Permisos triviales: edita quien tiene `moodle/course:manageactivities`; guardar = re-subir a Moodle (DEC-0012). | Versión del editor acoplada a la que el admin instale (mitigado: descarga desde GitHub Releases). |
+| Permisos triviales: edita quien tiene `moodle/course:manageactivities`; guardar = re-subir a Moodle (DEC-0-12). | Versión del editor acoplada a la que el admin instale (mitigado: descarga desde GitHub Releases). |
 | Privacidad limpia: borrar la actividad borra los datos; nada vive fuera. | Funcionalidades dependientes de servicios Online (p.ej. plantillas/temas remotos) no disponibles. |
 | Ya **implementado, verificado y en CI verde**. Cero infraestructura externa. | |
 | Funciona en Moodle Playground (WASM) y en cualquier despliegue sin red saliente. | |
@@ -115,11 +115,11 @@ como ejes de evaluación, más coste/operación y funcionalidad:
 | | Privacidad/GDPR: datos del alumno/autor fuera de Moodle, ciclo de vida no controlado por Moodle. |
 | | No funciona en Playground ni en despliegues aislados. |
 
-### C. Ambos, configurable (lo que tenía mod_exeweb / DEC-0005)
+### C. Ambos, configurable (lo que tenía mod_exeweb / DEC-0-05)
 
 | ✔ Pros | ✘ Contras |
 |---|---|
-| Flexibilidad: cada despliegue elige según si tiene instancia Online. | **Doble ruta de código y doble testing** (la razón principal por la que DEC-0009 lo descartó). |
+| Flexibilidad: cada despliegue elige según si tiene instancia Online. | **Doble ruta de código y doble testing** (la razón principal por la que DEC-0-09 lo descartó). |
 | Permite a organizaciones con Online ya montado reutilizarlo. | 4 settings interrelacionados (modo + URL + HMAC + expiración) → UX de admin compleja y propensa a errores. |
 | | Hereda TODOS los contras del eje 1-4 del modo Online, solo que "opcionales". |
 | | Mantener el puente HMAC + callbacks al día con cambios de la API de Online (REPO-005). |
@@ -148,7 +148,7 @@ vuelta automáticamente). El autor que quiera co-editar exporta/importa a mano.
 
 ## Recomendación (a validar por erseco)
 
-**Mantener A (solo embebido) como decisión vigente**, confirmando DEC-0009 ahora
+**Mantener A (solo embebido) como decisión vigente**, confirmando DEC-0-09 ahora
 con el análisis de fondo que faltaba; y **considerar D** si en algún momento se
 pide co-edición, por ser la única forma de ofrecer Online sin importar sus
 problemas de autenticación, sincronización y gobernanza de datos.
@@ -166,7 +166,7 @@ Online —co-edición en tiempo real— no es un requisito actual de
 
 ## Consecuencias
 
-Si se acepta la recomendación (A, confirmando DEC-0009):
+Si se acepta la recomendación (A, confirmando DEC-0-09):
 - No se reintroduce `editormode`/`exeonlinebaseuri`/`hmackey1` (se mantiene la
   restricción inmutable del proyecto).
 - Se cierra formalmente el debate Online con análisis documentado (no solo UX).
@@ -191,7 +191,7 @@ Si se decidiera reintroducir Online (C):
 
 ## Decisión (2026-05-29, erseco)
 
-**Aceptada la opción A: solo editor embebido**, confirmando DEC-0009 ahora con el
+**Aceptada la opción A: solo editor embebido**, confirmando DEC-0-09 ahora con el
 análisis de fondo de los cuatro ejes (no solo la UX de admin). Es una decisión
 **vigente y revisable**, no un portazo definitivo, por los matices recogidos en
 las respuestas del mantenedor:
@@ -216,7 +216,7 @@ es D (no C), y quedaría condicionado a (a) un requisito real de co-edición y
 
 ## Seguimiento
 
-- DEC-0009 queda **confirmado** por este análisis de fondo (se anota en su ADR).
+- DEC-0-09 queda **confirmado** por este análisis de fondo (se anota en su ADR).
 - Restricción inmutable intacta: no se reintroducen `editormode` /
   `exeonlinebaseuri` / `hmackey1`.
 - Si en el futuro se pide co-edición Y GDPR lo permite → abrir ADR de la opción

@@ -1,20 +1,20 @@
 ---
 id: DEC-70-01
-titulo: "Integración con la búsqueda global de Moodle (área de búsqueda + indexado de ficheros)"
-estado: Aceptada
-fecha: 2026-06-12
+title: "Integración con la búsqueda global de Moodle (área de búsqueda + indexado de ficheros)"
+status: Accepted
+date: 2026-06-12
 tracking_issue: 70
 legacy_id: DEC-0053
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
-relacionados:
-  - DEC-67-01
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-67-01]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-70-01: Integración con la búsqueda global de Moodle (área de búsqueda + indexado de ficheros)

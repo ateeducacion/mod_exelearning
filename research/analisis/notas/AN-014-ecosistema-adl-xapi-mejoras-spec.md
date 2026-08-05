@@ -10,12 +10,12 @@ fuentes:
   - FTE-017
   - FTE-011
 relacionados:
-  - DEC-0063
+  - DEC-0-18
   - DEC-17-01
-  - DEC-0003
-  - DEC-0014
-  - DEC-0015
-  - DEC-0007
+  - DEC-0-03
+  - DEC-0-14
+  - DEC-0-15
+  - DEC-0-07
   - DEC-5-01
   - DEC-6-01
   - DEC-13-07
@@ -92,7 +92,7 @@ licencia y sin código xAPI → se documenta que **no** es dependencia.
 | **M5** | Idempotencia con semántica LRS (id repetido → no re-aplicar; 409 si difiere); `X-API-Version` solo en la rama HTTP, no en `postMessage` | `xapi-integration-plan.md` §4.7/§6 + futura `exelearning_tracking_events` | FTE-015 Part Three §2.1.2/2.1.3, §6.2 | media |
 | **M6** | Declarar descartes de alcance nominales: State API/Document Resources, Agent/Activity Profile, Signed Statements (JWS) — además de cmi5/LRS externo | `xapi-integration-plan.md` §7 | FTE-015 Part Three §2.2/2.4; FTE-016 (`@xapi/cmi5` aparte) | media |
 | **M7** | Citar tipos MIT de `@xapi/xapi` como contrato del shape (sin vendorar) y derivar fixtures válidos/inválidos; usar `XAPI.Verbs` | `xapi-integration-plan.md` §5 + plan de tests (Vitest/PHPUnit) | FTE-016 `Statement.ts`/`Result.ts`/`XAPI.Verbs` | baja |
-| **M8** | Backup/restore del tracking xAPI envuelto por la condición `userinfo` (cmi5launch respalda session/au/usercourse pero parece **omitir** ese flag) | DEC-0007 + futuro `backup_exelearning_stepslib` | REPO-008 `backup_cmi5launch_stepslib.php` `[PENDIENTE]` | baja |
+| **M8** | Backup/restore del tracking xAPI envuelto por la condición `userinfo` (cmi5launch respalda session/au/usercourse pero parece **omitir** ese flag) | DEC-0-07 + futuro `backup_exelearning_stepslib` | REPO-008 `backup_cmi5launch_stepslib.php` `[PENDIENTE]` | baja |
 | **M9** | Documentar que `Moodle-PHP-Libs` **no** es dependencia; JWT/HTTP futuros con `\Firebase\JWT\JWT`/`\core\http_client` de core | `xapi-integration-plan.md` + `thirdpartylibs.xml` (solo pipwerks) | REPO-009 (license:null); moodledev.io thirdpartylibs | baja |
 
 ## Decisiones de reuso y licencia
@@ -100,18 +100,18 @@ licencia y sin código xAPI → se documenta que **no** es dependencia.
 | Recurso | Rol | Nota de licencia (GPLv3 = requisito Moodle) |
 |---|---|---|
 | cmi5launch (REPO-008) | **reference** | Cabeceras `.php` GPLv3-or-later; LICENSE raíz Apache-2.0 (one-way compat GPLv3). Solo se usan **patrones**, no se copia código → riesgo nulo |
-| Moodle-PHP-Libs (REPO-009) | **ignore** | Sin licencia agregada (license:null/404) → redistribución ambigua; viola «no vendorar» (DEC-0002). JWT/guzzle ya en core |
+| Moodle-PHP-Libs (REPO-009) | **ignore** | Sin licencia agregada (license:null/404) → redistribución ambigua; viola «no vendorar» (DEC-0-02). JWT/guzzle ya en core |
 | xAPI-Spec 1.0.3 (FTE-015) | **reference** | Repo Apache-2.0; solo se reutilizan **reglas** (hechos no protegibles) → riesgo nulo. Fijar **1.0.3** (no 2.0/IEEE) |
 | xAPI.js (FTE-016) | **reference + test-fixtures** | MIT (compat GPLv3). NO dependencia de runtime (arrastra `axios`, sin build AMD). Si se copiaran tipos: conservar aviso MIT + `thirdpartylibs.xml` |
 
 ## [INTERPRETACION] — Reconsideración de cmi5: *matizada*, sigue fuera de alcance
 
-La evidencia **no** cambia la postura «cmi5 fuera de alcance» (DEC-0014/FTE-009): la **refuerza** —cmi5launch
+La evidencia **no** cambia la postura «cmi5 fuera de alcance» (DEC-0-14/FTE-009): la **refuerza** —cmi5launch
 depende de un player externo (CATAPULT) + LRS, y en xAPI.js cmi5 es un paquete **separado** (`@xapi/cmi5`),
 ambos prueban que su valor está en LRS/catálogos lanzables, no en un recurso HTML embebido same-origin— y
 añade un **matiz de diseño**: precisamente porque cmi5launch **delega** `passed/failed/completed` al player y
 `mod_exelearning` **no tiene player**, la decisión `passed/failed` debe vivir en el **servidor** (umbral/
-`gradepass`, espíritu DEC-6-01), no esperarse del paquete. Esto no supersede DEC-0014; concreta M4 y M6.
+`gradepass`, espíritu DEC-6-01), no esperarse del paquete. Esto no supersede DEC-0-14; concreta M4 y M6.
 
 ## [HIPOTESIS]
 
@@ -143,7 +143,7 @@ añade un **matiz de diseño**: precisamente porque cmi5launch **delega** `passe
 - `[PENDIENTE]` re-verificar verbatim las cláusulas MUST/SHOULD de FTE-015 contra `xAPI-Data.md`/
   `xAPI-Communication.md` al commit fijado antes de citarlas literal en un ADR.
 
-## Actualización 2026-06-17 — xAPI 2.0 y formalización en DEC-0063
+## Actualización 2026-06-17 — xAPI 2.0 y formalización en DEC-0-18
 
 - **xAPI 2.0 (IEEE 9274.1.1-2023) NO obliga a `mod_exelearning`** (FTE-017): no somos un LRS; el modelo de
   Statement es retro-compatible (`result.score` idéntico; solo `contextAgents`/`contextGroups` nuevos y
@@ -151,12 +151,12 @@ añade un **matiz de diseño**: precisamente porque cmi5launch **delega** `passe
   same-origin. Como el emisor upstream envía `1.0.3`, la política recomendada es **consumir 1.0.3 pero validar
   la versión de forma permisiva** (aceptar `1.0.x` y, defensivamente, `2.0.0`; nunca rechazar por header). →
   **M-versión**, destino `xapi-integration-plan.md` §4 + `xapi_listener.js`, prioridad media.
-- **`DEC-0063` (Propuesta)** formaliza como diseño vinculante (PR2/TAREA-015) las mejoras **M1, M2, M3, M4, M5,
+- **`DEC-0-18` (Propuesta)** formaliza como diseño vinculante (PR2/TAREA-015) las mejoras **M1, M2, M3, M4, M5,
   M6** y la M-versión, citando FTE-015 + FTE-017. Las mejoras **M7** (fixtures `@xapi/xapi`), **M8** (backup
   `userinfo`) y **M9** (`Moodle-PHP-Libs` no-dependencia) quedan como seguimiento, no decididas en este ADR.
 
 **Resoluciones de diseño (erseco, 2026-06-17)** — las preguntas abiertas del endpoint quedan decididas y
-registradas en **DEC-0063 §Resoluciones de diseño**: `scaled∉[0,1]` → **rechazo 400**; overall → **recálculo
+registradas en **DEC-0-18 §Resoluciones de diseño**: `scaled∉[0,1]` → **rechazo 400**; overall → **recálculo
 server-side** (DEC-6-01); `registration`/`sessiontoken` **conviven**; ingesta = **endpoint custom** +
 `core_xapi` opcional luego. En paralelo: DEC-18-01 → **solo Fase 1** (reemplazo descubrible + URL externa
 opt-in admin, refresco manual); DEC-34-02 → **diferida** (la salida definitiva es xAPI); RIE-001 → **aceptado**

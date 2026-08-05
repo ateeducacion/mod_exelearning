@@ -3,7 +3,7 @@ title: ADR (frontmatter de DEC-<numero-de-seguimiento>-<NN>-<slug>.md)
 type: object
 required: [id, titulo, estado, fecha]
 $defs:
-  # Identificador actual (`DEC-13-01`) o retirado (`DEC-0001`). La numeración
+  # Identificador actual (`DEC-13-01`) o retirado (`DEC-0-01`). La numeración
   # retirada sólo sigue viva en los 18 registros del arranque del repositorio,
   # enumerados en tools/check_decisions.py; el contenido nuevo usa la actual.
   decisionId:

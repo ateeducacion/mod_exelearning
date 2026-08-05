@@ -1,24 +1,22 @@
 ---
 id: DEC-111-01
-titulo: "Versión Moodle real y monótona en main: fin del centinela; el empaquetado valida y nunca reescribe"
-estado: Aceptada
-fecha: 2026-07-24
+title: "Versión Moodle real y monótona en main: fin del centinela; el empaquetado valida y nunca reescribe"
+status: Accepted
+date: 2026-07-24
 tracking_issue: 111
 legacy_id: DEC-0068
-supersede: DEC-13-08
-agentes:
+supersedes: DEC-13-08
+deciders:
   - erseco
   - amanzano3ip
   - claude-code
-fuentes:
+sources:
   - REPO-004
-relacionados:
-  - DEC-13-08
-  - DEC-78-01
-  - DEC-106-01
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-fable-5
+related:
+  adrs: [DEC-13-08, DEC-78-01, DEC-106-01]
+ai_assistance:
+  tool: claude-code
+  model: claude-fable-5
 ---
 
 # DEC-111-01: Versión Moodle real y monótona en main: fin del centinela; el empaquetado valida y nunca reescribe

@@ -1,23 +1,21 @@
 ---
 id: DEC-19-01
-titulo: "Selector de categoría de calificación por actividad (gradecat) aplicado a todos los grade items vía set_parent"
-estado: Aceptada
-fecha: 2026-06-04
+title: "Selector de categoría de calificación por actividad (gradecat) aplicado a todos los grade items vía set_parent"
+status: Accepted
+date: 2026-06-04
 tracking_issue: 19
 legacy_id: DEC-0034
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
   - FTE-012
-relacionados:
-  - DEC-0008
-  - DEC-13-07
-  - DEC-13-09
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-0-08, DEC-13-07, DEC-13-09]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-19-01: Selector de categoría de calificación por actividad (gradecat) aplicado a todos los grade items vía set_parent
@@ -36,7 +34,7 @@ DEC-13-09). **No** existe campo `gradecat`, **ni** columna `exelearning.gradecat
 (`db/install.xml`), **ni** se pasa `categoryid` en ninguna de las llamadas a
 `grade_update()` de `lib.php`/`track.php`.
 
-Particularidad del plugin: en modo `peritem` (por defecto, DEC-0008) una actividad
+Particularidad del plugin: en modo `peritem` (por defecto, DEC-0-08) una actividad
 registra **varios** grade items (overall oculto `itemnumber=0` + uno por iDevice
 calificable), y `exelearning_sync_grade_items()` los crea/actualiza en cada
 guardado/`view` (re-subir un paquete puede añadir columnas). La categoría debe sobrevivir

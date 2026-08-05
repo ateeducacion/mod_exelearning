@@ -7,7 +7,7 @@ resumen: >-
   confirmado (mod_form usa standard_coursemodule_elements y no hay campo gradecat ni
   columna ni categoryid en grade_update). (#2) Profesor y alumno ven items distintos y el
   alumno percibe que sus notas no aparecen: causa raíz = en peritem el item overall
-  itemnumber=0 se mantiene OCULTO para completionpassgrade (DEC-0010) y, al seguir
+  itemnumber=0 se mantiene OCULTO para completionpassgrade (DEC-0-10) y, al seguir
   agregando, Moodle vacía el total del alumno por el ajuste por defecto
   grade_report_user_showtotalsifcontainhidden=0 (HIDE_TOTAL_IF_CONTAINS_HIDDEN); además el
   profesor lo ve por moodle/grade:viewhidden. Decisiones del usuario: #1 categoría plana
@@ -31,8 +31,8 @@ relacionados:
   - DEC-19-01
   - DEC-19-02
   - FTE-012
-  - DEC-0008
-  - DEC-0010
+  - DEC-0-08
+  - DEC-0-10
   - DEC-5-01
   - DEC-13-07
   - DEC-13-09

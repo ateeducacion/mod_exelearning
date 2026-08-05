@@ -107,24 +107,24 @@ ningún issue, y `gh api repos/.../commits/<sha>/pulls` devuelve vacío para tod
 
 | Identificador | Commit que lo añadió |
 |---|---|
-| `DEC-0001`, `DEC-0002`, `DEC-0003` | `bec976e` |
-| `DEC-0004` | `8cd169d` |
-| `DEC-0005`, `DEC-0006` | `7af2303` |
-| `DEC-0007`, `DEC-0008` | `d505d87` |
-| `DEC-0009` | `d0d6ecf` |
-| `DEC-0010` | `2c07b22` |
-| `DEC-0011` | `0aadc1b` |
-| `DEC-0012` | `4dd0866` |
-| `DEC-0013` | `a0ba1da` |
-| `DEC-0014` | `bab463f` |
-| `DEC-0015` | `59670b8` |
-| `DEC-0019` | `90d5cf5` |
-| `DEC-0036` | `a2116f6` |
-| `DEC-0063` | `4eccb06` |
+| `DEC-0-01`, `DEC-0-02`, `DEC-0-03` | `bec976e` |
+| `DEC-0-04` | `8cd169d` |
+| `DEC-0-05`, `DEC-0-06` | `7af2303` |
+| `DEC-0-07`, `DEC-0-08` | `d505d87` |
+| `DEC-0-09` | `d0d6ecf` |
+| `DEC-0-10` | `2c07b22` |
+| `DEC-0-11` | `0aadc1b` |
+| `DEC-0-12` | `4dd0866` |
+| `DEC-0-13` | `a0ba1da` |
+| `DEC-0-14` | `bab463f` |
+| `DEC-0-15` | `59670b8` |
+| `DEC-0-16` | `90d5cf5` |
+| `DEC-0-17` | `a2116f6` |
+| `DEC-0-18` | `4eccb06` |
 
 **No se ha inventado un número para ellos y no se ha abierto ningún issue.** Sus
 identificadores siguen siendo válidos y resolubles: son los ficheros que existen. La
-lista está congelada en `research/tools/check_decisions.py`; un archivo `DEC-NNNN-*.md`
+lista está congelada en `research/tools/architecture_records.py`; un archivo `DEC-NNNN-*.md`
 **nuevo** hace fallar la validación, así que la deuda no puede crecer.
 
 Para cerrarla hace falta una decisión de mantenimiento entre estas opciones:
@@ -137,11 +137,11 @@ Para cerrarla hace falta una decisión de mantenimiento entre estas opciones:
 Candidatos débiles que **no** se han promovido a decisión, sólo para que el mantenedor
 los valore:
 
-- `DEC-0063` — se escribió en `main` como `DEC-0059` (commit `4eccb06`) y se renumeró a
-  `DEC-0063` en `9b606b0` para esquivar la colisión con la rama del iframe seguro. El PR
+- `DEC-0-18` — se escribió en `main` como `DEC-0059` (commit `4eccb06`) y se renumeró a
+  `DEC-0-18` en `9b606b0` para esquivar la colisión con la rama del iframe seguro. El PR
   **#85** lo cita en su cuerpo y entrega su hermano `DEC-85-01`, pero el registro es
   anterior al PR.
-- `DEC-0004` — una sección de enmienda dentro del registro menciona «Issue #22, PR #23»,
+- `DEC-0-04` — una sección de enmienda dentro del registro menciona «Issue #22, PR #23»,
   pero eso documenta una *revisión posterior*, no la decisión original.
 
 ## Documentos que pueden nombrar identificadores retirados
@@ -153,8 +153,8 @@ La validación permite identificadores retirados en:
 | `research/decisiones/mapa-migracion-ids.md` | esta página |
 | `research/decisiones/README.md` | enumera los registros no migrados |
 | `research/schemas/decision.schema.yaml` | documenta el patrón retirado |
-| `research/tools/check_decisions.py` y su test | la lista congelada y sus fixtures |
-| `research/tareas/diario/2026-06-17-adr-validacion-xapi-y-2.0.yaml` | registro histórico de la colisión `DEC-0059`/`DEC-0063` que motivó retirar el contador |
+| `research/tools/architecture_records.py` y su test | la lista congelada y sus fixtures |
+| `research/tareas/diario/2026-06-17-adr-validacion-xapi-y-2.0.yaml` | registro histórico de la colisión `DEC-0059`/`DEC-0-18` que motivó retirar el contador |
 | cualquier línea `legacy_id:` | el campo existe precisamente para eso |
 
 ## Identificadores reservados en ramas abiertas

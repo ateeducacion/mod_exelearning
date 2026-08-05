@@ -1,26 +1,22 @@
 ---
 id: DEC-12-01
-titulo: "Edición de contenido calificable: semántica snapshot + aviso al profesor (estilo SCORM)"
-estado: Aceptada
-fecha: 2026-06-02
+title: "Edición de contenido calificable: semántica snapshot + aviso al profesor (estilo SCORM)"
+status: Accepted
+date: 2026-06-02
 tracking_issue: 12
 legacy_id: DEC-0021
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - FTE-010
   - FTE-006
   - REPO-004
-relacionados:
-  - DEC-0007
-  - DEC-0008
-  - DEC-0012
-  - DEC-5-01
-  - DEC-6-01
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-0-07, DEC-0-08, DEC-0-12, DEC-5-01, DEC-6-01]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-12-01: Edición de contenido calificable: semántica snapshot + aviso al profesor (estilo SCORM)
@@ -36,7 +32,7 @@ qué hace el core de Moodle, y qué debería hacer?
 
 El enlace nota↔tarea es `objectid` (`<odeIdeviceId>` estable de `content.xml`) →
 `itemnumber` (columna del gradebook) → filas `exelearning_attempt`. El `objectid` se
-preserva entre exports tras el fix upstream exelearning#1791 (DEC-0012/RIE-006).
+preserva entre exports tras el fix upstream exelearning#1791 (DEC-0-12/RIE-006).
 Detección: `classes/local/package.php::detect_gradable_idevices()`. Sincronización:
 `lib.php::exelearning_sync_grade_items()`.
 
@@ -107,14 +103,14 @@ estilo SCORM**.
    `exelearning_update_instance()` (en el redirect del formulario). **No bloquea** el guardado.
 4. **Remediación = la que ya existe.** El profesor borra intentos en `report.php`
    (capability `mod/exelearning:deleteattempt`), que recalcula vía
-   `exelearning_recalculate_user_grades()` (DEC-0007). No se añade reset automático.
+   `exelearning_recalculate_user_grades()` (DEC-0-07). No se añade reset automático.
 
 ## Consecuencias
 
 - Positivas: cierra el hueco de la nota obsoleta con una señal clara; iguala el mejor
   aviso del core (SCORM) y supera a h5pactivity (que no avisa); mantiene la semántica
   snapshot del core; migración aditiva (una columna nullable), sin tocar intentos
-  existentes; sin cambios en código vendorado (DEC-0002) ni en `amd/*` (el aviso usa la
+  existentes; sin cambios en código vendorado (DEC-0-02) ni en `amd/*` (el aviso usa la
   cola de notificaciones del core, sin JS nuevo).
 - Negativas / coste: el `contenthash` puede dar **falsos positivos** si un re-export
   reescribe el bloque sin cambio semántico → un aviso informativo de más (no bloquea, no
@@ -135,7 +131,7 @@ estilo SCORM**.
   cero; un hash divergente da `changed=1` y se refresca; `activity_has_attempts()`;
   `exelearning_warn_if_grades_stale()` avisa solo con cambio **y** intentos.
 - `php -l` en verde; `xmllint` valida `db/install.xml`.
-- Suite completa + phpcs delegados a CI (moodle-plugin-ci, DEC-0004).
+- Suite completa + phpcs delegados a CI (moodle-plugin-ci, DEC-0-04).
 - e2e/manual: subir `.elpx` con una tarea calificable, hacer un intento, editar la opción
   y guardar → aviso al recargar; la nota previa no cambia; el reset de intentos la limpia.
 

@@ -26,7 +26,7 @@ relacionados:
   - DEC-12-01
   - DEC-13-03
   - DEC-16-01
-  - DEC-0019
+  - DEC-0-16
 criterios_aceptacion:
   - "Re-subir un paquete (o pulsar 'Reemplazar paquete') incrementa revision, re-extrae a content/{rev} y dispara el aviso de notas obsoletas si hay intentos."
   - "Con origen URL, un .elpx servido por HTTP(S) se descarga, pasa has_content_xml y se extrae idéntico a una subida; un ZIP sin content.xml se rechaza."

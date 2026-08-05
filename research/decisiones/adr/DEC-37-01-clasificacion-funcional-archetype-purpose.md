@@ -1,22 +1,20 @@
 ---
 id: DEC-37-01
-titulo: "Clasificación funcional del módulo: mantener MOD_ARCHETYPE_ASSIGNMENT + MOD_PURPOSE_ASSESSMENT"
-estado: Aceptada
-fecha: 2026-06-11
+title: "Clasificación funcional del módulo: mantener MOD_ARCHETYPE_ASSIGNMENT + MOD_PURPOSE_ASSESSMENT"
+status: Accepted
+date: 2026-06-11
 tracking_issue: 37
 legacy_id: DEC-0047
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
-relacionados:
-  - DEC-13-07
-  - DEC-0015
-  - DEC-0008
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-13-07, DEC-0-15, DEC-0-08]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-37-01: Clasificación funcional del módulo: mantener MOD_ARCHETYPE_ASSIGNMENT + MOD_PURPOSE_ASSESSMENT
@@ -67,7 +65,7 @@ por instancia**. En consecuencia, la clasificación **no puede variar según
 
 1. **Mantener `MOD_ARCHETYPE_ASSIGNMENT` + `MOD_PURPOSE_ASSESSMENT` (status quo).**
    - *Ventajas:* el **propósito primario** y la razón de ser del plugin es la
-     **evaluación multi-ítem** ([[DEC-0015]], [[DEC-0008]]); el archetype `ASSIGNMENT`
+     **evaluación multi-ítem** ([[DEC-0-15]], [[DEC-0-08]]); el archetype `ASSIGNMENT`
      aporta los defaults correctos (grupos/agrupamientos, completion, ubicación en
      "Actividades" y no en "Recursos") y `FEATURE_GRADE_HAS_GRADE = true` es coherente.
      El modo sin nota es un **caso secundario opcional**, no la identidad del módulo.
@@ -92,7 +90,7 @@ por instancia**. En consecuencia, la clasificación **no puede variar según
 - [[DEC-13-07]] — `gradeenabled` es un interruptor **por actividad** que deshabilita los
   campos de nota/intentos en `mod_form.php` (`disabledIf`), no una propiedad del tipo de
   módulo.
-- [[DEC-0015]] — justificación de la multicalificación: la evaluación multi-ítem es la
+- [[DEC-0-15]] — justificación de la multicalificación: la evaluación multi-ítem es la
   razón de ser del plugin.
 - REPO-004 — `plugin_supports('mod', …, FEATURE_MOD_ARCHETYPE/FEATURE_MOD_PURPOSE)` se
   resuelve por tipo de módulo y alimenta el *activity chooser*.

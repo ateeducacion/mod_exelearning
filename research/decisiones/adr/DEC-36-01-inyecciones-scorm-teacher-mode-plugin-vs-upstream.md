@@ -1,23 +1,20 @@
 ---
 id: DEC-36-01
-titulo: "Inyecciones SCORM-loader y teacher-mode: corrección en el plugin vs upstream en eXeLearning"
-estado: Aceptada
-fecha: 2026-06-10
+title: "Inyecciones SCORM-loader y teacher-mode: corrección en el plugin vs upstream en eXeLearning"
+status: Accepted
+date: 2026-06-10
 tracking_issue: 36
 legacy_id: DEC-0046
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
-relacionados:
-  - DEC-34-02
-  - DEC-13-11
-  - DEC-17-01
-  - DEC-0019
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-fable-5
+related:
+  adrs: [DEC-34-02, DEC-13-11, DEC-17-01, DEC-0-16]
+ai_assistance:
+  tool: claude-code
+  model: claude-fable-5
 ---
 
 # DEC-36-01: Inyecciones SCORM-loader y teacher-mode: corrección en el plugin vs upstream en eXeLearning

@@ -190,7 +190,7 @@ para evidencia de que el export SCORM actual agrega.
 
 ## Soporte para multi-grade-items
 
-Depende del export: ver FTE-001/FTE-002/FTE-004 según la decisión que tome DEC-0003.
+Depende del export: ver FTE-001/FTE-002/FTE-004 según la decisión que tome DEC-0-03.
 
 ## Soporte para navegación/sidebar
 

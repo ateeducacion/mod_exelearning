@@ -1,26 +1,28 @@
 ---
-id: DEC-0009
-titulo: "Sólo modo editor embebido. Sin integración eXeLearning Online"
-estado: Aceptada
-fecha: 2026-05-28
-agentes:
+id: DEC-0-09
+tracking_issue: 0
+legacy_id: DEC-0009
+title: "Sólo modo editor embebido. Sin integración eXeLearning Online"
+status: Accepted
+date: 2026-05-28
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-002
   - REPO-005
-experimentos: []
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-7
-supersede: DEC-0005
+experiments: []
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-7
+supersedes: DEC-0-05
 ---
 
-# DEC-0009: Sólo modo editor embebido. Sin integración eXeLearning Online
+# DEC-0-09: Sólo modo editor embebido. Sin integración eXeLearning Online
 
 ## Contexto
 
-`DEC-0005` (Aceptada) heredaba la maquinaria del editor de `mod_exeweb` con
+`DEC-0-05` (Aceptada) heredaba la maquinaria del editor de `mod_exeweb` con
 los **dos** modos que ese plugin soporta: editor embebido (estática compilada
 con Bun) y eXeLearning Online (servicio remoto autenticado con HMAC).
 
@@ -42,7 +44,7 @@ HMAC eran 4 settings interrelacionados), el mantenedor (erseco) decide
 
 ## Opciones consideradas
 
-1. **Mantener ambos** (statu quo de DEC-0005).
+1. **Mantener ambos** (statu quo de DEC-0-05).
 2. **Sólo embebido** (recomendada).
 3. Sólo Online (descartada por dependencia externa obligatoria).
 
@@ -71,7 +73,7 @@ Adoptar **opción 2**. `mod_exelearning` ofrece **sólo el modo embebido**.
 - Eliminar `providername` / `providerversion` (anuncio del provider).
 - Conservar `embeddededitor` (toggle on/off del editor).
 - Conservar (futuro) `template` / `sendtemplate` (plantilla por defecto del
-  editor, ver DEC-0005).
+  editor, ver DEC-0-05).
 - Conservar (futuro) `mandatoryfileslist` / `forbiddenfileslist` (validación
   de paquetes subidos).
 
@@ -168,16 +170,16 @@ Negativas:
 
 ## Seguimiento
 
-- Tras aplicar esta decisión, marcar `DEC-0005` como **Superseded** por
-  `DEC-0009` en `status.yaml`.
+- Tras aplicar esta decisión, marcar `DEC-0-05` como **Superseded** por
+  `DEC-0-09` en `status.yaml`.
 - TAREA-031 (próxima sesión si no se cierra ahora): pulir la página de gestión
   con i18n completa y un POC de "descargar release de GitHub".
 
-## Confirmación (2026-05-29) por DEC-0013
+## Confirmación (2026-05-29) por DEC-0-13
 
-DEC-0009 se tomó por simplicidad de UX de admin. **DEC-0013 lo confirma** con el
+DEC-0-09 se tomó por simplicidad de UX de admin. **DEC-0-13 lo confirma** con el
 análisis de fondo que faltaba (autenticación HMAC, flujo ida/vuelta, desconexión
 / ubicación de datos, permisos + co-edición). Decisión vigente: **solo embebido**.
 La eventual reapertura (si surge co-edición real y GDPR lo permite) iría por la
-opción D de DEC-0013 (enlace a Online sin integrar datos), no por reintroducir el
-modo Online con HMAC. Ver DEC-0013 para el detalle.
+opción D de DEC-0-13 (enlace a Online sin integrar datos), no por reintroducir el
+modo Online con HMAC. Ver DEC-0-13 para el detalle.

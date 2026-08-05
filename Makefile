@@ -213,14 +213,14 @@ clean-editor:
 # Print the decision index, derived from the records' own frontmatter. The index
 # is generated on demand, never hand-maintained.
 architecture-records:
-	python3 research/tools/check_decisions.py list
+	python3 research/tools/architecture_records.py list
 
 # Validate decision identifiers, metadata and cross-references, and reject any
 # reference to a retired identifier. Also runs the checker's own unit tests, so
 # a broken checker cannot silently pass everything.
 architecture-check:
-	python3 research/tools/check_decisions.py check
-	python3 research/tools/test_check_decisions.py
+	python3 research/tools/architecture_records.py check
+	python3 research/tools/architecture_records_test.py
 
 # -------------------------------------------------------
 # Packaging

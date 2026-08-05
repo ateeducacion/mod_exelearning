@@ -1,22 +1,21 @@
 ---
 id: DEC-26-01
-titulo: "Parser de content.xml híbrido (DOM para estructura + descifrado/hash conservados)"
-estado: Aceptada
-fecha: 2026-06-09
+title: "Parser de content.xml híbrido (DOM para estructura + descifrado/hash conservados)"
+status: Accepted
+date: 2026-06-09
 tracking_issue: 26
 legacy_id: DEC-0039
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
   - REPO-005
-relacionados:
-  - DEC-13-01
-  - DEC-13-10
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-13-01, DEC-13-10]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-26-01: Parser de content.xml híbrido (DOM para estructura + descifrado/hash conservados)

@@ -1,22 +1,19 @@
 ---
 id: DEC-29-01
-titulo: "Detectar GeoGebra calificable por la clase auto-geogebra-scorm"
-estado: Aceptada
-fecha: 2026-06-10
+title: "Detectar GeoGebra calificable por la clase auto-geogebra-scorm"
+status: Accepted
+date: 2026-06-10
 tracking_issue: 29
 legacy_id: DEC-0043
-agentes:
+deciders:
   - codex
-fuentes:
+sources:
   - REPO-004
-relacionados:
-  - DEC-13-01
-  - DEC-13-10
-  - DEC-26-01
-  - DEC-13-11
-herramienta_ia:
-  interfaz: codex
-  modelo: gpt-5
+related:
+  adrs: [DEC-13-01, DEC-13-10, DEC-26-01, DEC-13-11]
+ai_assistance:
+  tool: codex
+  model: gpt-5
 ---
 
 # DEC-29-01: Detectar GeoGebra calificable por la clase auto-geogebra-scorm

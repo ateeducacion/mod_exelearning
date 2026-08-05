@@ -7,14 +7,14 @@ resumen: >-
   exe_xapi.js mergeado y el .elpx de ejemplo (ground truth, no resumen), el maintainer (erseco) fija
   tres decisiones que registra DEC-85-01: (1) coexistencia = xAPI-primary para paquetes que emiten,
   con window.API inerte y SCORM sólo para legacy; (2) sólo calificación, eventos core_xapi diferidos;
-  (3) siempre activo, sin ajuste. Se documenta además una desviación informada de DEC-0063 §2 (el
+  (3) siempre activo, sin ajuste. Se documenta además una desviación informada de DEC-0-18 §2 (el
   overall sale del statement de paquete, ponderado, porque los answered no llevan peso) y un
   refinamiento de forma (endpoint = script plano xapi_track.php; listener = IIFE inline
   js/xapi_listener.js, patrón scorm_tracker.js/DEC-74-01; sin AMD ni db/services.php).
 acciones:
-  - "DEC-85-01 (Aceptada): registra xAPI-primary (detección por presencia de libs/xapi/exe_xapi.js → window.API inerte vía disableTracking; SCORM para legacy), la propiedad de seguridad (un mismo sendScoreNew dispara gamification.track + pipwerks set → coextensivos, suprimir el POST SCORM no pierde nota), el overall desde el statement de paquete (refina DEC-0063 §2, honra DEC-6-01 validando), siempre-activo, eventos diferidos, e idempotencia por exelearning_tracking_events (statementid UNIQUE)."
+  - "DEC-85-01 (Aceptada): registra xAPI-primary (detección por presencia de libs/xapi/exe_xapi.js → window.API inerte vía disableTracking; SCORM para legacy), la propiedad de seguridad (un mismo sendScoreNew dispara gamification.track + pipwerks set → coextensivos, suprimir el POST SCORM no pierde nota), el overall desde el statement de paquete (refina DEC-0-18 §2, honra DEC-6-01 validando), siempre-activo, eventos diferidos, e idempotencia por exelearning_tracking_events (statementid UNIQUE)."
   - "Verificado el contrato mergeado (e3b1bd13): coincide con FTE-011 + dos adiciones de seguridad upstream — anonimización de PII al difundir a '*' sin parentOrigin, y escape </script>/U+2028/U+2029 en serializeForScript. Confirmado que el answered NO lleva peso y que el export sirve odeId vacío (routear por idevice-id extension)."
-  - "Código (PR2): js/xapi_listener.js (IIFE, valida event.origin, dedup por statement.id, POST a xapi_track.php con sesskey+cmid+registration), xapi_track.php (endpoint plano simétrico a track.php), classes/local/xapi/statement_normalizer.php (validación canónica DEC-0063) + ingestor.php (orquestación reusando track::apply_item_scores/attempts/grade_update), classes/local/xapi/config_injector.php (parentOrigin/actor:null), flag disableTracking en js/scorm_tracker.js, tabla exelearning_tracking_events (install.xml + upgrade etapa 2026061800), detección exelearning_package_emits_xapi + cableado en view.php, privacy provider y strings."
+  - "Código (PR2): js/xapi_listener.js (IIFE, valida event.origin, dedup por statement.id, POST a xapi_track.php con sesskey+cmid+registration), xapi_track.php (endpoint plano simétrico a track.php), classes/local/xapi/statement_normalizer.php (validación canónica DEC-0-18) + ingestor.php (orquestación reusando track::apply_item_scores/attempts/grade_update), classes/local/xapi/config_injector.php (parentOrigin/actor:null), flag disableTracking en js/scorm_tracker.js, tabla exelearning_tracking_events (install.xml + upgrade etapa 2026061800), detección exelearning_package_emits_xapi + cableado en view.php, privacy provider y strings."
   - "Tests (en inglés): PHPUnit del normalizador y del ingestor (paridad de nota con SCORM, rechazo de objectid desconocido, actor ignorado→$USER, idempotencia, maxattempt, gradeenabled=0→no-op); Vitest del listener (origen, dedup) y del stub inerte."
   - "Docs: FTE-011 anotada (merge + adiciones de seguridad); TAREA-015 → Done; docs/xapi-integration-plan.md y docs/tracking-architecture.md a 'implementado (DEC-85-01)'. Índices regenerados."
 evidencia:
@@ -29,8 +29,8 @@ pendientes:
 relacionados:
   - DEC-85-01
   - DEC-17-01
-  - DEC-0063
-  - DEC-0014
+  - DEC-0-18
+  - DEC-0-14
   - DEC-6-01
   - DEC-13-11
   - TAREA-015

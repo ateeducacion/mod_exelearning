@@ -2,8 +2,8 @@
 
 > How `mod_exelearning` serves the static eXeLearning v4 editor bundled in the
 > release package, and how the in-browser editor saves a package back into the
-> activity. Embedded-only by design (DEC-0009): no eXeLearning Online, no HMAC,
-> no remote service. (DEC-0005 — the original embedded/online toggle — is
+> activity. Embedded-only by design (DEC-0-09): no eXeLearning Online, no HMAC,
+> no remote service. (DEC-0-05 — the original embedded/online toggle — is
 > superseded, and so is the runtime installer: since DEC-106-01 the editor is a
 > release artifact.)
 
@@ -179,8 +179,8 @@ The "Save to Moodle" button drives the export round-trip
 variant. The plugin embeds the **static** editor in a same-origin iframe and
 exchanges packages purely over `postMessage` + same-origin AJAX. The eXeLearning
 **Online** mode — a remote authenticated service with HMAC-signed tokens — was
-deliberately discarded (DEC-0009,
-`research/decisiones/adr/DEC-0009-solo-editor-embebido.md:23-45`): no
+deliberately discarded (DEC-0-09,
+`research/decisiones/adr/DEC-0-09-solo-editor-embebido.md:23-45`): no
 `editormode` toggle, no `exeonlinebaseuri`, no `hmackey1`, no token TTL. There
 is no outbound traffic at all: since DEC-106-01 the editor arrives inside the
 release package and the runtime performs no downloads (§1).

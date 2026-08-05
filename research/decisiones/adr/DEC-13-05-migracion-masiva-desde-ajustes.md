@@ -1,22 +1,21 @@
 ---
 id: DEC-13-05
-titulo: "Migración masiva de mod_exeweb/mod_exescorm desde los Ajustes del plugin (issue #13 #3)"
-estado: Aceptada
-fecha: 2026-06-03
+title: "Migración masiva de mod_exeweb/mod_exescorm desde los Ajustes del plugin (issue #13 #3)"
+status: Accepted
+date: 2026-06-03
 tracking_issue: 13
 legacy_id: DEC-0026
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
-relacionados:
-  - DEC-13-03
-  - DEC-13-04
-supersede: DEC-13-04
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-13-03, DEC-13-04]
+supersedes: DEC-13-04
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-13-05: Migración masiva de mod_exeweb/mod_exescorm desde los Ajustes del plugin (issue #13 #3)

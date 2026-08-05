@@ -1,23 +1,23 @@
 id: TAREA-005
-titulo: "Cerrar DEC-0003 con matriz cuantificada"
+titulo: "Cerrar DEC-0-03 con matriz cuantificada"
 estado: Done
 fecha: 2026-05-28
 agente: claude-code
 prioridad: alta
-objetivo: "Convertir la matriz cualitativa en cuantitativa con datos de EXP-001 y EXP-002, y pasar DEC-0003 de Propuesta a Aceptada o, alternativamente, abrir un superseder."
+objetivo: "Convertir la matriz cualitativa en cuantitativa con datos de EXP-001 y EXP-002, y pasar DEC-0-03 de Propuesta a Aceptada o, alternativamente, abrir un superseder."
 pasos:
   - "Sustituir escalas -- / - / 0 / + / ++ por puntuaciones 0-5 justificadas con evidencia."
   - "Calcular total ponderado por opción."
   - "Documentar caída a Plan B (SCORM 2004) si EXP-001 invalida el camino xAPI."
   - "Aplicar checklist `checklist-adr-tecnologica.md` antes de aceptar."
 relacionados:
-  - DEC-0003
+  - DEC-0-03
   - "analisis/matrices/matriz-estandar-tracking.yaml"
   - TAREA-002
   - TAREA-003
   - TAREA-004
 criterios_aceptacion:
   - "Matriz con números."
-  - "DEC-0003 en estado `Aceptada` o reemplazado por DEC-0003b."
+  - "DEC-0-03 en estado `Aceptada` o reemplazado por DEC-0003b."
   - "Riesgos formalizados como RIE-NNN en status.yaml."
-notas: "Cerrada el 2026-06-01: DEC-0003 ya estaba Aceptada desde 2026-05-29 y la matriz quedó cuantificada 0-5 con totales ponderados."
+notas: "Cerrada el 2026-06-01: DEC-0-03 ya estaba Aceptada desde 2026-05-29 y la matriz quedó cuantificada 0-5 con totales ponderados."

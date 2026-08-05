@@ -1,22 +1,21 @@
 ---
 id: DEC-13-04
-titulo: "Importar actividades desde mod_exeweb y mod_exescorm (issue #13 #3)"
-estado: Superseded
-fecha: 2026-06-03
+title: "Importar actividades desde mod_exeweb y mod_exescorm (issue #13 #3)"
+status: Superseded
+date: 2026-06-03
 tracking_issue: 13
 legacy_id: DEC-0025
-reemplazada_por: DEC-13-05
-agentes:
+superseded_by: DEC-13-05
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
-relacionados:
-  - DEC-0009
-  - DEC-13-03
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-0-09, DEC-13-03]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-13-04: Importar actividades desde mod_exeweb y mod_exescorm (issue #13 #3)

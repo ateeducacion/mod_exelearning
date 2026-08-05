@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Attempt recording and aggregation for mod_exelearning (DEC-0007).
+ * Attempt recording and aggregation for mod_exelearning (DEC-0-07).
  *
  * @package    mod_exelearning
  * @copyright  2026 ATE (Área de Tecnología Educativa)
@@ -104,7 +104,7 @@ class attempts {
 
     /**
      * Teacher-facing participation summary for the activity front page
-     * (DEC-0011 option B, "Assignment-style" summary). Counts how many of the
+     * (DEC-0-11 option B, "Assignment-style" summary). Counts how many of the
      * given users have at least one attempt and the mean overall scaled score.
      *
      * Group filtering is the caller's responsibility: pass the userids that the
@@ -139,7 +139,7 @@ class attempts {
         );
 
         // Mean of each user's AGGREGATED overall score (0..1) → percent. The
-        // aggregation follows the activity's grademethod (DEC-0007) so this
+        // aggregation follows the activity's grademethod (DEC-0-07) so this
         // summary matches what the gradebook publishes — it previously
         // hardcoded the best attempt regardless of method. A second named
         // parameter set (param2_) avoids collisions with the count query above.
@@ -310,7 +310,7 @@ class attempts {
     }
 
     /**
-     * Reduce an ordered list of scaled scores to a single grade (DEC-0007).
+     * Reduce an ordered list of scaled scores to a single grade (DEC-0-07).
      *
      * Pure aggregation shared by the per-user-per-item path (aggregate_scaled())
      * and the batch recalculation path (exelearning_recalculate_grades_for_users()
@@ -346,7 +346,7 @@ class attempts {
      *
      * One query replacing the per-user-per-item SELECTs of the bulk grade
      * recalculation. Scores are ordered by attempt ASC inside each group so
-     * aggregate_values() (DEC-0007) sees the same ordering aggregate_scaled()
+     * aggregate_values() (DEC-0-07) sees the same ordering aggregate_scaled()
      * uses.
      *
      * @param int $exelearningid

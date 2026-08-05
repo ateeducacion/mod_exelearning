@@ -1,26 +1,28 @@
 ---
-id: DEC-0063
-titulo: "Reglas de validación canónica del endpoint xAPI y política de versión (1.0.3 con tolerancia a 2.0)"
-estado: Propuesta
-fecha: 2026-06-17
-agentes:
+id: DEC-0-18
+tracking_issue: 0
+legacy_id: DEC-0063
+title: "Reglas de validación canónica del endpoint xAPI y política de versión (1.0.3 con tolerancia a 2.0)"
+status: Proposed
+date: 2026-06-17
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - FTE-015
   - FTE-017
   - FTE-011
   - REPO-008
   - REPO-009
   - FTE-016
-experimentos:
+experiments:
   - EXP-004
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
-# DEC-0063: Reglas de validación canónica del endpoint xAPI y política de versión (1.0.3 con tolerancia a 2.0)
+# DEC-0-18: Reglas de validación canónica del endpoint xAPI y política de versión (1.0.3 con tolerancia a 2.0)
 
 ## Contexto
 
@@ -36,7 +38,7 @@ La investigación AN-014 (cruce con el ecosistema ADL/xAPI: REPO-008 `mod_cmi5la
 `Moodle-PHP-Libs`, FTE-015 xAPI 1.0.3 canónica, FTE-016 `@xapi/xapi`) y FTE-017 (xAPI 2.0 / IEEE
 9274.1.1-2023) aportan ahora la base normativa para cerrar ese hueco. Este ADR **acepta como diseño
 vinculante** (para PR2 / TAREA-015) las reglas de validación canónica (AN-014 M1/M2/M3/M4/M5/M6) y la política
-de versión. **Complementa** `DEC-17-01` y `DEC-0014`; no los supersede. Es documental: la implementación va en
+de versión. **Complementa** `DEC-17-01` y `DEC-0-14`; no los supersede. Es documental: la implementación va en
 TAREA-015, condicionada a que el contrato upstream `exelearning#1867` (FTE-011) se congele.
 
 ## Problema
@@ -129,10 +131,10 @@ impondrá, **antes** de normalizar a `itemscores`:
   **forward-compatible con xAPI 2.0 a coste cero** (campos consumidos idénticos); idempotencia alineada con la
   semántica canónica del LRS; «highest score wins» elimina ambigüedad ante `answered` repetidos.
 - **Negativas / coste:** consume un contrato upstream **draft** (RIE-013, churn posible); las reglas añaden
-  código de validación en PR2; el «modelo neutro» sigue implícito en `itemscores` (DEC-0007/DEC-17-01).
+  código de validación en PR2; el «modelo neutro» sigue implícito en `itemscores` (DEC-0-07/DEC-17-01).
 - **Cambios que dispara:** alimenta `docs/xapi-integration-plan.md` (§4 validación, §5 escala, §6 idempotencia,
   §7 fuera de alcance) y `docs/tracking-architecture.md` (trust boundary) cuando se implemente; `thirdpartylibs.xml`
-  **no** cambia (REPO-009 descartado; solo `pipwerks`). Refuerza la postura «cmi5 fuera de alcance» de DEC-0014.
+  **no** cambia (REPO-009 descartado; solo `pipwerks`). Refuerza la postura «cmi5 fuera de alcance» de DEC-0-14.
 
 ## Riesgos
 
@@ -153,7 +155,7 @@ impondrá, **antes** de normalizar a `itemscores`:
 ## Seguimiento
 
 - Al implementar (PR2): fundir las reglas en `docs/xapi-integration-plan.md` y `tracking-architecture.md`, y
-  añadir docblocks citando `(DEC-0063)` y `(see FTE-015/FTE-017)`.
+  añadir docblocks citando `(DEC-0-18)` y `(see FTE-015/FTE-017)`.
 - Pendientes heredados (AN-014): backup del tracking envuelto por `userinfo` (M8, verificar
   `backup_cmi5launch_stepslib.php` antes de citarlo como anti-patrón); decisión `custom vs core_xapi` (FTE-007/
   AN-003); `registration ↔ sessiontoken` (formato UUID server-side).

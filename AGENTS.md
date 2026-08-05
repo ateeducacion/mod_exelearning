@@ -22,12 +22,12 @@ Reglas operativas de investigación: [`research/AGENTS.md`](./research/AGENTS.md
 - Bridge SCORM 1.2: `view.php` shim + `exelearning_inject_scorm_loader` (pipwerks
   auto-init en `<head>`) + `track.php` con parseo de `cmi.suspend_data`
   (regex `^(\d+)\. "([^"]*)"; [^:]+: ([\d.]+)%; [^:]+: ([\d.]+)%`).
-- Modos preview/grading (DEC-0006, verificado).
-- **Intentos (DEC-0007, Aceptada)**: tabla `exelearning_attempt` + agregación
+- Modos preview/grading (DEC-0-06, verificado).
+- **Intentos (DEC-0-07, Aceptada)**: tabla `exelearning_attempt` + agregación
   `grademethod` (highest/average/first/last/lowest) en `classes/local/attempts.php`
   + `report.php` + privacy provider + backup/restore. Agrupación por
   `sessiontoken` (1 intento por carga de página). Verificado en Docker.
-- **Finalización estilo SCORM (DEC-0010, Aceptada)**: `gradepass` + condición
+- **Finalización estilo SCORM (DEC-0-10, Aceptada)**: `gradepass` + condición
   core `completionpassgrade` ("aprobar para completar"). `track.php` refuerza
   `completion->update_state` tras grabar nota.
 - **Self-heal de subidas programáticas**: `view.php` re-extrae el paquete y
@@ -53,21 +53,21 @@ Reglas operativas de investigación: [`research/AGENTS.md`](./research/AGENTS.md
 3. **Auditorías de cumplimiento**: licencias, privacidad y accesibilidad.
 4. **TAREA-013 / RIE-001 (M8)**: investigar sandboxing de JS en cliente (ShadowRealm, SES/
    Compartments, Web Worker + DOM proxy, QuickJS-WASM, librerías tipo `sandboxjs`) como
-   mitigación que mantiene el servido same-origin. Ver DEC-0019 (M8).
+   mitigación que mantiene el servido same-origin. Ver DEC-0-16 (M8).
 5. _(Futuro, documentado, sin priorizar)_ **RIE-001** hardening del `.elpx`: roadmap en
-   DEC-0019 — Tier 1 (Permissions-Policy + CSP estricto-con-toggle + quitar
+   DEC-0-16 — Tier 1 (Permissions-Policy + CSP estricto-con-toggle + quitar
    `allow-popups-to-escape-sandbox`) → Tier 2 (bridge `postMessage` → origen opaco/subdominio).
 
-Cerradas: **TAREA-012 / RIE-001** investigación (DEC-0019); **TAREA-009 / RIE-011**
+Cerradas: **TAREA-012 / RIE-001** investigación (DEC-0-16); **TAREA-009 / RIE-011**
 `maxattempt` aceptado por paridad con core (DEC-6-01, commit `f6e8ec8`).
 
 ### Hecho en sesión 2026-05-28 (tarde-noche, claude-opus-4-8)
-- DEC-0008 `grademodel` (selector peritem [default] / overall; modo both eliminado en rev. 2026-05-29).
-- DEC-0007 fase 2: `maxattempt` + `reviewmode` + borrar intento en `report.php` (cap
+- DEC-0-08 `grademodel` (selector peritem [default] / overall; modo both eliminado en rev. 2026-05-29).
+- DEC-0-07 fase 2: `maxattempt` + `reviewmode` + borrar intento en `report.php` (cap
   `mod/exelearning:deleteattempt`) + recálculo `exelearning_recalculate_user_grades`.
 - Editor embebido **inline en settings** + **estilos definidos** portados de
-  `exelearning/mod_exeweb` (DEC-0009: sin modo online). Página rota eliminada.
-- CI `ci.yml` con matriz moodle-plugin-ci (DEC-0004).
+  `exelearning/mod_exeweb` (DEC-0-09: sin modo online). Página rota eliminada.
+- CI `ci.yml` con matriz moodle-plugin-ci (DEC-0-04).
 
 ### Hecho en sesión 2026-06-03 (issue #13 PR núcleo, claude-opus-4-8)
 - **Detección por `isScorm`** (DEC-13-01): `package.php` detecta calificables por el flag
@@ -142,25 +142,25 @@ y el mapa de identificadores retirados en
 
 | ADR | Estado | Resumen |
 |---|---|---|
-| DEC-0001 | Aceptada | Metodología evidencia + ADRs |
-| DEC-0002 | Aceptada | Política clones externos (no vendorar) |
-| DEC-0003 | **Aceptada** (2026-05-29) | SCORM 1.2 estándar de tracking vigente y suficiente; xAPI sólo hoja de ruta |
-| DEC-0004 | **Aceptada** (2026-05-29) | CI matriz Moodle 4.5/5.0/5.1/5.2 × PHP 8.1-8.4 × pgsql/mariadb; `version.php` soporta Moodle [405, 502] |
-| DEC-0005 | **Superseded** by DEC-0009 | Editor embebido (versión con online) |
-| DEC-0006 | Aceptada | Modos preview/grading |
-| DEC-0007 | **Aceptada** | Intentos: tabla plana `exelearning_attempt` + `grademethod` (implementado) |
-| DEC-0008 | **Aceptada** (rev. 2026-05-29) | Selector `grademodel` `peritem` (default) / `overall`; modo `both` eliminado |
-| DEC-0009 | Aceptada | **Sólo editor embebido**; eliminado eXeLearning Online / hmac |
-| DEC-0010 | **Aceptada** | Finalización estilo SCORM = core `completionpassgrade` + `gradepass` |
-| DEC-0011 | **Aceptada** | Presentación intentos en portada: resumen profesor (Tarea) + línea alumno; detalle en Informes |
-| DEC-0012 | **Aceptada** | `editor/save.php` re-extrae + re-sincroniza libro tras guardar (RIE-006: estabilidad objectid) |
-| DEC-0013 | **Aceptada** | Editor Online vs embebido: confirma solo-embebido (DEC-0009); reapertura futura iría por opción D (enlace, sin HMAC) |
-| DEC-0014 | **Aceptada** (2026-05-29) | Soporte xAPI A+C: SCORM 1.2 vigente + diseño de referencia; sin empuje upstream (analítica LRS no prioritaria) |
-| DEC-0015 | **Aceptada** (2026-05-29) | Justificación de la multicalificación: DAFO + comparativa (exeweb/exescorm/scorm/h5p); veredicto: merece la pena con matices (deuda = shim SCORM, hoja de ruta = xAPI DEC-0014) |
+| DEC-0-01 | Aceptada | Metodología evidencia + ADRs |
+| DEC-0-02 | Aceptada | Política clones externos (no vendorar) |
+| DEC-0-03 | **Aceptada** (2026-05-29) | SCORM 1.2 estándar de tracking vigente y suficiente; xAPI sólo hoja de ruta |
+| DEC-0-04 | **Aceptada** (2026-05-29) | CI matriz Moodle 4.5/5.0/5.1/5.2 × PHP 8.1-8.4 × pgsql/mariadb; `version.php` soporta Moodle [405, 502] |
+| DEC-0-05 | **Superseded** by DEC-0-09 | Editor embebido (versión con online) |
+| DEC-0-06 | Aceptada | Modos preview/grading |
+| DEC-0-07 | **Aceptada** | Intentos: tabla plana `exelearning_attempt` + `grademethod` (implementado) |
+| DEC-0-08 | **Aceptada** (rev. 2026-05-29) | Selector `grademodel` `peritem` (default) / `overall`; modo `both` eliminado |
+| DEC-0-09 | Aceptada | **Sólo editor embebido**; eliminado eXeLearning Online / hmac |
+| DEC-0-10 | **Aceptada** | Finalización estilo SCORM = core `completionpassgrade` + `gradepass` |
+| DEC-0-11 | **Aceptada** | Presentación intentos en portada: resumen profesor (Tarea) + línea alumno; detalle en Informes |
+| DEC-0-12 | **Aceptada** | `editor/save.php` re-extrae + re-sincroniza libro tras guardar (RIE-006: estabilidad objectid) |
+| DEC-0-13 | **Aceptada** | Editor Online vs embebido: confirma solo-embebido (DEC-0-09); reapertura futura iría por opción D (enlace, sin HMAC) |
+| DEC-0-14 | **Aceptada** (2026-05-29) | Soporte xAPI A+C: SCORM 1.2 vigente + diseño de referencia; sin empuje upstream (analítica LRS no prioritaria) |
+| DEC-0-15 | **Aceptada** (2026-05-29) | Justificación de la multicalificación: DAFO + comparativa (exeweb/exescorm/scorm/h5p); veredicto: merece la pena con matices (deuda = shim SCORM, hoja de ruta = xAPI DEC-0-14) |
 | DEC-4-01 | **Aceptada** (2026-06-01) | Auditoría de seguridad multi-agente: 21 hallazgos (18 corregidos, 3 diferidos) |
 | DEC-5-01 | **Aceptada** (2026-06-01) | Ruteo de calificaciones por `objectid` estable (mis-ruteo N→itemnumber, RIE-007) |
 | DEC-6-01 | **Aceptada** (2026-06-01) | Recálculo del overall desde `itemscores` (cierre RIE-007) + hardening menor |
-| DEC-0019 | **Aceptada** (2026-06-02) | Aislamiento del `.elpx` (RIE-001): análisis, paridad con core y roadmap (NO implementado por decisión) |
+| DEC-0-16 | **Aceptada** (2026-06-02) | Aislamiento del `.elpx` (RIE-001): análisis, paridad con core y roadmap (NO implementado por decisión) |
 | DEC-11-01 | **Aceptada** (2026-06-02) | Traducciones es/ca/eu/gl: reuso de hermanos + marca «~» para auto-traducción pendiente de revisión |
 | DEC-12-01 | **Aceptada** (2026-06-02) | Edición de contenido calificable: semántica snapshot + aviso al profesor (estilo SCORM) |
 | DEC-13-01 | **Aceptada** (2026-06-03) | Detección de calificables por `isScorm>0` (no por lista de tipos) → issue #13 #2 y #5 |
@@ -177,7 +177,7 @@ y el mapa de identificadores retirados en
 | DEC-18-01 | **Propuesta** (2026-06-04) | Actualización de contenido: reemplazo del `.elpx` + origen por URL con sincronización (patrón `mod_scorm`) → TAREA-016 |
 | DEC-19-01 | **Aceptada** (2026-06-04) | Selector de categoría de calificación (`gradecat`) aplicado a todos los grade items vía `grade_item::set_parent` (`grade_update` ignora `categoryid`) → petición usabilidad INTEF #1 |
 | DEC-19-02 | **Aceptada** (2026-06-04) | Coherencia profesor/alumno en `peritem`: excluir la nota overall oculta de la agregación (`grade_grade::set_excluded`) para que Moodle no vacíe el total del alumno → petición usabilidad INTEF #2 |
-| DEC-0036 | **Aceptada** (2026-06-08) | `contenttype_exelearning` (banco de contenidos, REPO-006) como plugin separado; mirroring intencional de extracción/sandbox `.elpx` (RIE-013) |
+| DEC-0-17 | **Aceptada** (2026-06-08) | `contenttype_exelearning` (banco de contenidos, REPO-006) como plugin separado; mirroring intencional de extracción/sandbox `.elpx` (RIE-013) |
 | DEC-13-10 | **Aceptada** (2026-06-08) | Detección de `isScorm` también en el div `*-DataGame` cifrado (`unescape` + XOR 146) → issue #13 "solo 12 de 30 detectados" |
 | DEC-25-01 | **Aceptada** (2026-06-08) | Sin columna overall oculta en `peritem`: completion estilo workshop sobre un item por-iDevice (supersede de DEC-19-02) |
 | DEC-26-01 | **Aceptada** (2026-06-09) | Parser `content.xml` híbrido: `DOMDocument` por `local-name()` para la estructura + descifrado/hash conservados + fallback regex; acepta `<!DOCTYPE SYSTEM>` externo, rechaza entidades internas |
@@ -192,13 +192,13 @@ y el mapa de identificadores retirados en
 | DEC-66-01 | **Aceptada** (2026-06-12) | Estrategia de cobertura de tests: mockear la red con `\curl::mock_response()` + mock parcial de `download_to_temp()` en vez de excluir; no excluir del scope código testeable (`excludelistfiles` vacío); xdebug/Codecov es la medida autoritativa (pcov local subacredita llamadas anidadas — artefacto, no límite); gate `codecov project: target: auto` (trinquete). Cobertura honesta 85.71%→87.2% (PR #65) |
 | DEC-67-01 | **Aceptada** (2026-06-12) | Auditoría estándar de repositorio (2026-06-11, tras DEC-4-01/DEC-34-01): 9 mejoras P1–P3 implementadas (PRs #46–#54: hardening XML de estilos, thirdpartylibs en el ZIP, fidelidad backup/restore, lock de intentos, participación vs grademethod, recálculo de notas en lote, `zip_utils`, descarga del informe, Behat) + registro de **hallazgos descartados** y opciones de dirección para no re-auditar |
 | DEC-13-12 | **Aceptada** (2026-06-12) | La herramienta de migración exeweb/exescorm vive en `mod_exelearning` (destino, dueño de los internals); orígenes como fuentes legacy de solo lectura tras `source_interface`. Endurecimiento de la rama issue #13: fix `mod_exeweb` itemid=revision (antes leía 0 → todo `nosource`); clasificación `mod_exescorm` (`.elpx` directo / 1 embebido / 0=nosource / >1=ambiguous / external+aiccurl+localsync=unsupported, `localsync` excluido por sincronización aunque tenga snapshot local); limpieza compensatoria con `course_delete_module` ante fallo parcial (sin transacción, caveat recycle bin); preservación de metadatos del cm (idnumber **nunca** se copia); validación post-extracción anti shell-vacío (`migrateextractfailed`); eventos (started/migrated/skipped/failed, patrón DEC-26-03); columnas `userid`/`timemodified` (upgrade 2026061201); preflight + `\core\progress\display`. Refactor a `classes/local/migration/` (elimina `import_service`). CLI diferido |
-| (resto, 2026-06-12 → 2026-07-24) | (varias) | **Ver índice completo en `research/docs/indices/adrs.yaml`.** Resumen: DEC-68-01 eventos selectivos · DEC-69-01 completion por estado · DEC-70-01 búsqueda global · DEC-71-01 refactor `lib.php` (extracción a clases) · DEC-72-01 auditoría post-refactor · DEC-74-01 tests JS (Vitest) · DEC-77-01 extracción no-destructiva (BETA→STABLE) · DEC-78-01 fijar tag del editor en release · DEC-0063 validación canónica del endpoint xAPI + política de versión (1.0.3 tolerante a 2.0) · DEC-85-01 implementación ingesta xAPI · DEC-106-01 editor solo empaquetado en release (sin instalador runtime) · DEC-108-01 interruptor global del editor (modo reproductor puro) · DEC-110-01 página de estilos solo-endpoint (cierra UX-01) · DEC-111-01 versión real y monótona en main (supersede DEC-13-08; empaquetado valida, no muta). *(La rama `feature/secure-iframe-scorm-bridge` (PR #80) lleva más decisiones aún no fusionadas; migra sus propios identificadores en su rama.)* |
+| (resto, 2026-06-12 → 2026-07-24) | (varias) | **Ver índice completo en `research/docs/indices/adrs.yaml`.** Resumen: DEC-68-01 eventos selectivos · DEC-69-01 completion por estado · DEC-70-01 búsqueda global · DEC-71-01 refactor `lib.php` (extracción a clases) · DEC-72-01 auditoría post-refactor · DEC-74-01 tests JS (Vitest) · DEC-77-01 extracción no-destructiva (BETA→STABLE) · DEC-78-01 fijar tag del editor en release · DEC-0-18 validación canónica del endpoint xAPI + política de versión (1.0.3 tolerante a 2.0) · DEC-85-01 implementación ingesta xAPI · DEC-106-01 editor solo empaquetado en release (sin instalador runtime) · DEC-108-01 interruptor global del editor (modo reproductor puro) · DEC-110-01 página de estilos solo-endpoint (cierra UX-01) · DEC-111-01 versión real y monótona en main (supersede DEC-13-08; empaquetado valida, no muta). *(La rama `feature/secure-iframe-scorm-bridge` (PR #80) lleva más decisiones aún no fusionadas; migra sus propios identificadores en su rama.)* |
 
 ## Restricciones inmutables
 
 - **Sólo paquete v4 ODE 2.0** (con `content.xml`), aceptado como `.elpx` **o `.zip`** (DEC-16-01). NO `.elp` legacy, NO `iteexe_online`.
 - **NO** vendorar repos externos.
-- **NO** integración eXeLearning Online (DEC-0009): no tocar `editormode`,
+- **NO** integración eXeLearning Online (DEC-0-09): no tocar `editormode`,
   `exeonlinebaseuri`, `hmackey1`, `APP_SECRET`, `EXELEARNING_WEB_*`.
 - Sidebar nativa **siempre** preservada (técnica iframe de `mod_exeweb`).
 - Repo público: `github.com/exelearning/moodle-mod_exelearning`.
@@ -244,7 +244,7 @@ y el mapa de identificadores retirados en
 - **Documentar cada funcionalidad en el código fuente con base en la
   investigación** (en inglés): cada función/área no trivial lleva un docblock que
   explica *qué hace y por qué*, citando la decisión/fuente que la justifica
-  (p.ej. `(DEC-0008)`, `(see FTE-006)`, `(RIE-006)`). El "porqué" vive junto al
+  (p.ej. `(DEC-0-08)`, `(see FTE-006)`, `(RIE-006)`). El "porqué" vive junto al
   código, no solo en `research/`.
 - **`phpcs --standard=moodle` debe quedar limpio (0/0).** Validar SIEMPRE con
   `vendor/bin/phpcs --standard=moodle <archivos>`, NO con el ruleset local

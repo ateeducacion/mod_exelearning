@@ -1,27 +1,29 @@
 ---
-id: DEC-0005
-titulo: "Editor eXeLearning embebido: heredar la maquinaria de mod_exeweb"
-estado: Superseded
-reemplazada_por: DEC-0009
-fecha: 2026-05-28
-agentes:
+id: DEC-0-05
+tracking_issue: 0
+legacy_id: DEC-0005
+title: "Editor eXeLearning embebido: heredar la maquinaria de mod_exeweb"
+status: Superseded
+superseded_by: DEC-0-09
+date: 2026-05-28
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-001
   - REPO-002
   - REPO-005
-experimentos: []
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-7
+experiments: []
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-7
 ---
 
-# DEC-0005: Editor eXeLearning embebido: heredar la maquinaria de mod_exeweb
+# DEC-0-05: Editor eXeLearning embebido: heredar la maquinaria de mod_exeweb
 
-> **Superseded por [DEC-0009](DEC-0009-solo-editor-embebido.md) (2026-05-29).**
+> **Superseded por [DEC-0-09](DEC-0-09-solo-editor-embebido.md) (2026-05-29).**
 > Esta versión contemplaba además el modo eXeLearning Online (hmac, editormode,
-> exeonlinebaseuri). DEC-0009 la reemplaza: **sólo editor embebido**, sin
+> exeonlinebaseuri). DEC-0-09 la reemplaza: **sólo editor embebido**, sin
 > integración Online. El editor embebido en sí se mantiene (implementado y
 > verificado); lo descartado es la rama Online.
 
@@ -164,7 +166,7 @@ Negativas:
 
 ## Seguimiento
 
-- TAREA-007 (cierre v1 + DEC-0004 features adoptar).
+- TAREA-007 (cierre v1 + DEC-0-04 features adoptar).
 - TAREA-017: portar el editor — esta sesión.
 - TAREA-018 (futura): adaptar `editor/save.php` para que dispare
   `exelearning_sync_grade_items` además del refresh de `content/`.

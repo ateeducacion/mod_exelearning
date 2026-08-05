@@ -1,23 +1,24 @@
 ---
-id: DEC-0036
-titulo: "Mantener contenttype_exelearning como plugin separado de mod_exelearning (no fusionar)"
-estado: Aceptada
-fecha: 2026-06-08
-agentes:
+id: DEC-0-17
+tracking_issue: 0
+legacy_id: DEC-0036
+title: "Mantener contenttype_exelearning como plugin separado de mod_exelearning (no fusionar)"
+status: Accepted
+date: 2026-06-08
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-006
   - FTE-013
-relacionados:
-  - DEC-0002
-  - DEC-0009
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-0-02, DEC-0-09]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
-# DEC-0036: Mantener contenttype_exelearning como plugin separado de mod_exelearning (no fusionar)
+# DEC-0-17: Mantener contenttype_exelearning como plugin separado de mod_exelearning (no fusionar)
 
 ## Contexto
 
@@ -79,7 +80,7 @@ ellos?
   README: "es un visor/almacén; no califica iDevices (usa `mod_exelearning` para actividades
   calificables)". Solapamiento de código = *mirroring* de la política sandbox del iframe, sin
   `use mod_exelearning\*` ni clases compartidas.
-- **DEC-0002**: política de no vendorizar repos externos dentro de este plugin (coherente con no
+- **DEC-0-02**: política de no vendorizar repos externos dentro de este plugin (coherente con no
   absorber `contenttype_exelearning`).
 
 ## Decisión
@@ -103,8 +104,8 @@ ellos?
   el precedente H5P.
 - Releases y madurez desacopladas (STABLE v1.0.0 del visor sin atarse a la ALPHA de la actividad).
 - El administrador instala visor, actividad, ambos o ninguno, según necesidad.
-- Coherente con DEC-0002 (sin vendoring) y con la frontera de `mod_exelearning` (File API, no
-  banco de contenidos — DEC-0009 mantiene el alcance del módulo).
+- Coherente con DEC-0-02 (sin vendoring) y con la frontera de `mod_exelearning` (File API, no
+  banco de contenidos — DEC-0-09 mantiene el alcance del módulo).
 
 **Negativas / coste**
 - Solapamiento de código duplicado entre ambos plugins (extracción/sandbox `.elpx`) ⇒ riesgo de
@@ -125,7 +126,7 @@ ellos?
 - Verificación documental: las reglas de FTE-013 confirman la inviabilidad de la fusión (rutas de
   instalación fijas por tipo, subplugins restringidos, una entrada por plugin en el directorio).
 - `python3 tools/build_indexes.py && python3 tools/test_schema_validation.py` ⇒ OK, con
-  `DEC-0036`, `REPO-006`, `FTE-013` presentes en los índices.
+  `DEC-0-17`, `REPO-006`, `FTE-013` presentes en los índices.
 - No hay validación de código asociada (decisión sin cambios de implementación).
 
 ## Seguimiento

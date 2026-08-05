@@ -9,7 +9,7 @@ no una hipótesis.
 ## Datos personales almacenados (estado actual)
 
 El plugin guarda datos personales de **alumnado** en `exelearning_attempt` (historial de
-intentos plano, DEC-0007) y datos de **profesorado/gestores** en `exelearning_migration`
+intentos plano, DEC-0-07) y datos de **profesorado/gestores** en `exelearning_migration`
 (traza de auditoría de la herramienta de migración, DEC-13-05/DEC-13-12). `provider::get_metadata()`
 declara ambas campo a campo y añade un enlace al subsistema `core_grades`, porque el plugin
 publica las puntuaciones de cada usuario en el libro de calificaciones de Moodle mediante

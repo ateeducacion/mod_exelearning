@@ -1,29 +1,31 @@
 ---
-id: DEC-0014
-titulo: "Soporte xAPI: qué haría falta en eXeLearning y en mod_exelearning, y si compensa"
-estado: Aceptada
-fecha: 2026-05-29
-agentes:
+id: DEC-0-14
+tracking_issue: 0
+legacy_id: DEC-0014
+title: "Soporte xAPI: qué haría falta en eXeLearning y en mod_exelearning, y si compensa"
+status: Accepted
+date: 2026-05-29
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
   - REPO-005
   - FTE-003
-experimentos: []
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
-relacionados:
-  - DEC-0003
-  - DEC-0007
+experiments: []
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
+related:
+  adrs: [DEC-0-03]
+  - DEC-0-07
 ---
 
-# DEC-0014: Soporte xAPI: qué haría falta en eXeLearning y en mod_exelearning, y si compensa
+# DEC-0-14: Soporte xAPI: qué haría falta en eXeLearning y en mod_exelearning, y si compensa
 
 ## Contexto
 
-El tracking vigente de `mod_exelearning` es un **bridge SCORM 1.2** (DEC-0003):
+El tracking vigente de `mod_exelearning` es un **bridge SCORM 1.2** (DEC-0-03):
 el shim `window.API` en `view.php` captura las llamadas `LMSSetValue` que hacen
 los iDevices (vía el wrapper pipwerks que eXeLearning incluye en su export
 SCORM) y las reenvía a `track.php`, que parsea `cmi.core.score.raw` y, por
@@ -68,7 +70,7 @@ Hoy no emite xAPI; habría que añadir, en orden de menor a mayor ambición:
    cambio central y el más reutilizable (sirve a cualquier LMS, no solo Moodle).
 2. **Identificadores estables de actividad** por iDevice como `object.id` (IRI).
    Ya resuelto en parte: el `odeIdeviceId` es estable tras el PR #1791 (ver
-   DEC-0012); habría que materializarlo como IRI de actividad xAPI.
+   DEC-0-12); habría que materializarlo como IRI de actividad xAPI.
 3. **Perfil xAPI propio de eXeLearning** (`Activity Types` y `Verbs`
    publicados, p.ej. `https://exelearning.net/xapi/...`) para que los statements
    sean interoperables y describibles.
@@ -89,7 +91,7 @@ same-origin en nuestro iframe):
    reutilizando el mapa `exelearning_grade_item` (objectid → itemnumber) que ya
    tenemos.
 3. **Almacén de statements / intentos**: encajar con la tabla de intentos
-   (DEC-0007); cada statement de un iDevice → una fila de intento por item.
+   (DEC-0-07); cada statement de un iDevice → una fila de intento por item.
 4. **Capabilities y privacy**: declarar el origen xAPI en el provider de privacy.
 5. Mantener el **bridge SCORM 1.2 como fallback** para paquetes que no emitan
    xAPI (compatibilidad hacia atrás).
@@ -99,7 +101,7 @@ Referencia de patrón: `mod_h5pactivity` ya hace exactamente esto con `core_xapi
 
 ## Opciones consideradas
 
-### A. Mantener solo el bridge SCORM 1.2 (statu quo, DEC-0003)
+### A. Mantener solo el bridge SCORM 1.2 (statu quo, DEC-0-03)
 
 | ✔ Pros | ✘ Contras |
 |---|---|
@@ -140,7 +142,7 @@ necesario. Es la continuación natural de PREG-002 (que ya logró ids estables v
 
 - Si se acepta A+C: no hay trabajo de plugin inmediato; este ADR queda como
   diseño de referencia y se reactiva cuando upstream emita xAPI.
-- DEC-0003 se mantiene (SCORM 1.2 vigente); este ADR es su evolución natural.
+- DEC-0-03 se mantiene (SCORM 1.2 vigente); este ADR es su evolución natural.
 
 ## Preguntas abiertas — resueltas (2026-05-29, erseco)
 
@@ -164,5 +166,5 @@ statements xAPI**. No hay trabajo de plugin inmediato.
   línea de PREG-002 / #1791). **No se abre issue por decisión de erseco** (sin
   prioridad de analítica LRS en ATE ahora).
 - Si upstream emite xAPI: implementar `xapi_bridge.js` + handler `core_xapi` +
-  integración con intentos (DEC-0007), modelando `mod_h5pactivity` (AN-003), y
+  integración con intentos (DEC-0-07), modelando `mod_h5pactivity` (AN-003), y
   decidir entonces transporte (`postMessage` vs LRS) y cmi5.

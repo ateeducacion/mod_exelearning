@@ -1,21 +1,20 @@
 ---
 id: DEC-13-01
-titulo: "Detección de iDevices calificables por el flag isScorm (issue #13 #2 y #5)"
-estado: Aceptada
-fecha: 2026-06-03
+title: "Detección de iDevices calificables por el flag isScorm (issue #13 #2 y #5)"
+status: Accepted
+date: 2026-06-03
 tracking_issue: 13
 legacy_id: DEC-0022
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
-relacionados:
-  - DEC-5-01
-  - DEC-12-01
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-5-01, DEC-12-01]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-13-01: Detección de iDevices calificables por el flag isScorm (issue #13 #2 y #5)

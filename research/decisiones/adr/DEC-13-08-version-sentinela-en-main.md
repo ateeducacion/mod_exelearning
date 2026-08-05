@@ -1,23 +1,22 @@
 ---
 id: DEC-13-08
-titulo: "Versión 'sentinela' (9999999999/dev) en main; la versión real la inyecta make package (issue #13)"
-estado: Superseded
-fecha: 2026-06-03
+title: "Versión 'sentinela' (9999999999/dev) en main; la versión real la inyecta make package (issue #13)"
+status: Superseded
+date: 2026-06-03
 tracking_issue: 13
 legacy_id: DEC-0030
-reemplazada_por: DEC-111-01
-agentes:
+superseded_by: DEC-111-01
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-001
   - REPO-004
-relacionados:
-  - DEC-0004
-  - DEC-111-01
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-0-04, DEC-111-01]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-13-08: Versión 'sentinela' (9999999999/dev) en main; la versión real la inyecta make package (issue #13)
@@ -40,7 +39,7 @@ El hermano **mod_exescorm** (REPO-001) resolvió esto con una **versión sentine
 `$plugin->version = 9999999999;` y `$plugin->release = 'dev';`. La versión real (con fecha) y el
 semver se **inyectan solo al empaquetar**.
 
-Hallazgo clave: **mod_exelearning ya tiene exactamente la misma maquinaria** (heredada, DEC-0004):
+Hallazgo clave: **mod_exelearning ya tiene exactamente la misma maquinaria** (heredada, DEC-0-04):
 
 - `Makefile` target `package:` — `make package RELEASE=x.y.z` pone
   `$plugin->version = $(date +%Y%m%d)00` y `$plugin->release = x.y.z`, crea el ZIP y **restaura

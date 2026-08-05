@@ -98,14 +98,14 @@ final class grade_sync {
         $grademodel = (int) ($instance->grademodel ?? EXELEARNING_GRADEMODEL_PERITEM);
 
         // Canonical grade item (itemnumber=0) according to the grading model
-        // (DEC-0008, revised by DEC-25-01). The two models are now symmetric: OVERALL
+        // (DEC-0-08, revised by DEC-25-01). The two models are now symmetric: OVERALL
         // shows only the aggregated column, PERITEM shows only the per-iDevice
         // columns. There is no longer a hidden overall stub in PERITEM — a hidden
         // item still shows (greyed) to teachers with moodle/grade:viewhidden and was
         // reported as a confusing "extra grade" (DEC-25-01). Completion-by-grade keeps
         // working the Moodle-native way: the teacher points completiongradeitemnumber
         // at a per-iDevice item (workshop model), or uses OVERALL mode to complete on
-        // passing the activity as a whole (DEC-0010).
+        // passing the activity as a whole (DEC-0-10).
         if ($grademodel === EXELEARNING_GRADEMODEL_OVERALL) {
             // Overall only: the gradebook shows a single aggregated column (SCORM-style).
             // Pass hidden=0 explicitly so switching PERITEM -> OVERALL un-hides the

@@ -1,22 +1,20 @@
 ---
 id: DEC-13-09
-titulo: "Separar el formulario del recurso en 'Grading' y 'Attempts management' (issue #13)"
-estado: Aceptada
-fecha: 2026-06-03
+title: "Separar el formulario del recurso en 'Grading' y 'Attempts management' (issue #13)"
+status: Accepted
+date: 2026-06-03
 tracking_issue: 13
 legacy_id: DEC-0031
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-001
-relacionados:
-  - DEC-0007
-  - DEC-0008
-  - DEC-13-07
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-0-07, DEC-0-08, DEC-13-07]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-13-09: Separar el formulario del recurso en 'Grading' y 'Attempts management' (issue #13)
@@ -39,10 +37,10 @@ mod_exescorm usa dos headers: `gradesettings` ("Grade": `grademethod`, `maxgrade
 Partir la sección en **dos headers**, replicando el patrón de mod_exescorm:
 
 - **`gradingsection` ("Grading")** — cómo se puntúa la actividad: `gradeenabled` (interruptor
-  maestro, DEC-13-07), `grademodel` (columnas por iDevice vs global, DEC-0008), `grademax`,
-  `grademin`, `gradepass` (completación por nota, DEC-0010), `gradedisplaytype`.
+  maestro, DEC-13-07), `grademodel` (columnas por iDevice vs global, DEC-0-08), `grademax`,
+  `grademin`, `gradepass` (completación por nota, DEC-0-10), `gradedisplaytype`.
 - **`attemptssection` ("Attempts management")** — cómo se gestionan los intentos: `maxattempt`
-  (límite), `grademethod` (qué intento cuenta: mayor/media/primero/último/menor, DEC-0007),
+  (límite), `grademethod` (qué intento cuenta: mayor/media/primero/último/menor, DEC-0-07),
   `reviewmode` (revisión por el alumno).
 
 Cadena nueva `attemptsmanagementheading` = "Attempts management" (en orden alfabético en

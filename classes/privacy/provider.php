@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Privacy provider for mod_exelearning (DEC-0007 attempt history).
+ * Privacy provider for mod_exelearning (DEC-0-07 attempt history).
  *
  * @package    mod_exelearning
  * @copyright  2026 ATE (Área de Tecnología Educativa)

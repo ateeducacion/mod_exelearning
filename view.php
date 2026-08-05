@@ -41,7 +41,7 @@ require_course_login($course, true, $cm);
 $context = context_module::instance($cm->id);
 require_capability('mod/exelearning:view', $context);
 
-// Preview/test mode is ONLY for users with management capability (DEC-0006).
+// Preview/test mode is ONLY for users with management capability (DEC-0-06).
 // A student without permission who changes the URL to ?mode=preview falls back to grading.
 $canpreview = has_capability('moodle/course:manageactivities', $context);
 if ($mode === 'preview' && !$canpreview) {
@@ -51,7 +51,7 @@ if (!in_array($mode, ['grading', 'preview'], true)) {
     $mode = 'grading';
 }
 
-// Whether to show the teacher preview/grading toggle banner (DEC-0006). Shown to
+// Whether to show the teacher preview/grading toggle banner (DEC-0-06). Shown to
 // anyone who can manage the activity; capability still gates the preview mode
 // itself, so a student can never reach preview regardless.
 $showpreviewtoggle = $canpreview;
@@ -129,7 +129,7 @@ if (!empty($exelearning->intro)) {
     );
 }
 
-// Preview mode banner + toggle links (DEC-0006).
+// Preview mode banner + toggle links (DEC-0-06).
 if ($showpreviewtoggle) {
     if ($mode === 'preview') {
         $exiturl = new moodle_url('/mod/exelearning/view.php', ['id' => $cm->id]);
@@ -259,7 +259,7 @@ if (!$mainfile) {
         echo s(implode(' · ', $labels));
         echo html_writer::end_div();
     }
-    // Participation summary + report link (DEC-0011 option B, Assignment-style):
+    // Participation summary + report link (DEC-0-11 option B, Assignment-style):
     // an at-a-glance "how many have attempted" for the teacher without opening
     // the report. Respects separate groups. Skipped when the activity is not graded (DEC-13-07).
     if ($exelearning->gradeenabled && has_capability('mod/exelearning:viewreport', $context)) {
@@ -305,7 +305,7 @@ if (!$mainfile) {
         );
         echo html_writer::end_div();
     }
-    // Attempt summary for the student (DEC-0007 phase 2). Skipped when the activity
+    // Attempt summary for the student (DEC-0-07 phase 2). Skipped when the activity
     // is not graded (DEC-13-07).
     if ($exelearning->gradeenabled && !$canpreview) {
         $myattempts = $DB->get_records('exelearning_attempt', [
@@ -324,7 +324,7 @@ if (!$mainfile) {
                     )
                     : get_string('attemptsused', 'mod_exelearning', $used);
 
-            // Enrich with grading method + reported grade (DEC-0011 option C
+            // Enrich with grading method + reported grade (DEC-0-11 option C
             // refined: the useful parts of SCORM without its full table).
             $extras = [];
             if ($used > 0) {
@@ -394,7 +394,7 @@ if (!$mainfile) {
     // Minimal viable implementation: buffers CMI pairs and sends them to
     // track.php on LMSCommit/LMSFinish.
     // One page-load token groups all of this view's commits into a single attempt,
-    // shared by whichever channel grades (DEC-0007).
+    // shared by whichever channel grades (DEC-0-07).
     $sessiontoken = random_string(20);
     // Channel choice (DEC-85-01): a package that bundles the upstream xAPI emitter grades
     // via xAPI; the SCORM shim stays alive (so pipwerks finds window.API and the iDevices

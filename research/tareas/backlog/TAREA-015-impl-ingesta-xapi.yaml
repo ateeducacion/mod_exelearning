@@ -13,14 +13,14 @@ pasos:
   - "amd/src/xapi_listener.js: aceptar sólo {type:'exe-xapi-statement'}, validar event.origin contra el origen del iframe (pluginfile), dedup por statement.id en página, POST con sesskey+cmid(+registration)."
   - "Endpoint (classes/external/submit_xapi_statement, ajax): validar sesión/cmid/capability savetrack, ignorar actor→$USER, respetar gradeenabled (DEC-13-07), mapear object.id→objectid→itemnumber (rechazo si desconocido), normalizar a itemscores y llamar a track::apply_item_scores."
   - "Opcional: classes/xapi/handler.php (core_xapi) + eventos idevice_answered/package_completed/passed/failed para analítica."
-  - "Persistencia opcional: tabla exelearning_tracking_events (statementid UNIQUE) para auditoría/idempotencia; sin cabecera/detalle (DEC-0007)."
+  - "Persistencia opcional: tabla exelearning_tracking_events (statementid UNIQUE) para auditoría/idempotencia; sin cabecera/detalle (DEC-0-07)."
   - "Tests PHPUnit + JS según los criterios; regenerar amd/build con grunt amd."
 relacionados:
   - DEC-17-01
-  - DEC-0063
+  - DEC-0-18
   - DEC-85-01
-  - DEC-0014
-  - DEC-0007
+  - DEC-0-14
+  - DEC-0-07
   - DEC-5-01
   - DEC-13-07
   - FTE-011

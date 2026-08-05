@@ -5,7 +5,7 @@ How `mod_exelearning` maps a published eXeLearning package onto Moodle grade ite
 ## The two grading models
 
 Grading has exactly two **mutually-exclusive** presentations, selected per instance by `grademodel`
-(constants `EXELEARNING_GRADEMODEL_*`, `lib.php:35-36`). The legacy "both" mode was removed (DEC-0008, rev. 2026-05-29).
+(constants `EXELEARNING_GRADEMODEL_*`, `lib.php:35-36`). The legacy "both" mode was removed (DEC-0-08, rev. 2026-05-29).
 
 | Model | Constant (value) | Gradebook columns | Overall column (`itemnumber=0`)? |
 |---|---|---|---|
@@ -62,7 +62,7 @@ never creates grade items from the client (`classes/local/track.php:46-49`).
 
 ## Attempt aggregation
 
-Each user submission is one row per gradable item in `exelearning_attempt`, keeping attempt history (DEC-0007). The
+Each user submission is one row per gradable item in `exelearning_attempt`, keeping attempt history (DEC-0-07). The
 gradebook grade for an item is aggregated across that user's attempts by the per-instance `grademethod`:
 
 | Method | Constant (value) | Behaviour |
@@ -85,13 +85,13 @@ PER-ITEM and `itemnumber>0` in OVERALL (the batched logic lives in
 (→ `\mod_exelearning\grades\grade_sync::update_grades()`) fans this out across
 every user with attempts, and short-circuits when grading is disabled.
 
-## gradepass + completion-by-grade (DEC-0010)
+## gradepass + completion-by-grade (DEC-0-10)
 
 `gradepass` (`db/install.xml:22`, default 0) is the grade required to pass; it feeds Moodle's native
 completion-by-grade ("require passing grade", `completionpassgrade`), SCORM-style. `track::ingest()` recalculates
 completion after grading (`classes/local/track.php:220`). Completion-by-grade keeps working the Moodle-native way:
 the teacher points `completiongradeitemnumber` at a per-iDevice item (workshop model) or uses OVERALL mode to
-complete on passing the activity as a whole (DEC-0010). The plugin relaxes core's
+complete on passing the activity as a whole (DEC-0-10). The plugin relaxes core's
 `badcompletiongradeitemnumber` rejection for a registered gradable item via
 `exelearning_relax_completion_grade_errors()` (`mod_form.php:328-332`; delegador en `lib.php` →
 `\mod_exelearning\grades\completion_validator::relax_errors()`, DEC-71-01; B7, DEC-34-01).
@@ -179,4 +179,4 @@ The Grading and Attempts sections of the activity form (`mod_form.php:78-227`), 
   the dual SCORM 1.2 + xAPI pipeline).
 - `docs/PRIVACY_BACKUP_FILES.md` — backup/restore of `exelearning_grade_item` and attempt data
   (`backup/moodle2/backup_exelearning_stepslib.php`).
-- `research/decisiones/adr/` — DEC-0008, DEC-0010, DEC-5-01, DEC-12-01, DEC-13-07, DEC-25-01, DEC-37-01, DEC-69-01.
+- `research/decisiones/adr/` — DEC-0-08, DEC-0-10, DEC-5-01, DEC-12-01, DEC-13-07, DEC-25-01, DEC-37-01, DEC-69-01.

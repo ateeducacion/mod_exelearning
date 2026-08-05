@@ -1,26 +1,22 @@
 ---
 id: DEC-18-01
-titulo: "Actualización de contenido: reemplazo del paquete .elpx y origen por URL con sincronización"
-estado: Propuesta
-fecha: 2026-06-04
+title: "Actualización de contenido: reemplazo del paquete .elpx y origen por URL con sincronización"
+status: Proposed
+date: 2026-06-04
 tracking_issue: 18
 legacy_id: DEC-0033
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
   - REPO-MOODLE-SCORM
   - REPO-EXE-V4
-relacionados:
-  - DEC-0019
-  - DEC-12-01
-  - DEC-13-03
-  - DEC-16-01
-  - DEC-13-08
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-0-16, DEC-12-01, DEC-13-03, DEC-16-01, DEC-13-08]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-18-01: Actualización de contenido: reemplazo del paquete .elpx y origen por URL con sincronización
@@ -122,7 +118,7 @@ propio vs. *file picker* de Moodle? ¿Actualización manual vs. automática?
 
 - **B3. Referencia externa "viva" sin descarga (estilo `mod_url`/`SCORM_TYPE_EXTERNAL`).**
   No aplica: el contenido eXe debe servirse **localmente** desde `pluginfile.php` (y
-  bajo el sandbox del iframe, DEC-0019); no podemos enlazar a un `.elpx` remoto sin
+  bajo el sandbox del iframe, DEC-0-16); no podemos enlazar a un `.elpx` remoto sin
   extraerlo. Descartada.
 
 ### Bloque C — Cadencia de actualización (P2, sobre B2)
@@ -227,7 +223,7 @@ opcional** — se deja explícitamente para Fase 2 (no bloquea la decisión).
   - Reemplazar por URL hereda el aviso de notas obsoletas (DEC-12-01): un cambio remoto
     del paquete puede alterar iDevices calificables sin recalcular notas previas.
 - Dispara/relaciona: extiende DEC-13-03/DEC-16-01 (vías de entrada del paquete); reusa
-  DEC-12-01 (notas obsoletas); el contenido descargado sigue bajo el sandbox de DEC-0019;
+  DEC-12-01 (notas obsoletas); el contenido descargado sigue bajo el sandbox de DEC-0-16;
   el `revision` (cache-busting, DEC-13-08/`db/install.xml`) se incrementa sólo si el hash
   cambió.
 
@@ -238,7 +234,7 @@ opcional** — se deja explícitamente para Fase 2 (no bloquea la decisión).
   opt-in de admin desactivado por defecto.
 - **RIE-URL-2 (paquete remoto inválido/malicioso)**: reutilizar la validación
   `exelearning_package_has_content_xml()` (DEC-16-01) tras descargar; rechazar si falta
-  `content.xml`. Contenido servido bajo sandbox (DEC-0019).
+  `content.xml`. Contenido servido bajo sandbox (DEC-0-16).
 - **RIE-URL-3 (notas obsoletas tras refresco automático)**: un cambio remoto recalifica
   iDevices sin recomputar intentos previos. Mitigación: aviso DEC-12-01 + automático
   como opt-in (no default).

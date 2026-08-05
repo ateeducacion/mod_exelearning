@@ -1,21 +1,20 @@
 ---
 id: DEC-16-01
-titulo: "Aceptar también .zip (con content.xml) además de .elpx en la subida"
-estado: Aceptada
-fecha: 2026-06-03
+title: "Aceptar también .zip (con content.xml) además de .elpx en la subida"
+status: Accepted
+date: 2026-06-03
 tracking_issue: 16
 legacy_id: DEC-0027
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
-relacionados:
-  - DEC-13-03
-  - DEC-13-05
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-13-03, DEC-13-05]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-16-01: Aceptar también .zip (con content.xml) además de .elpx en la subida
@@ -57,7 +56,7 @@ validación e idéntico pipeline de extracción/sincronización.
 - Relaja la restricción "sólo `.elpx`" de `AGENTS.md` → reformularla como "sólo paquetes v4
   ODE 2.0 (con `content.xml`), aceptados como `.elpx` o `.zip`".
 - Riesgo: un `.zip` sin `content.xml` (o un zip malicioso). Mitigado por la validación
-  post-extracción + el sandbox del iframe (DEC-0019) ya existente para el contenido servido.
+  post-extracción + el sandbox del iframe (DEC-0-16) ya existente para el contenido servido.
 - Simplifica DEC-13-05 (la resolución de fuente no depende de la extensión).
 
 ## Implementación

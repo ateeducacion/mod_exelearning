@@ -1,21 +1,20 @@
 ---
 id: DEC-13-06
-titulo: "Enlaces del libro de calificaciones: análisis y destino del 'grade analysis' (issue #13 #4)"
-estado: Aceptada
-fecha: 2026-06-03
+title: "Enlaces del libro de calificaciones: análisis y destino del 'grade analysis' (issue #13 #4)"
+status: Accepted
+date: 2026-06-03
 tracking_issue: 13
 legacy_id: DEC-0028
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
-relacionados:
-  - DEC-13-02
-  - DEC-13-07
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-13-02, DEC-13-07]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-13-06: Enlaces del libro de calificaciones: análisis y destino del 'grade analysis' (issue #13 #4)

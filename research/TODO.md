@@ -19,12 +19,12 @@ siendo `status.yaml` + `tareas/backlog/`.
 - [ ] TAREA-015 / DEC-17-01: implementar la ingesta xAPI dual (listener AMD +
       endpoint + normalizador) reutilizando la tubería existente, sin romper el
       shim SCORM 1.2. Gated a que el PR upstream #1867 congele el contrato.
-      **Diseño del endpoint DECIDIDO 2026-06-17** (DEC-0063 §Resoluciones: `scaled∉[0,1]`→rechazo 400,
+      **Diseño del endpoint DECIDIDO 2026-06-17** (DEC-0-18 §Resoluciones: `scaled∉[0,1]`→rechazo 400,
       overall recalculado server-side, `registration`/`sessiontoken` conviven, endpoint custom + `core_xapi` opcional).
 - [ ] Cumplimiento: solo **accesibilidad** pendiente (pasada `axe-core`; known-gap post-STABLE, no
       bloqueante). Licencias y privacidad: vigentes (revisadas 2026-06-17, ver `cumplimiento/`).
 - [x] TAREA-013 / RIE-001: **DECIDIDO 2026-06-17** — RIE-001 **aceptado** (media/baja, mitigación v1
-      sandbox); el hardening (DEC-0019: Permissions-Policy, CSP estricto, origen opaco) lo implementa la rama
+      sandbox); el hardening (DEC-0-16: Permissions-Policy, CSP estricto, origen opaco) lo implementa la rama
       `feature/secure-iframe-scorm-bridge`, no como bloqueante. No se abre ficha de investigación separada.
 
 ## Cerrado
@@ -35,7 +35,7 @@ siendo `status.yaml` + `tareas/backlog/`.
       validado antes de mover el puntero de BD y podar la revisión anterior; editor de
       irrecuperable a recuperable. Promueve `maturity` BETA→STABLE. 263 tests verdes.
 - [x] TAREA-012 / RIE-001: investigación de aislamiento del `.elpx` COMPLETADA
-      (DEC-0019, 2026-06-02). Core no aísla (mod_scorm sin sandbox; core_h5p curado);
+      (DEC-0-16, 2026-06-02). Core no aísla (mod_scorm sin sandbox; core_h5p curado);
       mod_exelearning ya es el mejor aislado de los tres; no hay origen separado en core
       (requiere infra). Roadmap de hardening documentado (NO implementado por decisión):
       Tier 1 (M2 Permissions-Policy + M3 CSP estricto-con-toggle + M1) → Tier 2 (M6
@@ -48,9 +48,9 @@ siendo `status.yaml` + `tareas/backlog/`.
 - [x] TAREA-002: Context7 completado en FTE-001..FTE-008.
 - [x] TAREA-003: EXP-001 completado.
 - [x] TAREA-004: EXP-002 completado.
-- [x] TAREA-005: DEC-0003 aceptada y matriz cuantificada.
+- [x] TAREA-005: DEC-0-03 aceptada y matriz cuantificada.
 - [x] TAREA-006: CI matriz Moodle/PHP/DB documentada e implementada.
-- [x] TAREA-007: DEC-0015 justifica la multicalificación.
+- [x] TAREA-007: DEC-0-15 justifica la multicalificación.
 - [x] TAREA-008 / RIE-010: aplicado guard de origen al puente legacy
       `postMessage`; `amd/build/` regenerado con `grunt amd` en Moodle 5.2beta.
 - [x] TAREA-010: el ZIP del editor descargado desde GitHub se verifica contra

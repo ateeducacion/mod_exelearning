@@ -1,20 +1,20 @@
 ---
 id: DEC-13-10
-titulo: "Detección de isScorm también en el DataGame cifrado (issue #13: solo 12 de 30)"
-estado: Aceptada
-fecha: 2026-06-08
+title: "Detección de isScorm también en el DataGame cifrado (issue #13: solo 12 de 30)"
+status: Accepted
+date: 2026-06-08
 tracking_issue: 13
 legacy_id: DEC-0037
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
-relacionados:
-  - DEC-13-01
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-13-01]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-13-10: Detección de isScorm también en el DataGame cifrado (issue #13: solo 12 de 30)

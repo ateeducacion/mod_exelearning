@@ -9,7 +9,7 @@ Scripts utilitarios. No depender de paquetes pip externos sin justificar.
   supersesión y las referencias de las decisiones, y rechaza cualquier identificador
   retirado que sobreviva en el árbol. El modo `list` imprime el índice derivado.
   **Es el único de estos scripts que corre en CI** (job `release-workflow-check`).
-- `test_check_decisions.py` — tests unitarios de `check_decisions.py` (`unittest`).
+- `architecture_records_test.py` — tests unitarios de `check_decisions.py` (`unittest`).
 
 Ejecución (desde `research/`):
 
@@ -17,7 +17,7 @@ Ejecución (desde `research/`):
 python3 tools/build_indexes.py
 python3 tools/test_schema_validation.py
 python3 tools/check_decisions.py check
-python3 tools/test_check_decisions.py
+python3 tools/architecture_records_test.py
 ```
 
 Desde la raíz del repositorio: `make architecture-check` y `make architecture-records`.

@@ -75,7 +75,7 @@ item elegido no tiene nota configurada, y `activitygradetopassnotset` si
 ## Aplicación a mod_exelearning
 
 - **DEC-25-01**: como la finalización puede apuntar a un iDevice, se elimina el overall
-  oculto en `peritem` (que solo existía para `completionpassgrade`, DEC-0010). La
+  oculto en `peritem` (que solo existía para `completionpassgrade`, DEC-0-10). La
   finalización «aprobar la actividad entera» vive en el modo OVERALL (overall visible
   con `gradepass`); la finalización sobre un ejercicio concreto usa
   `completiongradeitemnumber` apuntando a ese iDevice.

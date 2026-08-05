@@ -1,11 +1,13 @@
 ---
-id: DEC-0003
-titulo: "Estándar de tracking y registro de múltiples grade items"
-estado: Aceptada
-fecha: 2026-05-28
-agentes:
+id: DEC-0-03
+tracking_issue: 0
+legacy_id: DEC-0003
+title: "Estándar de tracking y registro de múltiples grade items"
+status: Accepted
+date: 2026-05-28
+deciders:
   - claude-code
-fuentes:
+sources:
   - FTE-001
   - FTE-002
   - FTE-003
@@ -17,15 +19,15 @@ fuentes:
   - REPO-001
   - REPO-002
   - REPO-004
-experimentos:
+experiments:
   - EXP-001
   - EXP-002
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-7
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-7
 ---
 
-# DEC-0003: Estándar de tracking y registro de múltiples grade items
+# DEC-0-03: Estándar de tracking y registro de múltiples grade items
 
 ## Contexto
 
@@ -107,7 +109,7 @@ Antes de cerrar como `Aceptada`:
 ## Seguimiento
 
 - TAREA-003 (EXP-001), TAREA-004 (EXP-002), TAREA-005 (cierre).
-- Tras `Aceptada`, abrir DEC-0004 (esquema de tablas) y DEC-0005 (formato de entrada en
+- Tras `Aceptada`, abrir DEC-0-04 (esquema de tablas) y DEC-0-05 (formato de entrada en
   v1: publicado-only vs proyecto+publicado).
 
 ## Actualización (2026-05-29): Aceptada con el estado real (Plan B vigente)

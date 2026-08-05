@@ -1,23 +1,20 @@
 ---
 id: DEC-68-01
-titulo: "Eventos de ciclo de vida del intento (attempt_started / attempt_completed), uno por intento"
-estado: Aceptada
-fecha: 2026-06-12
+title: "Eventos de ciclo de vida del intento (attempt_started / attempt_completed), uno por intento"
+status: Accepted
+date: 2026-06-12
 tracking_issue: 68
 legacy_id: DEC-0051
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
-relacionados:
-  - DEC-26-03
-  - DEC-0007
-  - DEC-26-02
-  - DEC-34-01
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-26-03, DEC-0-07, DEC-26-02, DEC-34-01]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-68-01: Eventos de ciclo de vida del intento (attempt_started / attempt_completed), uno por intento
@@ -85,7 +82,7 @@ misma señal sin tocar los endpoints.
   (`rawscore` nulo) / sobre-cap, de modo que los eventos solo se emiten tras una escritura
   real. La detección "una vez por intento" usa `record_exists` (intento nuevo) y el `status`
   previo del registro overall (`itemnumber=0`) para la transición a terminal; `status` ya se
-  almacena por intento ([[DEC-0007]]).
+  almacena por intento ([[DEC-0-07]]).
 
 ## Decisión
 
@@ -109,7 +106,7 @@ dos eventos de ciclo de vida del alumno que faltaban.
 ## Riesgos
 
 - RIE-016: un commit puntuado sin `lesson_status` explícito normaliza a `completed`
-  ([[DEC-0007]]), de modo que `attempt_completed` se dispararía en el primer commit con nota.
+  ([[DEC-0-07]]), de modo que `attempt_completed` se dispararía en el primer commit con nota.
   Mitigación: es **una vez por intento** igualmente (el siguiente commit ve el estado previo
   ya terminal y no re-emite), así que no hay flood; el caso incompleto→completo real se
   cubre por la transición de estado. Aceptado.

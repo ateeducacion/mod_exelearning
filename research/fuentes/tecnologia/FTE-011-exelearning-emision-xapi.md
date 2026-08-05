@@ -13,7 +13,7 @@ context7:
   fecha: 2026-06-04
   version_devuelta: "adlnet/xapi-spec (xAPI-Data.md / xAPI-About.md) — High. Confirma answered + cmi.interaction + result.success, result.score {scaled,raw,min,max}, completed/failed, context.registration, contextActivities.parent y actor con account.name='anonymous'."
 fecha_consulta: 2026-06-04
-relevancia_para_mod_exelearning: "Desbloquea DEC-0014: los paquetes publicados ya emiten statements xAPI por postMessage; mod_exelearning puede consumirlos reusando el mapa objectid→itemnumber (DEC-5-01) y la tubería de intentos (DEC-0007)."
+relevancia_para_mod_exelearning: "Desbloquea DEC-0-14: los paquetes publicados ya emiten statements xAPI por postMessage; mod_exelearning puede consumirlos reusando el mapa objectid→itemnumber (DEC-5-01) y la tubería de intentos (DEC-0-07)."
 herramienta_ia:
   interfaz: claude-code
   modelo: claude-opus-4-8
@@ -41,7 +41,7 @@ rama `feature/add-xapi-support`) añade a **todos** los formatos de exportación
 que cualquier paquete publicado es "xAPI-compatible out of the box", **sin opción de
 exportación**.
 
-Esto **invalida el hecho de partida de DEC-0014** ("eXeLearning upstream NO emite xAPI
+Esto **invalida el hecho de partida de DEC-0-14** ("eXeLearning upstream NO emite xAPI
 hoy", verificado 2026-05-29) y **reactiva** su hoja de ruta (opción C: SCORM 1.2 vigente
 + xAPI cuando upstream lo emita).
 
@@ -65,7 +65,7 @@ hoy", verificado 2026-05-29) y **reactiva** su hoja de ruta (opción C: SCORM 1.
   `registration` y `actor`.
 - **Identidad de actividad estable.** `object.id` por iDevice =
   `{baseIri}/idevice/{ideviceId}`, donde `ideviceId` es el `<odeIdeviceId>` estable
-  (PR upstream #1791, ver DEC-0012/DEC-5-01) — el **mismo** valor que
+  (PR upstream #1791, ver DEC-0-12/DEC-5-01) — el **mismo** valor que
   `exelearning_grade_item.objectid`.
 
 ## Contrato observado (código, `exe_xapi.js` @ 59b9b9b)

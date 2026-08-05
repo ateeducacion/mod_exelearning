@@ -13,7 +13,7 @@ pasos:
   - "Añadir badges al README del plugin."
   - "Añadir codeql.yml + dependabot.yml."
 relacionados:
-  - DEC-0004
+  - DEC-0-04
   - AN-006
   - REPO-001
   - REPO-002

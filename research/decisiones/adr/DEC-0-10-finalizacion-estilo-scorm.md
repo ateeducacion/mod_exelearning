@@ -1,24 +1,25 @@
 ---
-id: DEC-0010
-titulo: "Condiciones de finalización estilo SCORM (aprobar para completar)"
-estado: Aceptada
-fecha: 2026-05-28
-agentes:
+id: DEC-0-10
+tracking_issue: 0
+legacy_id: DEC-0010
+title: "Condiciones de finalización estilo SCORM (aprobar para completar)"
+status: Accepted
+date: 2026-05-28
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
-experimentos: []
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
-relacionados:
-  - DEC-0006
-  - DEC-0007
-  - DEC-0008
+experiments: []
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
+related:
+  adrs: [DEC-0-06, DEC-0-07]
+  - DEC-0-08
 ---
 
-# DEC-0010: Condiciones de finalización estilo SCORM (aprobar para completar)
+# DEC-0-10: Condiciones de finalización estilo SCORM (aprobar para completar)
 
 ## Contexto
 
@@ -32,7 +33,7 @@ mínima (`completionscorerequired`).
 
 `mod_scorm` tiene condiciones de finalización propias
 (`completionstatusrequired`, `completionscorerequired`) ligadas al data model
-CMI. `mod_exelearning` NO arrastra el data model SCORM (ver DEC-0007), así que
+CMI. `mod_exelearning` NO arrastra el data model SCORM (ver DEC-0-07), así que
 replicarlas tal cual no aplica. ¿Qué mecanismo de "completar al aprobar"
 usamos?
 
@@ -70,7 +71,7 @@ Concretamente:
 |---|---|
 | `completionscorerequired = N` | `gradepass = N` + `completionpassgrade = 1` |
 | `completionstatusrequired = passed` | `completionpassgrade = 1` (aprobar = pasar) |
-| `whatgrade` (highest/average/...) | `grademethod` (DEC-0007) |
+| `whatgrade` (highest/average/...) | `grademethod` (DEC-0-07) |
 
 ## Demo (setup_demo.php + blueprint.json)
 
@@ -120,8 +121,8 @@ Negativas:
 
 ## Revisión 2026-06-01 — compatibilidad con `peritem`
 
-La sesión e2e de TAREA-011 confirmó que DEC-0010 depende de que exista un
-`grade_item` overall evaluable. Para mantener la UX de DEC-0008 y la semántica
+La sesión e2e de TAREA-011 confirmó que DEC-0-10 depende de que exista un
+`grade_item` overall evaluable. Para mantener la UX de DEC-0-08 y la semántica
 SCORM-style de esta ADR, `peritem` conserva un overall oculto y `track.php`
 publica ahí la nota agregada. Moodle core puede evaluar `completionpassgrade`,
 pero el profesor sigue viendo las columnas por iDevice como presentación normal

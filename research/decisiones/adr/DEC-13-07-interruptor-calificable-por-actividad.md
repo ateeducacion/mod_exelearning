@@ -1,21 +1,20 @@
 ---
 id: DEC-13-07
-titulo: "Interruptor 'Calificable' por actividad (issue #13)"
-estado: Aceptada
-fecha: 2026-06-03
+title: "Interruptor 'Calificable' por actividad (issue #13)"
+status: Accepted
+date: 2026-06-03
 tracking_issue: 13
 legacy_id: DEC-0029
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
-relacionados:
-  - DEC-0008
-  - DEC-13-01
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-0-08, DEC-13-01]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-13-07: Interruptor 'Calificable' por actividad (issue #13)
@@ -49,7 +48,7 @@ Campo nuevo **`gradeenabled`** en la tabla `exelearning` (INT, **default 1**).
 - Cambio de esquema: `gradeenabled` + etapa de upgrade (2026060400) + bump de versión.
 - Desactivar una actividad con notas existentes quita las columnas del libro pero preserva los
   intentos (no destruye datos del alumno).
-- `completionpassgrade` (DEC-0010) no debe usarse con `gradeenabled=0` (se elimina el overall);
+- `completionpassgrade` (DEC-0-10) no debe usarse con `gradeenabled=0` (se elimina el overall);
   si la actividad no califica, no procede la finalización por nota.
 
 ## Implementación

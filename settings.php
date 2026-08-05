@@ -17,7 +17,7 @@
 /**
  * mod_exelearning admin settings.
  *
- * DEC-0009: embedded editor mode only. Integration with eXeLearning Online
+ * DEC-0-09: embedded editor mode only. Integration with eXeLearning Online
  * was discarded to avoid external dependencies. The editor itself ships inside
  * the release package (DEC-106-01) and has no runtime management; this page only
  * manages defined styles, gated by the

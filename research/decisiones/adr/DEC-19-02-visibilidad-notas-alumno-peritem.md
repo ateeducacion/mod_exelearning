@@ -1,25 +1,22 @@
 ---
 id: DEC-19-02
-titulo: "Coherencia profesor/alumno en peritem: excluir la nota overall oculta de la agregación para no vaciar el total del alumno"
-estado: Superseded
-fecha: 2026-06-04
+title: "Coherencia profesor/alumno en peritem: excluir la nota overall oculta de la agregación para no vaciar el total del alumno"
+status: Superseded
+date: 2026-06-04
 tracking_issue: 19
 legacy_id: DEC-0035
-reemplazada_por: DEC-25-01
-agentes:
+superseded_by: DEC-25-01
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
   - FTE-012
-relacionados:
-  - DEC-0008
-  - DEC-0010
-  - DEC-5-01
-  - DEC-6-01
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-0-08, DEC-0-10, DEC-5-01, DEC-6-01]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-19-02: Coherencia profesor/alumno en peritem: excluir la nota overall oculta de la agregación para no vaciar el total del alumno
@@ -31,10 +28,10 @@ elementos evaluables**, los elementos de calificación que ve el rol
 **administrador/profesor no son los mismos** que ve el **alumno**: el alumno resuelve
 las actividades pero **"no aparecen" cuando consulta sus calificaciones**.
 
-Estado del código: en el modelo `peritem` (por defecto, DEC-0008),
+Estado del código: en el modelo `peritem` (por defecto, DEC-0-08),
 `exelearning_sync_grade_items()` (`lib.php`) crea el item overall `itemnumber=0`
 **oculto** (`hidden=1`, líneas ~940-943) y lo mantiene únicamente para que la
-finalización por nota de aprobado del core (`completionpassgrade`, DEC-0010) tenga un
+finalización por nota de aprobado del core (`completionpassgrade`, DEC-0-10) tenga un
 item con `gradepass`. Las columnas por-iDevice se crean **visibles**. La nota overall se
 escribe en `track.php` (y en `exelearning_recalculate_user_grades`) también oculta.
 
@@ -61,7 +58,7 @@ vez → riesgo de **doble conteo** en el total del curso.
   oculto para la finalización pero se **excluye de la agregación** por-nota
   (`grade_grade::set_excluded(true)`). El alumno ve sus N notas por-iDevice y un total
   correcto; el profesor ve lo mismo + el item de finalización (ya inofensivo). Bajo
-  riesgo, respeta DEC-0008/DEC-0010.
+  riesgo, respeta DEC-0-08/DEC-0-10.
 - **B. Overall visible para ambos.** Hacer visible el overall también al alumno (mismas
   columnas en ambos roles), ajustando la agregación para no duplicar. Más intrusivo en la
   lógica de agregación; cambia el modelo.
@@ -112,7 +109,7 @@ toca `finalgrade`/`gradepass`, así que `completionpassgrade` sigue intacto.
 - El alumno ve sus notas por-iDevice **y** un total correcto; desaparece la percepción de
   "notas que no aparecen".
 - Se elimina el doble conteo del overall en el total del curso.
-- `completionpassgrade` (DEC-0010) sigue funcionando (la nota oculta conserva
+- `completionpassgrade` (DEC-0-10) sigue funcionando (la nota oculta conserva
   `finalgrade`/`gradepass`).
 
 **Negativas / coste**

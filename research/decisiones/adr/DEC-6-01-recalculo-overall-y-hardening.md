@@ -1,25 +1,22 @@
 ---
 id: DEC-6-01
-titulo: "Recálculo del overall desde itemscores (cierre residuo RIE-007) + hardening menor"
-estado: Aceptada
-fecha: 2026-06-01
+title: "Recálculo del overall desde itemscores (cierre residuo RIE-007) + hardening menor"
+status: Accepted
+date: 2026-06-01
 tracking_issue: 6
 legacy_id: DEC-0018
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-005
   - FTE-006
   - FTE-008
-relacionados:
-  - DEC-5-01
-  - DEC-4-01
-  - DEC-0008
-  - DEC-0007
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-5-01, DEC-4-01, DEC-0-08, DEC-0-07]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-6-01: Recálculo del overall desde itemscores (cierre residuo RIE-007) + hardening menor
@@ -33,7 +30,7 @@ productor vendorado), que **queda corrupto** bajo la colisión multipágina de
 `cmi.suspend_data` (ver `track.php`, antes del `record_item` de itemnumber=0). El
 shim de `view.php` ya captura `itemscores` (mapa `objectid → {scorepct, weighted}`),
 así que el servidor dispone de los datos para recomputar el overall sin tocar código
-vendorado (DEC-0002) ni el esquema.
+vendorado (DEC-0-02) ni el esquema.
 
 Una auditoría del código real tras DEC-5-01 identificó además un cluster de
 **hardening menor** de bajo riesgo, y reconfirmó dos ítems que se **difieren**
@@ -195,7 +192,7 @@ sería un lock `\core\lock\lock_config::get_lock_factory('mod_exelearning_maxatt
 por recurso `"user:{userid}:exe:{id}"`, **confinado a la rama `!sessionknown`** de
 `track.php` (recount + recheck + primer `record_item` dentro del lock; HTTP 409 si no
 se obtiene). Su coste sería **despreciable** —se adquiere ~1 vez por intento, no por
-autocommit, y en MariaDB/PostgreSQL (matriz CI, DEC-0004) el factory `auto` usa locks
+autocommit, y en MariaDB/PostgreSQL (matriz CI, DEC-0-04) el factory `auto` usa locks
 nativos `GET_LOCK`/advisory in-memory, no el fallback lento `db_record`/`file` que
 motiva la advertencia de rendimiento de la Lock API.
 

@@ -2,8 +2,8 @@
 
 > Status: **describes the code as shipped today**. Tracking in `mod_exelearning` is
 > currently **100% SCORM 1.2 shim**; there is no xAPI path yet.
-> Decision trail (Spanish): `research/decisiones/adr/` — DEC-0003 (SCORM 1.2 standard),
-> DEC-0006 (preview/grading), DEC-0007 (attempts), DEC-0008 (grade model), DEC-0010
+> Decision trail (Spanish): `research/decisiones/adr/` — DEC-0-03 (SCORM 1.2 standard),
+> DEC-0-06 (preview/grading), DEC-0-07 (attempts), DEC-0-08 (grade model), DEC-0-10
 > (completion), DEC-5-01 (objectid routing), DEC-6-01 (overall recompute), DEC-13-07
 > (master grading switch).
 
@@ -34,7 +34,7 @@ note in the root `AGENTS.md`.
 - Implements SCORM 1.2: `LMSInitialize`, `LMSFinish`, `LMSCommit`, `LMSGetValue`,
   `LMSSetValue`, `LMSGetLastError`, … (`view.php:498-523`).
 - A random **session token** per page load (`random_string(20)`, `view.php:531`) groups all
-  auto-commits of one page view into a single attempt (DEC-0007).
+  auto-commits of one page view into a single attempt (DEC-0-07).
 - **Auto-commit** 500 ms after the last `LMSSetValue` of a critical key, plus a synchronous
   send on `beforeunload` so closing the tab does not drop a grade (`view.php:493-528`).
 - **Per-iDevice objectid routing** (`captureItemScores`/`resolveObjectMap`,
@@ -51,7 +51,7 @@ note in the root `AGENTS.md`.
    proxy logs (SEC-04).
 2. Resolve `cm` / `course` / instance; `require_login` (`track.php:53-57`).
 3. **Authorization** (`track.php:51-57`): `?mode=preview` is honoured **only** with
-   `moodle/course:manageactivities` (DEC-0006); otherwise
+   `moodle/course:manageactivities` (DEC-0-06); otherwise
    `require_capability('mod/exelearning:savetrack')`. A student forcing `preview` falls
    back to grading.
 4. Parse JSON body; read `cmi.core.score.raw|max` and `cmi.core.lesson_status`
@@ -68,11 +68,11 @@ note in the root `AGENTS.md`.
    from per-item scores via `track::recompute_overall_pct()` instead of trusting
    `cmi.core.score.raw` (DEC-6-01, `track.php:210-229`); record it
    (`attempts::record_item`) and aggregate across attempts by `grademethod`
-   (`attempts::aggregate_scaled`, DEC-0007).
+   (`attempts::aggregate_scaled`, DEC-0-07).
 10. **Publish** with `grade_update('mod/exelearning', …, itemnumber=0, …)`; in PERITEM mode
     the overall item is `hidden=1` and exists only so Moodle's `completionpassgrade` rule
-    can evaluate pass/fail (DEC-0008, `track.php:261-273`).
-11. **Completion**: force re-evaluation with `completion_info::update_state()` (DEC-0010,
+    can evaluate pass/fail (DEC-0-08, `track.php:261-273`).
+11. **Completion**: force re-evaluation with `completion_info::update_state()` (DEC-0-10,
     `track.php:278-281`).
 
 ## Data model
@@ -83,7 +83,7 @@ note in the root `AGENTS.md`.
 - **`exelearning_grade_item`** — one row per gradable iDevice: `objectid`
   (`<odeIdeviceId>`), `itemnumber` (0..100), `idevicetype`, `pageid`, `contenthash`,
   `deleted`. UNIQUE `(exelearningid, itemnumber)` and `(exelearningid, objectid)`.
-- **`exelearning_attempt`** — **flat** table (DEC-0007), one row per
+- **`exelearning_attempt`** — **flat** table (DEC-0-07), one row per
   `(exelearningid, userid, attempt, itemnumber)` with `rawscore`, `maxscore`,
   `scaledscore`, `status`, `sessiontoken`. `itemnumber=0` is the overall.
 

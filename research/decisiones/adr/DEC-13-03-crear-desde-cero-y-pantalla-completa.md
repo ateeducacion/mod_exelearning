@@ -1,21 +1,20 @@
 ---
 id: DEC-13-03
-titulo: "Crear .elpx desde cero (paquete opcional) y control de pantalla completa (issue #13 #1 y #6)"
-estado: Aceptada
-fecha: 2026-06-03
+title: "Crear .elpx desde cero (paquete opcional) y control de pantalla completa (issue #13 #1 y #6)"
+status: Accepted
+date: 2026-06-03
 tracking_issue: 13
 legacy_id: DEC-0024
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
-relacionados:
-  - DEC-0009
-  - DEC-0012
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-0-09, DEC-0-12]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-13-03: Crear .elpx desde cero (paquete opcional) y control de pantalla completa (issue #13 #1 y #6)
@@ -33,11 +32,11 @@ El issue #13 pide poder **crear un recurso eLPX desde cero** sin subir un ficher
 paquete vacío: `exelearning_save_and_extract_package()` retorna pronto si no hay fichero, y
 `exelearning_get_package_url()` degrada a `null`, con lo que el editor embebido recibe
 `initialProjectUrl: ''` y crea un proyecto nuevo en cliente (Yjs); al guardar,
-`editor/save.php` extrae y sincroniza (DEC-0012). En `view.php`, el estado "sin contenido"
+`editor/save.php` extrae y sincroniza (DEC-0-12). En `view.php`, el estado "sin contenido"
 deja de ser un error: si el editor embebido está disponible se muestra un aviso informativo
 que invita a usar **Editar con eXe**; si está deshabilitado, se guía a subir un `.elpx` por
 los ajustes; al alumno se le mantiene el error duro. Requiere, por tanto, el **editor
-embebido instalado** (coherente con DEC-0009: solo editor embebido).
+embebido instalado** (coherente con DEC-0-09: solo editor embebido).
 
 **Interfaz (punto 6).** El botón **Editar con eXe** se alinea a la derecha
 (`d-flex justify-content-end`). Se añade un botón **Pantalla completa** en una barra sobre el

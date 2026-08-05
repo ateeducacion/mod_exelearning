@@ -1,25 +1,21 @@
 ---
 id: DEC-13-12
-titulo: "La herramienta de migración exeweb/exescorm vive en mod_exelearning: endurecimiento (itemid=revision, clasificación exescorm, limpieza compensatoria, metadatos, preflight, eventos)"
-estado: Aceptada
-fecha: 2026-06-12
+title: "La herramienta de migración exeweb/exescorm vive en mod_exelearning: endurecimiento (itemid=revision, clasificación exescorm, limpieza compensatoria, metadatos, preflight, eventos)"
+status: Accepted
+date: 2026-06-12
 tracking_issue: 13
 legacy_id: DEC-0050
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-001
   - REPO-007
-relacionados:
-  - DEC-13-05
-  - DEC-13-04
-  - DEC-26-03
-  - DEC-0008
-  - DEC-13-08
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-13-05, DEC-13-04, DEC-26-03, DEC-0-08, DEC-13-08]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-13-12: La herramienta de migración exeweb/exescorm vive en mod_exelearning: endurecimiento (itemid=revision, clasificación exescorm, limpieza compensatoria, metadatos, preflight, eventos)
@@ -61,7 +57,7 @@ que **se verificaron todos en el código** antes de actuar:
 Se mantiene la lógica de migración en el plugin **destino**, no en los orígenes. El
 destino es quien posee el nuevo modelo de datos: extracción del `.elpx`
 (`exelearning_extract_stored_package()`), sincronización de grade items
-(`exelearning_sync_grade_items()`), los modelos de calificación ([[DEC-0008]]) y la
+(`exelearning_sync_grade_items()`), los modelos de calificación ([[DEC-0-08]]) y la
 tabla de idempotencia. Los plugins origen se tratan como **fuentes legacy de solo
 lectura** detrás de una interfaz (`source_interface`); no se les añade lógica de
 escritura hacia el destino, lo que evitaría duplicar el flujo y obligaría a mantener

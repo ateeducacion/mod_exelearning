@@ -1,23 +1,20 @@
 ---
 id: DEC-77-01
-titulo: "Extracción de paquete no-destructiva: validar la nueva revisión antes de podar la anterior (issue 73)"
-estado: Aceptada
-fecha: 2026-06-13
+title: "Extracción de paquete no-destructiva: validar la nueva revisión antes de podar la anterior (issue 73)"
+status: Accepted
+date: 2026-06-13
 tracking_issue: 77
 legacy_id: DEC-0057
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
-relacionados:
-  - DEC-71-01
-  - DEC-34-01
-  - DEC-13-08
-  - DEC-72-01
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-71-01, DEC-34-01, DEC-13-08, DEC-72-01]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-77-01: Extracción de paquete no-destructiva: validar la nueva revisión antes de podar la anterior (issue 73)

@@ -15,7 +15,7 @@ context7:
   fecha: 2026-05-29
   version_devuelta: "adlnet/xapi-spec + aicc.github.io/CMI-5_Spec_Current (consulta web 2026-05-29)"
 fecha_consulta: 2026-05-29
-relevancia_para_mod_exelearning: "Fundamenta la hoja de ruta de tracking (DEC-0003 vigente SCORM 1.2, DEC-0014 xAPI). Sirve para decidir si una futura capa xAPI/cmi5 merece la pena y qué exige de eXeLearning."
+relevancia_para_mod_exelearning: "Fundamenta la hoja de ruta de tracking (DEC-0-03 vigente SCORM 1.2, DEC-0-14 xAPI). Sirve para decidir si una futura capa xAPI/cmi5 merece la pena y qué exige de eXeLearning."
 herramienta_ia:
   interfaz: claude-code
   modelo: claude-opus-4-8
@@ -24,10 +24,10 @@ herramienta_ia:
 ## Resumen ejecutivo
 
 > **[ACTUALIZACION 2026-06-17]** Comparativa de bootstrap (2026-05-29). Matiz de staleness: donde el cuerpo
-> afirma como presente que «eXeLearning **no emite** xAPI» (input de DEC-0014/DEC-0015), eso **ya no es cierto**:
+> afirma como presente que «eXeLearning **no emite** xAPI» (input de DEC-0-14/DEC-0-15), eso **ya no es cierto**:
 > upstream emite statements xAPI por iDevice (PR #1867, **FTE-011**); el consumo + validación canónica está en
 > **FTE-015**, la versión 2.0 / forward-compat en **FTE-017**, y la síntesis en **AN-014** (decisión
-> **DEC-17-01/DEC-0063**). La comparativa de estándares sigue válida; solo el «hoy no emite» quedó superado.
+> **DEC-17-01/DEC-0-18**). La comparativa de estándares sigue válida; solo el «hoy no emite» quedó superado.
 
 Tres estándares de tracking en juego (AICC queda descartado: legado de 1988, grupo
 disuelto en 2014 — iSpring). En una frase:
@@ -35,7 +35,7 @@ disuelto en 2014 — iSpring). En una frase:
 - **SCORM (1.2 / 2004)**: instrucciones de lanzamiento + criterios de finalización
   normalizados, pero contenido **atado al paquete y al navegador/mismo dominio**, y
   datos limitados a elementos predefinidos que viven **en el LMS**. Soporte casi
-  universal. Es lo que `mod_exelearning` usa hoy (vía puente SCORM 1.2, DEC-0003).
+  universal. Es lo que `mod_exelearning` usa hoy (vía puente SCORM 1.2, DEC-0-03).
 - **xAPI (Experience API / Tin Can)**: statements `actor-verb-object[-result]`
   flexibles enviados a un **LRS**; rastrea cualquier cosa (móvil, offline, juegos),
   datos portables. **Pero** "pelado" carece de reglas estandarizadas de
@@ -102,19 +102,19 @@ disuelto en 2014 — iSpring). En una frase:
 | Acoplamiento al productor | exige inyectar pipwerks + el parche del guard de `form`/`scrambled-list` (DEC-13-11) | ninguno — el emisor está siempre activo en cada export | **xAPI** — menos mutaciones en servido |
 | Estado del estándar | heredado (SCORM 1.2, era 2004) | actual (xAPI 1.0.3, compatible hacia 2.0) | **xAPI** — moderno y mantenido |
 | Ubicuidad LMS / tooling | casi universal, décadas de soporte | estándar moderno, adopción creciente | **SCORM** — máxima compatibilidad |
-| Madurez en el plugin | productivo, por defecto desde DEC-0003 | nuevo en esta capa | **SCORM** — probado |
+| Madurez en el plugin | productivo, por defecto desde DEC-0-03 | nuevo en esta capa | **SCORM** — probado |
 | Listo para analítica / LRS | no (los datos quedan como notas Moodle) | statements con forma de LRS (handler `core_xapi` futuro, diferido) | **xAPI** — vía hacia learning analytics |
 
 **En resumen**
 
 - **SCORM 1.2 destaca en** ubicuidad y madurez, y en llevar el peso por iDevice en línea (el overall
   ponderado no necesita una señal aparte). Permanece como camino de compatibilidad para paquetes
-  anteriores al emisor xAPI (DEC-0003).
+  anteriores al emisor xAPI (DEC-0-03).
 - **xAPI destaca en** granularidad estructurada por interacción, eliminar la regex frágil de
   `suspend_data` y la dependencia de pipwerks, idempotencia, portabilidad (móvil/offline/LRS) y ser el
   estándar moderno y a prueba de futuro. Es el canal primario para los paquetes que lo emiten (DEC-85-01).
 
-## Implicación para mod_exelearning (ver DEC-0014 y AN-010)
+## Implicación para mod_exelearning (ver DEC-0-14 y AN-010)
 
 - Hoy el bridge es **SCORM 1.2** porque eXeLearning **no emite xAPI** (FTE-007).
   Funciona y da multi-itemnumber con un shim (ver AN-010 / glosario "shim").
@@ -125,4 +125,4 @@ disuelto en 2014 — iSpring). En una frase:
 - Conclusión preliminar: **xAPI puro** (consumido por `core_xapi` de Moodle) es el
   objetivo natural si upstream emite statements; **cmi5 es probablemente excesivo**
   para el caso "recurso embebido en Moodle" (su valor está en LRS externos y
-  catálogos de cursos lanzables). Se detalla en DEC-0014 / DEC-0015.
+  catálogos de cursos lanzables). Se detalla en DEC-0-14 / DEC-0-15.

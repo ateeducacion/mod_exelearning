@@ -1,21 +1,20 @@
 ---
 id: DEC-13-02
-titulo: "Deep-link desde el gradebook al iDevice vía grade.php (issue #13 #4)"
-estado: Aceptada
-fecha: 2026-06-03
+title: "Deep-link desde el gradebook al iDevice vía grade.php (issue #13 #4)"
+status: Accepted
+date: 2026-06-03
 tracking_issue: 13
 legacy_id: DEC-0023
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
-relacionados:
-  - DEC-5-01
-  - DEC-13-01
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-5-01, DEC-13-01]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-13-02: Deep-link desde el gradebook al iDevice vía grade.php (issue #13 #4)

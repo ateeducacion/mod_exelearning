@@ -159,7 +159,7 @@ final class exeweb_source implements source_interface {
     }
 
     /**
-     * The target uses the default per-iDevice model (exeweb has no grades, DEC-0008).
+     * The target uses the default per-iDevice model (exeweb has no grades, DEC-0-08).
      *
      * @return int
      */

@@ -1,26 +1,20 @@
 ---
 id: DEC-34-01
-titulo: "Auditoría de bugs críticos (workflow multi-agente) y correcciones por temas"
-estado: Aceptada
-fecha: 2026-06-10
+title: "Auditoría de bugs críticos (workflow multi-agente) y correcciones por temas"
+status: Accepted
+date: 2026-06-10
 tracking_issue: 34
 legacy_id: DEC-0044
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
-relacionados:
-  - DEC-12-01
-  - DEC-13-03
-  - DEC-13-07
-  - DEC-19-01
-  - DEC-25-01
-  - DEC-26-02
-  - DEC-34-02
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-fable-5
+related:
+  adrs: [DEC-12-01, DEC-13-03, DEC-13-07, DEC-19-01, DEC-25-01, DEC-26-02, DEC-34-02]
+ai_assistance:
+  tool: claude-code
+  model: claude-fable-5
 ---
 
 # DEC-34-01: Auditoría de bugs críticos (workflow multi-agente) y correcciones por temas

@@ -1,22 +1,20 @@
 ---
 id: DEC-69-01
-titulo: "Regla de finalización personalizada por estado (completionstatusrequired)"
-estado: Aceptada
-fecha: 2026-06-12
+title: "Regla de finalización personalizada por estado (completionstatusrequired)"
+status: Accepted
+date: 2026-06-12
 tracking_issue: 69
 legacy_id: DEC-0052
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
-relacionados:
-  - DEC-25-01
-  - DEC-67-01
-  - DEC-34-01
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-25-01, DEC-67-01, DEC-34-01]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-69-01: Regla de finalización personalizada por estado (completionstatusrequired)
@@ -37,7 +35,7 @@ través del contrato de *custom completion* de Moodle.
 
 ¿Cómo cerrar el hueco de "completion rules" respecto a `mod_exescorm` **sin** clonar la
 complejidad multi-SCO que el propio informe critica, y **sin** crear mecanismos
-solapados con la finalización por nota ya existente ([[DEC-25-01]], [[DEC-0010]])?
+solapados con la finalización por nota ya existente ([[DEC-25-01]], [[DEC-0-10]])?
 
 ## Opciones consideradas
 
@@ -47,7 +45,7 @@ solapados con la finalización por nota ya existente ([[DEC-25-01]], [[DEC-0010]
 2. **Clonar las tres reglas de `mod_exescorm`** (`completionstatusrequired`,
    `completionscorerequired`, `completionstatusallscos`). Ventaja: paridad literal.
    Inconveniente: `completionscorerequired` duplica la finalización por nota ([[DEC-25-01]],
-   [[DEC-0010]]) — dos vías para lo mismo, justo el antipatrón que el informe critica — y
+   [[DEC-0-10]]) — dos vías para lo mismo, justo el antipatrón que el informe critica — y
    `completionstatusallscos` es un concepto multi-SCO ajeno a eXe (no hay varios SCO por
    módulo). Coste y superficie altos.
 3. **Una sola regla por estado, a nivel de módulo** (elegida) — `completionstatusrequired`
@@ -64,11 +62,11 @@ Valoración del eje que cierra esta decisión (matriz comparativa de *completion
 |-------|----------------|--------------------------|------------------------------|----------------|
 | `HAS_RULES` | `true` | `false` | **`true`** | Cierra el hueco de amplitud (REPO-004 / [[DEC-67-01]]). |
 | Estado requerido | sí (bitmask de estados SCORM) | — | **sí** (aprobado/completado/cualquiera) | El campo `status` ya existe en `exelearning_attempt`. |
-| Puntuación requerida | sí | — (vía nota) | **no** | Solapa con completion-by-grade ([[DEC-25-01]], [[DEC-0010]]); dos vías = antipatrón. |
+| Puntuación requerida | sí | — (vía nota) | **no** | Solapa con completion-by-grade ([[DEC-25-01]], [[DEC-0-10]]); dos vías = antipatrón. |
 | Todos los SCO | sí | — | **no** | Concepto multi-SCO; eXe es un módulo = un estado. |
 
 Por qué **solo estado**: la finalización "por nota mínima" ya está cubierta de forma
-nativa (`completionpassgrade` + `gradepass`, [[DEC-0010]]) y el modelo de notas
+nativa (`completionpassgrade` + `gradepass`, [[DEC-0-10]]) y el modelo de notas
 per-iDevice/overall ([[DEC-25-01]]) permite apuntar la condición a un ítem concreto. Añadir
 `completionscorerequired` crearía dos caminos para "completar al superar una puntuación",
 divergentes en aristas (qué ítem, qué agregación), que es precisamente la duplicación que
@@ -92,7 +90,7 @@ modo que **no entra en conflicto** con ese rechazo: encaja exactamente en
   Moodle en `../moodle`): patrón canónico de `*_supports`, `*_get_coursemodule_info`,
   `add_completion_rules`/`completion_rule_enabled` y la subclase de
   `activity_custom_completion`, que esta implementación reproduce a escala de una regla.
-- **[[DEC-25-01]] / [[DEC-0010]]**: la finalización por nota ya existe, lo que motiva
+- **[[DEC-25-01]] / [[DEC-0-10]]**: la finalización por nota ya existe, lo que motiva
   **descartar** `completionscorerequired`.
 
 ## Decisión
@@ -131,7 +129,7 @@ cualquiera de los dos). Contrato completo de Moodle:
 - **Negativas / coste**: una columna y un *upgrade savepoint* más; el profesor dispone de
   una condición adicional que debe entender (documentada en `docs/GRADEBOOK.md`).
 - **Cambios que dispara**: ninguno pendiente; convive con la finalización por nota
-  ([[DEC-0010]], [[DEC-25-01]]) sin solaparse.
+  ([[DEC-0-10]], [[DEC-25-01]]) sin solaparse.
 
 ## Riesgos
 

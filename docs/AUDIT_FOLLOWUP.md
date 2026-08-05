@@ -62,7 +62,7 @@ No functional code was changed: the audit surfaced no clear incoherence to fix.
 |---|---|---|
 | Serve-time package transform (removes HTML injection at extraction — report's "debt #1"). | Proposed, deferred (not small/safe). | [[DEC-34-02]] / [[DEC-36-01]] |
 | Dual xAPI + SCORM 1.2 ingestion (definitive removal of the shim). | Proposed, gated on upstream `exelearning#1867`. | [[DEC-17-01]] |
-| `.elpx` client-side JS sandboxing hardening (RIE-001). | Documented roadmap, intentionally not implemented. | [[DEC-0019]] |
+| `.elpx` client-side JS sandboxing hardening (RIE-001). | Documented roadmap, intentionally not implemented. | [[DEC-0-16]] |
 | Embedded-editor `postMessage` origin: `editorOrigin` falls back to `'*'`. | Hardening opportunity, low risk (same-origin pluginfile). | `docs/EMBEDDED_EDITOR.md` |
 | Promote `MATURITY_BETA` → `MATURITY_STABLE`. | **Done** (PR #77 / [[DEC-77-01]]); the checklist is retained as the STABLE re-release gate. | `docs/RELEASE_CHECKLIST.md` |
 
@@ -72,7 +72,7 @@ No functional code was changed: the audit surfaced no clear incoherence to fix.
 |---|---|---|---|
 | Teacher expectation of a grade when `gradeenabled = 0`. | `lib.php:66-67` (`ASSESSMENT` static); [[DEC-13-07]]. | Documented in `docs/GRADEBOOK.md` + [[DEC-37-01]]; no code change. | `tests/` mod_form / grade-disabled behavior (existing). |
 | Package HTML injection coupled to eXe internals (`inject_scorm_loader`, teacher-mode hider). | `lib.php` `exelearning_inject_scorm_loader()` / `exelearning_require_teacher_mode_hider()`; [[DEC-36-01]]. | Migrate to serve-time transform when prioritised ([[DEC-34-02]]); keep workaround for legacy `.elpx`. | Backup/restore + view rendering tests (existing). |
-| `.elpx` runs untrusted JS same-origin in an iframe. | `view.php` iframe `sandbox` (no `allow-top-navigation`, no `allow-modals`); AN-008. | Tier-1/Tier-2 hardening roadmap ([[DEC-0019]]). | n/a (documented roadmap). |
+| `.elpx` runs untrusted JS same-origin in an iframe. | `view.php` iframe `sandbox` (no `allow-top-navigation`, no `allow-modals`); AN-008. | Tier-1/Tier-2 hardening roadmap ([[DEC-0-16]]). | n/a (documented roadmap). |
 | External DTD declaration in packages could be an XXE vector. | `package.php` `load_dom()` (`LIBXML_NONET`, no `DTDLOAD`/`NOENT`, internal-entity rejection); [[DEC-26-01]]. | None — mitigated; documented in `docs/ELPX_PACKAGE.md`. | Parser unit tests (existing, 22 cases). |
 | Client tampering with grades via tracking payload. | `track::ingest()` recompute + objectid filter + clamp; [[DEC-6-01]]. | None — mitigated; documented in `docs/TRACKING.md`. | Tracking/external unit tests (existing). |
 
@@ -100,7 +100,7 @@ re-audited) and the recorded **direction options** — is in [[DEC-67-01]].
 | 002 | Declare the bundled editor in the release ZIP's `thirdpartylibs.xml` (index-only stamp). | P1 | #47 |
 | 003 | Backup/restore fidelity: round-trip `contenthash` ([[DEC-12-01]]); skip unmappable attempt users instead of userid 0. | P1 | #48 |
 | 004 | Serialize attempt-number allocation with a per-`(instance,user)` `\core\lock` (degrades to today's behaviour on timeout). | P2 | #49 |
-| 005 | Participation summary honours `grademethod` ([[DEC-0007]]) so it matches the gradebook. | P2 | #50 |
+| 005 | Participation summary honours `grademethod` ([[DEC-0-07]]) so it matches the gradebook. | P2 | #50 |
 | 006 | Batch bulk grade recalculation: one SELECT + one `grade_update()` per item (kills the users×items N+1). | P2 | #51 |
 | 007 | Shared `zip_utils` with a post-extraction symlink/containment sweep, wired into both extraction sites. | P2 | #52 |
 | 008 | Attempts report download via `\core\dataformat` (CSV/Excel/ODS/JSON). | P3 | #53 |

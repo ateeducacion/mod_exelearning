@@ -1,24 +1,20 @@
 ---
 id: DEC-71-01
-titulo: "Extracción de la lógica de lib.php a clases por responsabilidad (grades/*, local/scorm/*, package_manager, urls)"
-estado: Aceptada
-fecha: 2026-06-12
+title: "Extracción de la lógica de lib.php a clases por responsabilidad (grades/*, local/scorm/*, package_manager, urls)"
+status: Accepted
+date: 2026-06-12
 tracking_issue: 71
 legacy_id: DEC-0054
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
-relacionados:
-  - DEC-67-01
-  - DEC-36-01
-  - DEC-25-01
-  - DEC-0007
-  - DEC-4-01
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-67-01, DEC-36-01, DEC-25-01, DEC-0-07, DEC-4-01]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-71-01: Extracción de la lógica de lib.php a clases por responsabilidad (grades/*, local/scorm/*, package_manager, urls)
@@ -49,7 +45,7 @@ consecuencias concretas:
 - El tamaño del fichero penalizaba la legibilidad y la revisión.
 
 El reto es hacerlo **sin cambiar comportamiento**: el cálculo de notas, el manejo de
-ficheros y la inyección SCORM son sensibles ([[DEC-0007]], [[DEC-25-01]]) y están cubiertos
+ficheros y la inyección SCORM son sensibles ([[DEC-0-07]], [[DEC-25-01]]) y están cubiertos
 por una suite existente que debe seguir verde **sin tocar sus asserts**.
 
 ## Opciones consideradas
@@ -125,12 +121,12 @@ así que `view.php`, `report.php`, `grade.php`, `mod_form.php`, `editor/*`, `cla
 - **RIE-018 — Regresión en el cálculo de notas durante el movimiento.** Mover los bucles de
   `grade_update()` (sync, recálculo masivo, remove-all, item-update) podría alterar
   silenciosamente el orden o las condiciones de publicación y corromper el libro
-  ([[DEC-0007]], [[DEC-25-01]]). **Mitigación:** el movimiento es **mecánico** (cuerpo copiado
+  ([[DEC-0-07]], [[DEC-25-01]]). **Mitigación:** el movimiento es **mecánico** (cuerpo copiado
   verbatim, mismas firmas, mismas constantes globales `EXELEARNING_GRADEMODEL_*`); la suite
   de notas existente (`grades_test`, `gradeitems_test`, `grademodel_test`, `lib_grades_test`,
   `backup_restore_test`) se conserva **sin cambiar asserts** como prueba de paridad; se
   añaden unit tests de la lógica ahora aislada; `phpcs` 0/0 y el gate **Codecov patch ≥80%**
-  ([[DEC-66-01]]) más la matriz CI ([[DEC-0004]]) validan en verde antes de fusionar. Riesgo
+  ([[DEC-66-01]]) más la matriz CI ([[DEC-0-04]]) validan en verde antes de fusionar. Riesgo
   residual bajo: PHPUnit no corre en local (memoria `phpunit_local`), se confía en CI.
 
 ## Validación

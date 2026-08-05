@@ -95,7 +95,7 @@
 - [ ] Soft-delete on re-upload: a removed iDevice sets
       `exelearning_grade_item.deleted = 1`, preserving grade history
       (`db/install.xml:56`; sync at `lib.php:1224-1242`).
-- [ ] Completion-by-grade works (`gradepass`, DEC-0010, `db/install.xml:22`).
+- [ ] Completion-by-grade works (`gradepass`, DEC-0-10, `db/install.xml:22`).
 - [ ] `gradeenabled = 0`: no grade items, no reports, behaves like a plain
       resource (DEC-13-07, `db/install.xml:26`).
 - [ ] Overlong package identifiers are clamped to column widths (no `dml`
@@ -207,9 +207,9 @@ mariadb10.11):
 
 **Documented-and-accepted posture (must remain documented, not necessarily fixed):**
 
-- **RIE-001** ELPX package isolation hardening — DEC-0019 is *Aceptada* with the
+- **RIE-001** ELPX package isolation hardening — DEC-0-16 is *Aceptada* with the
   explicit decision to **document the trade-offs and current posture, not
   implement any mitigation yet**
-  (`research/decisiones/adr/DEC-0019-aislamiento-paquete-elpx.md:4`,`:42-43`,`:214`).
+  (`research/decisiones/adr/DEC-0-16-aislamiento-paquete-elpx.md:4`,`:42-43`,`:214`).
   STABLE requires this remain documented; the deferred mitigations (M1–M7) stay on
   the roadmap.

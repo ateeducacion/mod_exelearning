@@ -1,24 +1,21 @@
 ---
 id: DEC-66-01
-titulo: "Estrategia de cobertura de tests: mockear en lugar de excluir, medir con xdebug y gatear con trinquete"
-estado: Aceptada
-fecha: 2026-06-12
+title: "Estrategia de cobertura de tests: mockear en lugar de excluir, medir con xdebug y gatear con trinquete"
+status: Accepted
+date: 2026-06-12
 tracking_issue: 66
 legacy_id: DEC-0048
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
   - REPO-001
-relacionados:
-  - DEC-0004
-  - DEC-34-01
-  - DEC-4-01
-  - DEC-36-01
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-0-04, DEC-34-01, DEC-4-01, DEC-36-01]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-66-01: Estrategia de cobertura de tests: mockear en lugar de excluir, medir con xdebug y gatear con trinquete

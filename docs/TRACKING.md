@@ -7,9 +7,9 @@
 > - `scorm-shim-current-flow.md` — the SCORM 1.2 shim as shipped today (step-by-step).
 > - `tracking-architecture.md` — the target dual SCORM 1.2 + xAPI architecture (DEC-17-01, not yet implemented).
 >
-> Decision trail (Spanish ADRs): `research/decisiones/adr/` — DEC-0003 (SCORM 1.2),
-> DEC-0006 (preview/grading), DEC-0007 (attempts), DEC-0008/DEC-25-01 (grade model),
-> DEC-0010 (completion), DEC-5-01 (objectid routing), DEC-6-01 (overall recompute),
+> Decision trail (Spanish ADRs): `research/decisiones/adr/` — DEC-0-03 (SCORM 1.2),
+> DEC-0-06 (preview/grading), DEC-0-07 (attempts), DEC-0-08/DEC-25-01 (grade model),
+> DEC-0-10 (completion), DEC-5-01 (objectid routing), DEC-6-01 (overall recompute),
 > DEC-26-02 (single `ingest()` entry), DEC-34-01 (critical-bug audit).
 
 ## Pipeline
@@ -44,7 +44,7 @@ funnels every channel into **one** server-side scoring method, `track::ingest()`
  grade_update('mod/exelearning', …)          track.php ingest:205 / apply_one:541
         │
         ├──► Moodle gradebook (grade_item / grade_grade)
-        └──► completion_info::update_state()   track.php ingest:221-224  (DEC-0010)
+        └──► completion_info::update_state()   track.php ingest:221-224  (DEC-0-10)
 ```
 
 The **same** `track::ingest()` is reused by the `save_track` web service for the
@@ -54,7 +54,7 @@ re-shapes its typed params into the `{cmi, session, itemscores}` payload
 therefore **cannot diverge** on normalisation, objectid filtering, overall recompute,
 clamping or the attempt cap — those live in one unit-tested place.
 
-## Preview vs grading (DEC-0006)
+## Preview vs grading (DEC-0-06)
 
 `?mode=preview` is honoured **only** when the caller holds
 `moodle/course:manageactivities` (`track.php:51-52`). A regular student who appends
@@ -65,7 +65,7 @@ persists**: `ingest()` returns before any gradebook write
 (`classes/local/track.php:96-98`). The web service never previews — it hardcodes
 `$ispreview = false` (`save_track.php:137`), so a WS caller cannot grade in preview.
 
-## Attempt model (DEC-0007)
+## Attempt model (DEC-0-07)
 
 - **One attempt per page load.** The shim mints a random `session` token
   (`random_string(20)`, `view.php:531`) and stamps every auto-commit of that page
@@ -77,7 +77,7 @@ persists**: `ingest()` returns before any gradebook write
   auto-commits in the same session refine the same row (`attempts.php:223-268`).
 - **Aggregation across attempts** by `grademethod` (highest/average/first/last/lowest)
   in `aggregate_scaled()` (`attempts.php:279-311`).
-- **Cap enforcement (DEC-0007 phase 2).** When `maxattempt > 0` and a *fresh* session
+- **Cap enforcement (DEC-0-07 phase 2).** When `maxattempt > 0` and a *fresh* session
   would exceed `count_user_attempts()`, `ingest()` returns
   `error => 'maxattemptsreached'` (`track.php` ingest at `classes/local/track.php:148-163`)
   and the endpoint replies **HTTP 409** (`track.php:70-72`) — a conflict, not a 500.
@@ -109,13 +109,13 @@ parent reads `iframe.contentDocument` for the objectid map, the child walks
 `window.parent.API`, the teacher-mode hider injects CSS into the content document), so
 removing `allow-same-origin` would break tracking. Cross-component XSS hardening
 (dedicated origin / `Permissions-Policy` / CSP, dropping
-`allow-popups-to-escape-sandbox`) is roadmapped as **RIE-001** / **DEC-0019** — see
+`allow-popups-to-escape-sandbox`) is roadmapped as **RIE-001** / **DEC-0-16** — see
 `research/analisis/notas/AN-008-iframe-vs-scorm-player.md:124-153`.
 
 ## What is, and is not, tech debt
 
 The SCORM 1.2 `window.API` shim in `view.php` is **not** considered tech debt: it is
-the deliberate compatibility surface (DEC-0003) that lets an unmodified web export
+the deliberate compatibility surface (DEC-0-03) that lets an unmodified web export
 report scores, and it is the channel the dual SCORM/xAPI architecture preserves
 (DEC-17-01, `tracking-architecture.md`).
 

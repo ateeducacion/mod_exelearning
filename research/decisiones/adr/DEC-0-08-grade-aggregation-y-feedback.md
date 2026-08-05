@@ -1,22 +1,24 @@
 ---
-id: DEC-0008
-titulo: "Agregación de grade items: por iDevice (default) o nota global (modo 'ambas' eliminado, rev. 2026-05-29)"
-estado: Aceptada
-fecha: 2026-05-28
-agentes:
+id: DEC-0-08
+tracking_issue: 0
+legacy_id: DEC-0008
+title: "Agregación de grade items: por iDevice (default) o nota global (modo 'ambas' eliminado, rev. 2026-05-29)"
+status: Accepted
+date: 2026-05-28
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
   - FTE-001
   - FTE-006
-experimentos: []
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-7
+experiments: []
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-7
 ---
 
-# DEC-0008: Agregación de grade items: por iDevice (default) o nota global (modo 'ambas' eliminado, rev. 2026-05-29)
+# DEC-0-08: Agregación de grade items: por iDevice (default) o nota global (modo 'ambas' eliminado, rev. 2026-05-29)
 
 ## Contexto
 
@@ -54,7 +56,7 @@ Definir un modelo de agregación coherente para `mod_exelearning` que:
 
 - `itemnumber=0` recibe el score agregado.
 - Los iDevices individuales NO crean `grade_items`. Los datos detallados
-  viven sólo en `mdl_exelearning_attempt_item` (cuando exista DEC-0007).
+  viven sólo en `mdl_exelearning_attempt_item` (cuando exista DEC-0-07).
 - Profesor que quiera "ver" por iDevice usa el report del módulo
   (`report.php`).
 
@@ -238,10 +240,10 @@ PHPUnit/Behat: con `grademodel=peritem`, la decisión de borrar por completo el
 condición core de "aprobar para completar" necesita un `grade_item` con nota y
 `gradepass`.
 
-La semántica visible de DEC-0008 se mantiene: en `peritem`, el libro muestra las
+La semántica visible de DEC-0-08 se mantiene: en `peritem`, el libro muestra las
 columnas por iDevice como valor diferencial del plugin. El ajuste aceptado es
 conservar y actualizar un `itemnumber=0` **oculto** que sirve sólo como soporte
-técnico para la finalización core de DEC-0010. En `overall`, el `itemnumber=0`
+técnico para la finalización core de DEC-0-10. En `overall`, el `itemnumber=0`
 sigue siendo la única columna visible.
 
 Evidencia:

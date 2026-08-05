@@ -1,25 +1,20 @@
 ---
 id: DEC-72-01
-titulo: "Auditoría follow-up post-refactor (#71): 8 mejoras implementadas + 1 hallazgo descartado por decisión previa"
-estado: Aceptada
-fecha: 2026-06-12
+title: "Auditoría follow-up post-refactor (#71): 8 mejoras implementadas + 1 hallazgo descartado por decisión previa"
+status: Accepted
+date: 2026-06-12
 tracking_issue: 72
 legacy_id: DEC-0055
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
-relacionados:
-  - DEC-71-01
-  - DEC-4-01
-  - DEC-0019
-  - DEC-6-01
-  - DEC-13-12
-  - DEC-13-11
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-71-01, DEC-4-01, DEC-0-16, DEC-6-01, DEC-13-12, DEC-13-11]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-72-01: Auditoría follow-up post-refactor (#71): 8 mejoras implementadas + 1 hallazgo descartado por decisión previa

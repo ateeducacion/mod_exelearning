@@ -16,8 +16,8 @@ relacionados:
   - REPO-005
   - FTE-008
   - PREG-001
-  - DEC-0003
+  - DEC-0-03
 criterios_aceptacion:
   - "Ficha EXP-001 completa con setup_command, run_command, métricas y limitaciones."
   - "PREG-001 actualizada (o resuelta) con la evidencia."
-notas: "Done (2026-05-29): cubierto vía PREG-001 (resuelta) con fixtures reales en research/fixtures/{elpx,scorm-export,web-export} + doc upstream elpx-format/ids.md. La estructura del paquete, el parser de content.xml (classes/local/package.php) y los odeIdeviceId quedan documentados; el bridge real usa SCORM 1.2 (DEC-0003). SCORM 2004/cmi5 fuera de alcance (DEC-0014)."
+notas: "Done (2026-05-29): cubierto vía PREG-001 (resuelta) con fixtures reales en research/fixtures/{elpx,scorm-export,web-export} + doc upstream elpx-format/ids.md. La estructura del paquete, el parser de content.xml (classes/local/package.php) y los odeIdeviceId quedan documentados; el bridge real usa SCORM 1.2 (DEC-0-03). SCORM 2004/cmi5 fuera de alcance (DEC-0-14)."

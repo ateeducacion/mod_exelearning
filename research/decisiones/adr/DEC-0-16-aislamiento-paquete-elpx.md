@@ -1,27 +1,28 @@
 ---
-id: DEC-0019
-titulo: "Aislamiento del paquete .elpx (RIE-001): análisis, paridad con core y roadmap"
-estado: Aceptada
-fecha: 2026-06-02
-agentes:
+id: DEC-0-16
+tracking_issue: 0
+legacy_id: DEC-0019
+title: "Aislamiento del paquete .elpx (RIE-001): análisis, paridad con core y roadmap"
+status: Accepted
+date: 2026-06-02
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
   - REPO-002
   - REPO-005
-relacionados:
+related:
+  adrs: [DEC-0-03, DEC-4-01, DEC-5-01]
+see_also:
   - RIE-001
   - AN-008
-  - DEC-0003
-  - DEC-4-01
-  - DEC-5-01
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
-# DEC-0019: Aislamiento del paquete .elpx (RIE-001): análisis, paridad con core y roadmap
+# DEC-0-16: Aislamiento del paquete .elpx (RIE-001): análisis, paridad con core y roadmap
 
 ## Contexto
 

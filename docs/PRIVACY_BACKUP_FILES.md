@@ -16,7 +16,7 @@
 
 ### Personal data stored
 
-The only user-data table is `exelearning_attempt` (DEC-0007 flat attempt
+The only user-data table is `exelearning_attempt` (DEC-0-07 flat attempt
 history). `get_metadata()` (`provider.php:48-66`) declares it field-by-field and
 adds a subsystem link to `core_grades` because the plugin pushes each user's
 scores into the Moodle gradebook via `grade_update()`

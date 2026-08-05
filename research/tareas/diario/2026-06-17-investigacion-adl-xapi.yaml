@@ -18,10 +18,10 @@ resumen: >-
   en AN-014 (un AN no decide), sin tocar el plan/ADR ni código de plugin.
 acciones:
   - "REPO-008 (fuentes/repositorios/REPO-008-moodle-mod-cmi5launch.md): módulo Moodle de referencia de ADL para ingesta xAPI/cmi5→gradebook. Documenta el patrón statement→nota (highest score wins por sesión, agregación highest/average en 2 niveles), registration como ancla de intento, backup del tracking, y el CONTRASTE de modelo: el estado passed/failed/completed lo calcula un player externo (CATAPULT), no Moodle; itemnumber=0 único (vs multi-item del plugin); sin persistencia ni dedup por statement.id. Licencia: cabeceras GPLv3-or-later / LICENSE raíz Apache-2.0. Rol: reference. commit main @ 9c7d90da."
-  - "REPO-009 (fuentes/repositorios/REPO-009-moodle-php-libs.md): ficha de DESCARTE. Es un vendor-bundle de Composer para compilar Moodle 5.2.0 (license:null, 404 en LICENSE, sin código xAPI); firebase/php-jwt y guzzle que contiene YA están en Moodle core. Viola 'no vendorar' (DEC-0002). Rol: ignore. commit main @ 908d7298."
+  - "REPO-009 (fuentes/repositorios/REPO-009-moodle-php-libs.md): ficha de DESCARTE. Es un vendor-bundle de Composer para compilar Moodle 5.2.0 (license:null, 404 en LICENSE, sin código xAPI); firebase/php-jwt y guzzle que contiene YA están en Moodle core. Viola 'no vendorar' (DEC-0-02). Rol: ignore. commit main @ 908d7298."
   - "FTE-015 (fuentes/tecnologia/FTE-015-xapi-spec-canonica.md): ancla normativa xAPI 1.0.3. Reglas que el endpoint DEBE validar: score.scaled∈[-1,1], raw∈[min,max], idempotencia por statement.id (no modificar estado ante id repetido; 409 si difiere; 400 batch duplicado), authority/stored controlados por el LRS (respalda IGNORA actor→$USER), X-Experience-API-Version:1.0.3 obligatorio en HTTP (no en postMessage), validación sintáctica (rechazar null fuera de extensions). Descartes de alcance: State/Profile/Signed Statements. Context7 /adlnet/xapi-spec consultado 2026-06-17. commit master @ ca782a11."
   - "FTE-016 (fuentes/tecnologia/FTE-016-xapijs-cliente-js.md): @xapi/xapi v3.0.3 (MIT). Tipos TS del statement (Statement.ts/Result.ts/Verb.ts) como contrato del shape, XAPI.Verbs (IRIs canónicos), fixtures derivables para Vitest/PHPUnit. fetchAdapter desacoplado valida usar fetch nativo (no axios al bundle AMD). cmi5 en paquete aparte (@xapi/cmi5) → evidencia de cmi5 fuera de alcance. Rol: reference + test-fixtures, NO dependencia. commit develop @ 5e28e9bd."
-  - "AN-014 (analisis/notas/AN-014-ecosistema-adl-xapi-mejoras-spec.md): síntesis. Responde las 2 preguntas del usuario: beneficios por recurso + 9 mejoras priorizadas M1..M9 (cada una con destino archivo/DEC + evidencia citada), decisiones de reuso/licencia, reconsideración de cmi5 (matizada: sigue fuera de alcance, pero passed/failed debe decidirse server-side), [HIPOTESIS] y [PENDIENTE]. Enlaza REPO-008/009, FTE-015/016, FTE-011, AN-012, DEC-17-01/DEC-0003/DEC-0014/DEC-0015."
+  - "AN-014 (analisis/notas/AN-014-ecosistema-adl-xapi-mejoras-spec.md): síntesis. Responde las 2 preguntas del usuario: beneficios por recurso + 9 mejoras priorizadas M1..M9 (cada una con destino archivo/DEC + evidencia citada), decisiones de reuso/licencia, reconsideración de cmi5 (matizada: sigue fuera de alcance, pero passed/failed debe decidirse server-side), [HIPOTESIS] y [PENDIENTE]. Enlaza REPO-008/009, FTE-015/016, FTE-011, AN-012, DEC-17-01/DEC-0-03/DEC-0-14/DEC-0-15."
   - "Verificado el pipeline real del plugin (mapa para aterrizar recomendaciones): track::ingest (classes/local/track.php:59-291) como punto único triple-caller (web track.php + WS save_track + futuro xAPI); apply_item_scores (track.php:470-520) rutea por objectid (DEC-5-01) e ignora objectids no registrados; recompute_overall_pct nunca confía el overall del cliente (DEC-6-01); aggregate_values highest/average/first/last/lowest (attempts.php:324-342); plantilla external_api en classes/external/manage_embedded_editor.php + db/services.php."
   - "Decisión de alcance (confirmada con el usuario): crear las 5 fichas y dejar M1..M9 como recomendaciones en AN-014, SIN tocar docs/xapi-integration-plan.md, tracking-architecture.md ni abrir ADR, y sin tocar código de plugin (fase 0)."
   - "Licencias (Rule 12): cmi5launch GPLv3-or-later (cabeceras) / Apache-2.0 (LICENSE) compatible; xAPI-Spec Apache-2.0; xAPI.js MIT; Moodle-PHP-Libs sin licencia → descartado. Solo se reutilizan reglas/patrones (no se copia ni vendora código)."
@@ -39,10 +39,10 @@ pendientes:
   - "Verificar línea a línea backup_cmi5launch_stepslib.php antes de citar la omisión del conditional userinfo como anti-patrón firme (M8)."
 relacionados:
   - DEC-17-01
-  - DEC-0003
-  - DEC-0014
-  - DEC-0015
-  - DEC-0007
+  - DEC-0-03
+  - DEC-0-14
+  - DEC-0-15
+  - DEC-0-07
   - DEC-5-01
   - DEC-6-01
   - DEC-13-07

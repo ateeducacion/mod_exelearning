@@ -6,7 +6,7 @@ fuentes:
   - REPO-001
   - REPO-002
 relacionados:
-  - DEC-0004
+  - DEC-0-04
 herramienta_ia:
   interfaz: claude-code
   modelo: claude-opus-4-7
@@ -76,7 +76,7 @@ Esta combinación es **estándar** en el ecosistema Moodle vía
 - Adicionalmente conviene añadir un workflow `codeql.yml` (análisis de seguridad
   estático) y/o `dependabot.yml`.
 
-## Recomendaciones (entrada de DEC-0004)
+## Recomendaciones (entrada de DEC-0-04)
 
 1. Reutilizar el Makefile (targets idénticos: `up/down/lint/fix/phpmd/test/behat/
    build-editor/package`). Adaptar nombre del componente.

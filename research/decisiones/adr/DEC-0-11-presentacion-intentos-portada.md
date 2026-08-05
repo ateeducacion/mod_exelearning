@@ -1,28 +1,27 @@
 ---
-id: DEC-0011
-titulo: "Presentación de intentos en la portada de la actividad: resumen SCORM, resumen-profesor estilo Tarea, o valor estilo H5P"
-estado: Aceptada
-fecha: 2026-05-28
-agentes:
+id: DEC-0-11
+tracking_issue: 0
+legacy_id: DEC-0011
+title: "Presentación de intentos en la portada de la actividad: resumen SCORM, resumen-profesor estilo Tarea, o valor estilo H5P"
+status: Accepted
+date: 2026-05-28
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
-relacionados:
-  - DEC-0006
-  - DEC-0007
-  - DEC-0008
-  - DEC-0010
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-0-06, DEC-0-07, DEC-0-08, DEC-0-10]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
-# DEC-0011: Presentación de intentos en la portada de la actividad: resumen SCORM, resumen-profesor estilo Tarea, o valor estilo H5P
+# DEC-0-11: Presentación de intentos en la portada de la actividad: resumen SCORM, resumen-profesor estilo Tarea, o valor estilo H5P
 
 ## Contexto
 
-Tras implementar intentos (DEC-0007), `mod_exelearning` ya tiene:
+Tras implementar intentos (DEC-0-07), `mod_exelearning` ya tiene:
 
 - Un **bloque al alumno** en `view.php`: aviso "Intentos: X de Y" (o "Intentos
   usados: X") y, según `reviewmode`, un desplegable con la nota de cada intento
@@ -81,7 +80,7 @@ intento, método de calificación (`grademethod`), nota informada, y botón
 | ✔ Pros | ✘ Contras |
 |---|---|
 | Familiar para quien viene de SCORM; transparencia total de la nota. | Diseñado para portadas SIN contenido inline; aquí empuja el iframe hacia abajo. |
-| Expone `grademethod` y `maxattempt` que ya tenemos (DEC-0007). | Redundante con el desplegable de revisión que ya mostramos al alumno. |
+| Expone `grademethod` y `maxattempt` que ya tenemos (DEC-0-07). | Redundante con el desplegable de revisión que ya mostramos al alumno. |
 | Cubre el caso "¿por qué tengo esta nota?". | No responde la pregunta del profesor ("cuántos han contestado"). |
 
 ### B. Resumen agregado para el profesor estilo Tarea ("cuántos han contestado")
@@ -118,7 +117,7 @@ Concretamente:
    calificable— el *método de calificación* y la *nota informada* (lo útil de la
    captura SCORM) sin reproducir la tabla completa de SCORM. El detalle de
    intentos sigue en el desplegable de revisión (gated por `reviewmode`,
-   DEC-0007).
+   DEC-0-07).
 2. **Profesor (añadir B):** banner agregado en la portada visible con
    `mod/exelearning:viewreport`: "N de M estudiantes han realizado intentos ·
    media X" + botón "Ver informe". Respeta grupos. Es el "resumen estilo Tarea"

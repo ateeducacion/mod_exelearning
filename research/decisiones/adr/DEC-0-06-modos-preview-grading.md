@@ -1,20 +1,22 @@
 ---
-id: DEC-0006
-titulo: "Modos de visualización: preview (test) y grading (calificar)"
-estado: Aceptada
-fecha: 2026-05-28
-agentes:
+id: DEC-0-06
+tracking_issue: 0
+legacy_id: DEC-0006
+title: "Modos de visualización: preview (test) y grading (calificar)"
+status: Accepted
+date: 2026-05-28
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
-experimentos: []
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-7
+experiments: []
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-7
 ---
 
-# DEC-0006: Modos de visualización: preview (test) y grading (calificar)
+# DEC-0-06: Modos de visualización: preview (test) y grading (calificar)
 
 ## Contexto
 

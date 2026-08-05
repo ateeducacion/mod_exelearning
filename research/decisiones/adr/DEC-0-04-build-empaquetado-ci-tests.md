@@ -1,22 +1,24 @@
 ---
-id: DEC-0004
-titulo: "Build, empaquetado y CI: Makefile heredado + moodle-plugin-ci con matriz Moodle/PHP/DB"
-estado: Aceptada
-fecha: 2026-05-28
-agentes:
+id: DEC-0-04
+tracking_issue: 0
+legacy_id: DEC-0004
+title: "Build, empaquetado y CI: Makefile heredado + moodle-plugin-ci con matriz Moodle/PHP/DB"
+status: Accepted
+date: 2026-05-28
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-001
   - REPO-002
   - AN-006
-experimentos: []
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-7
+experiments: []
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-7
 ---
 
-# DEC-0004: Build, empaquetado y CI: Makefile heredado + moodle-plugin-ci con matriz Moodle/PHP/DB
+# DEC-0-04: Build, empaquetado y CI: Makefile heredado + moodle-plugin-ci con matriz Moodle/PHP/DB
 
 ## Contexto
 
@@ -152,7 +154,7 @@ Antes de aceptar:
 ## Seguimiento
 
 - TAREA-006: redactar `ci.yml` concreto con matriz.
-- Esta decisión es **transversal**: no bloquea DEC-0003 pero se ejecuta en
+- Esta decisión es **transversal**: no bloquea DEC-0-03 pero se ejecuta en
   paralelo desde el primer commit del plugin.
 
 ## Actualización (2026-05-29): Aceptada — CI implementada y verde

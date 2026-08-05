@@ -12,32 +12,32 @@ resumen: >-
   'un LRS 2.0 rechaza header <2.0.0' vincula a un LRS, no a un consumidor same-origin. Como
   el emisor upstream envía 1.0.3, la política es consumir 1.0.3 pero validar la versión de
   forma permisiva (aceptar 1.0.x y 2.0.0, nunca rechazar por header). Se crea FTE-017 (xAPI
-  2.0) y se abre DEC-0063 (Propuesta) que formaliza M1/M2/M3/M4/M5/M6 + la política de
+  2.0) y se abre DEC-0-18 (Propuesta) que formaliza M1/M2/M3/M4/M5/M6 + la política de
   versión como diseño vinculante para PR2/TAREA-015, complementando DEC-17-01 sin superseder.
 acciones:
   - "FTE-017 (fuentes/tecnologia/FTE-017-xapi-2.0-ieee-9274.md): estado, gobernanza (ADL→IEEE LTSC/P9274.1.1 en 2019, primer estándar IEEE open source Apache-2.0), documentación de acceso libre (opensource.ieee.org/xapi, xapi.ieee-saopen.org), tabla de diferencias 2.0 vs 1.0.3 para un consumidor, conformancia (suite ADL >1400 tests; Veracity primer LRS 2.0) y aplicabilidad ([INTERPRETACION] no obliga; recomendación: consumir 1.0.3 con validación permisiva de versión)."
-  - "DEC-0063 (decisiones/adr/DEC-0063-validacion-canonica-endpoint-xapi-y-version.md, estado Propuesta): acepta como diseño vinculante (PR2/TAREA-015) las reglas de validación canónica del endpoint submit_xapi_statement — (1) score.scaled∈[-1,1] y raw∈[min,max] o rechazo; scaled<0 fuera del dominio eXeLearning→rechazo; (2) scorepct=scaled*100 documentado (s/10, f/100); (3) lista blanca de verbos; (4) object.id→ideviceId→itemnumber de la instancia o rechazo; (5) validación sintáctica (null fuera de extensions, IRI); (6) ignorar actor/authority/stored/timestamp→$USER+stored=now; (7) idempotencia por statement.id (no re-aplicar; 409 si difiere) + highest-score-wins por (registration,ideviceId); (8) política de versión Opción C (1.0.x y 2.0.0, nunca rechazar por header); (9) descartes de alcance State/Profile/Signed/cmi5/LRS externo. Opciones: validación mínima/canónica/LRS-completa y versión fija-1.0.3/migrar-2.0/tolerante; elegidas canónica + tolerante."
-  - "status.yaml: append DEC-0063 en decisiones_bloqueantes (tras DEC-17-01), estado Propuesta, relacionados [DEC-17-01,DEC-0014,DEC-0003,DEC-5-01,DEC-0007,DEC-13-07]. Sin reescribir entradas previas (append-only)."
-  - "AN-014: añadido FTE-017 a fuentes y DEC-0063 a relacionados; sección 'Actualización 2026-06-17' con la M-versión y el reparto M1..M6 (a DEC-0063) vs M7/M8/M9 (seguimiento). La nota sigue siendo la síntesis canónica, ahora enlazada bidireccionalmente con el ADR."
+  - "DEC-0-18 (decisiones/adr/DEC-0-18-validacion-canonica-endpoint-xapi-y-version.md, estado Propuesta): acepta como diseño vinculante (PR2/TAREA-015) las reglas de validación canónica del endpoint submit_xapi_statement — (1) score.scaled∈[-1,1] y raw∈[min,max] o rechazo; scaled<0 fuera del dominio eXeLearning→rechazo; (2) scorepct=scaled*100 documentado (s/10, f/100); (3) lista blanca de verbos; (4) object.id→ideviceId→itemnumber de la instancia o rechazo; (5) validación sintáctica (null fuera de extensions, IRI); (6) ignorar actor/authority/stored/timestamp→$USER+stored=now; (7) idempotencia por statement.id (no re-aplicar; 409 si difiere) + highest-score-wins por (registration,ideviceId); (8) política de versión Opción C (1.0.x y 2.0.0, nunca rechazar por header); (9) descartes de alcance State/Profile/Signed/cmi5/LRS externo. Opciones: validación mínima/canónica/LRS-completa y versión fija-1.0.3/migrar-2.0/tolerante; elegidas canónica + tolerante."
+  - "status.yaml: append DEC-0-18 en decisiones_bloqueantes (tras DEC-17-01), estado Propuesta, relacionados [DEC-17-01,DEC-0-14,DEC-0-03,DEC-5-01,DEC-0-07,DEC-13-07]. Sin reescribir entradas previas (append-only)."
+  - "AN-014: añadido FTE-017 a fuentes y DEC-0-18 a relacionados; sección 'Actualización 2026-06-17' con la M-versión y el reparto M1..M6 (a DEC-0-18) vs M7/M8/M9 (seguimiento). La nota sigue siendo la síntesis canónica, ahora enlazada bidireccionalmente con el ADR."
   - "Investigación 2.0 verificada contra texto normativo IEEE (no resúmenes): X-Experience-API-Version 2.0.0; LRS 2.0 rechaza <2.0.0 (vincula a LRS); result.score sin cambios; contextAgents/contextGroups Optional nuevos; HTTPS no MUST; Signed Statements JWS igual; authority/authorization eliminada/relajada."
-  - "ID (corrección): el ADR se abrió inicialmente como DEC-0059 porque en main el DEC más alto de la numeración global entonces vigente era DEC-0058 (hoy DEC-78-01). Pero el PR abierto feature/secure-iframe-scorm-bridge (worktree mod_exelearning_3, aún no en main) YA usa DEC-0059-bridge-scorm-postmessage-origen-opaco, DEC-0060 (token pluginfile), DEC-0061 (embeds promote-to-parent) y DEC-0062 (fix pipwerks get api). Para evitar duplicar ID al fusionar, se RENUMERÓ este ADR de xAPI a DEC-0063 (archivo + id + referencias en status.yaml/AN-014/FTE-017/diario). DEC-0063 es el primer ID libre por encima del rango del PR. Numeración monotónica y no-reúso respetados. [ACTUALIZACION: este episodio es la evidencia que motivó retirar el contador global; ver decisiones/mapa-migracion-ids.md. Los identificadores citados aquí son los retirados y se conservan como registro histórico.]"
+  - "ID (corrección): el ADR se abrió inicialmente como DEC-0059 porque en main el DEC más alto de la numeración global entonces vigente era DEC-0058 (hoy DEC-78-01). Pero el PR abierto feature/secure-iframe-scorm-bridge (worktree mod_exelearning_3, aún no en main) YA usa DEC-0059-bridge-scorm-postmessage-origen-opaco, DEC-0060 (token pluginfile), DEC-0061 (embeds promote-to-parent) y DEC-0062 (fix pipwerks get api). Para evitar duplicar ID al fusionar, se RENUMERÓ este ADR de xAPI a DEC-0-18 (archivo + id + referencias en status.yaml/AN-014/FTE-017/diario). DEC-0-18 es el primer ID libre por encima del rango del PR. Numeración monotónica y no-reúso respetados. [ACTUALIZACION: este episodio es la evidencia que motivó retirar el contador global; ver decisiones/mapa-migracion-ids.md. Los identificadores citados aquí son los retirados y se conservan como registro histórico.]"
   - "Licencias (Rule 12): xAPI 2.0/IEEE 9274.1.1 texto open source Apache-2.0 (compatible GPLv3); solo se reutilizan reglas (hechos no protegibles), sin incorporar código → riesgo nulo. Sin cambios en thirdpartylibs.xml."
 evidencia:
   - "research/fuentes/tecnologia/FTE-017-xapi-2.0-ieee-9274.md"
-  - "research/decisiones/adr/DEC-0063-validacion-canonica-endpoint-xapi-y-version.md"
-  - "research/status.yaml (DEC-0063 en decisiones_bloqueantes)"
-  - "research/analisis/notas/AN-014-... (fuentes +FTE-017, relacionados +DEC-0063, sección Actualización 2026-06-17)"
+  - "research/decisiones/adr/DEC-0-18-validacion-canonica-endpoint-xapi-y-version.md"
+  - "research/status.yaml (DEC-0-18 en decisiones_bloqueantes)"
+  - "research/analisis/notas/AN-014-... (fuentes +FTE-017, relacionados +DEC-0-18, sección Actualización 2026-06-17)"
   - "IEEE 9274.1.1-2023: standards.ieee.org/ieee/9274.1.1/7321/; ieeexplore.ieee.org/document/10273185/; opensource.ieee.org/xapi/xapi-base-standard-documentation; xapi.ieee-saopen.org; sagroups.ieee.org/9274-1-1 (consultados 2026-06-17)"
   - "Rustici/xAPI.com 'What vendors can do to prepare for xAPI 2.0'; Veracity (primer LRS 2.0, 2023-09-14); ADL lrs-conformance-test-suite (consultados 2026-06-17)"
 pendientes:
   - "Confirmar inclusión de IEEE 9274.1.1 en el IEEE GET Program (lo verificado es acceso libre vía IEEE-SA Open Apache-2.0); re-verificar verbatim los §§ del texto normativo 2.0 antes de transcribirlos literal."
-  - "Paso opcional posterior (si se aprueba): fundir M1..M6 + M-versión en docs/xapi-integration-plan.md y docs/tracking-architecture.md, citando (DEC-0063)/(FTE-015/FTE-017)."
+  - "Paso opcional posterior (si se aprueba): fundir M1..M6 + M-versión en docs/xapi-integration-plan.md y docs/tracking-architecture.md, citando (DEC-0-18)/(FTE-015/FTE-017)."
   - "Heredados de AN-014: M7 fixtures @xapi/xapi; M8 backup userinfo (verificar backup_cmi5launch_stepslib.php); M9 Moodle-PHP-Libs no-dependencia; custom vs core_xapi (FTE-007/AN-003); registration↔sessiontoken formato UUID."
-  - "DEC-0063 gated a que el contrato upstream exelearning#1867 (FTE-011) se congele (TAREA-015)."
+  - "DEC-0-18 gated a que el contrato upstream exelearning#1867 (FTE-011) se congele (TAREA-015)."
 relacionados:
-  - DEC-0063
+  - DEC-0-18
   - DEC-17-01
-  - DEC-0014
-  - DEC-0003
+  - DEC-0-14
+  - DEC-0-03
   - DEC-5-01
-  - DEC-0007
+  - DEC-0-07

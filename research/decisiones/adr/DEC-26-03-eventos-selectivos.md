@@ -1,21 +1,21 @@
 ---
 id: DEC-26-03
-titulo: "Eventos selectivos de trazabilidad (sin ruido de tracking)"
-estado: Aceptada
-fecha: 2026-06-09
+title: "Eventos selectivos de trazabilidad (sin ruido de tracking)"
+status: Accepted
+date: 2026-06-09
 tracking_issue: 26
 legacy_id: DEC-0041
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-001
   - REPO-002
-relacionados:
-  - DEC-0007
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-0-07]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-26-03: Eventos selectivos de trazabilidad (sin ruido de tracking)
@@ -44,7 +44,7 @@ filas de `exelearning_attempt`): el número de intento y el alumno viajan en
 ### Descartes (justificación)
 
 - **Tracking guardado / score enviado por commit**: el shim hace auto-commit cada
-  500 ms (DEC-0007); un evento por commit **inundaría** el log. No se añade. La señal
+  500 ms (DEC-0-07); un evento por commit **inundaría** el log. No se añade. La señal
   útil (un intento) ya vive en `exelearning_attempt` y en el gradebook.
 - **Editor abierto / actualizado, paquete exportado por docente**: bajo valor de
   auditoría frente al coste; no se añaden.

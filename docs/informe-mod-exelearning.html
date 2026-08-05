@@ -155,8 +155,8 @@ aporta y que está operativo:</p>
   <code>exelearning/exelearning#1791</code> (merged, ya en <code>main</code>) preserva
   los <code>odeIdeviceId</code> al importar/exportar → editar+guardar no duplica columnas</td>
   <td><span class="badge b-ok">resuelto (upstream)</span></td></tr>
-  <tr><td>Decisiones (ADR)</td><td>DEC-0003/DEC-0004/DEC-0014 Aceptadas; DEC-0005 Superseded;
-  DEC-0008 rev.; DEC-0011 Aceptada; DEC-0015 (justificación)</td>
+  <tr><td>Decisiones (ADR)</td><td>DEC-0-03/DEC-0-04/DEC-0-14 Aceptadas; DEC-0-05 Superseded;
+  DEC-0-08 rev.; DEC-0-11 Aceptada; DEC-0-15 (justificación)</td>
   <td><span class="badge b-ok">conciliado</span></td></tr>
 </table>
 </section>
@@ -174,7 +174,7 @@ aporta y que está operativo:</p>
     <li><strong>Acoplamiento</strong> al formato <code>content.xml</code> y a la
     estabilidad de ids (RIE-006).</li><li>Tope <code>MAX=100</code> iDevices.</li></ul></div>
   <div class="card o"><h4>Oportunidades</h4>
-    <ul class="small"><li>xAPI nativo (DEC-0014) cuando eXeLearning emita statements →
+    <ul class="small"><li>xAPI nativo (DEC-0-14) cuando eXeLearning emita statements →
     analítica LRS.</li><li>Impulso de eXeLearning v4 e interés ATE/INTEF.</li>
     <li>Aportación upstream (ids estables, manifiesto gradeitems).</li></ul></div>
   <div class="card t"><h4>Amenazas</h4>
@@ -224,18 +224,18 @@ de hecho, más granular en el gradebook — ese es el diferencial.</p>
   h5p una columna, exeweb no califica. Ése es el valor buscado y demandado por ATE
   (evaluar cada ejercicio dentro de un recurso), implementado y verificado. La
   complejidad es media y acotada; la única deuda «no estándar» es el shim SCORM 1.2,
-  con salida trazada hacia xAPI (DEC-0014). <span class="muted">(La sidebar nativa se
+  con salida trazada hacia xAPI (DEC-0-14). <span class="muted">(La sidebar nativa se
   preserva y es deseable, pero es una propiedad heredada de mod_exeweb, no el motivo
   de ser del plugin.)</span>
 </div>
 <h3>El porqué, decisión a decisión</h3>
 <ul class="small">
-  <li><strong>DEC-0003</strong> — SCORM 1.2 como tracking vigente y suficiente; xAPI a futuro.</li>
-  <li><strong>DEC-0007</strong> — intentos en tabla propia + <code>grademethod</code> (modelo h5pactivity).</li>
-  <li><strong>DEC-0008</strong> — <code>grademodel</code>: por iDevice (por defecto) o nota global agregada (como exescorm).</li>
-  <li><strong>DEC-0010</strong> — finalización estilo SCORM (<code>completionpassgrade</code>).</li>
-  <li><strong>DEC-0014</strong> — xAPI: mejora futura deseable, no imprescindible; activable y compatible cuando eXeLearning emita statements.</li>
-  <li><strong>DEC-0015</strong> — esta justificación (DAFO + comparativa + veredicto).</li>
+  <li><strong>DEC-0-03</strong> — SCORM 1.2 como tracking vigente y suficiente; xAPI a futuro.</li>
+  <li><strong>DEC-0-07</strong> — intentos en tabla propia + <code>grademethod</code> (modelo h5pactivity).</li>
+  <li><strong>DEC-0-08</strong> — <code>grademodel</code>: por iDevice (por defecto) o nota global agregada (como exescorm).</li>
+  <li><strong>DEC-0-10</strong> — finalización estilo SCORM (<code>completionpassgrade</code>).</li>
+  <li><strong>DEC-0-14</strong> — xAPI: mejora futura deseable, no imprescindible; activable y compatible cuando eXeLearning emita statements.</li>
+  <li><strong>DEC-0-15</strong> — esta justificación (DAFO + comparativa + veredicto).</li>
 </ul>
 </section>
 
@@ -283,7 +283,7 @@ es una <strong>mejora deseable a futuro</strong>, no un requisito.</p>
 <table>
   <tr><th>Pendiente</th><th>Prioridad</th><th>Notas</th></tr>
   <tr><td>Empujar emisión xAPI en eXeLearning (upstream)</td><td><span class="badge b-info">roadmap</span></td>
-      <td>Desbloquea la capa xAPI nativa del plugin (DEC-0014).</td></tr>
+      <td>Desbloquea la capa xAPI nativa del plugin (DEC-0-14).</td></tr>
   <tr><td>Capa xAPI en el plugin (<code>core_xapi</code> handler)</td><td><span class="badge b-info">roadmap</span></td>
       <td>Coste bajo–medio: reusa intentos + grade_update; cambia el transporte.</td></tr>
   <tr><td>Verificación e2e borrar-iDevice → guardar</td><td><span class="badge b-warn">media</span></td>

@@ -1,33 +1,29 @@
 ---
 id: DEC-106-01
-titulo: "Editor embebido exclusivamente empaquetado en la release: eliminar el instalador/actualizador en runtime"
-estado: Aceptada
-fecha: 2026-07-24
+title: "Editor embebido exclusivamente empaquetado en la release: eliminar el instalador/actualizador en runtime"
+status: Accepted
+date: 2026-07-24
 tracking_issue: 106
 legacy_id: DEC-0065
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-005
   - REPO-002
   - REPO-001
-relacionados:
-  - DEC-0005
-  - DEC-0009
-  - DEC-4-01
-  - DEC-13-08
-  - DEC-78-01
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-fable-5
+related:
+  adrs: [DEC-0-05, DEC-0-09, DEC-4-01, DEC-13-08, DEC-78-01]
+ai_assistance:
+  tool: claude-code
+  model: claude-fable-5
 ---
 
 # DEC-106-01: Editor embebido exclusivamente empaquetado en la release: eliminar el instalador/actualizador en runtime
 
 ## Contexto
 
-Desde [[DEC-0005]]/[[DEC-0009]] el plugin soporta **dos fuentes** para el editor embebido, con
+Desde [[DEC-0-05]]/[[DEC-0-09]] el plugin soporta **dos fuentes** para el editor embebido, con
 precedencia resuelta por `embedded_editor_source_resolver` (moodledata → bundled → none):
 
 1. **Instalada por el administrador** en `moodledata/mod_exelearning/embedded_editor/`, descargada
@@ -112,4 +108,4 @@ Negativas (asumidas):
 | Actualizador presente pero desactivado por defecto | El código sigue en el paquete y el revisor lo sigue auditando; un toggle no elimina la superficie ni la objeción. |
 | Subida manual de un ZIP del editor por el admin | Sigue siendo código ejecutable no revisado con el plugin y reintroduce validación/extracción/rollback; mismo problema con otra puerta. |
 | Conservar ambas fuentes (moodledata + bundled) | La precedencia es la causa de la divergencia de builds; sin instalador, la fuente moodledata es un apéndice muerto. |
-| Cargar el editor desde una URL remota | Peor en todos los ejes: disponibilidad, integridad, privacidad y revisión; contrario a [[DEC-0009]]. |
+| Cargar el editor desde una URL remota | Peor en todos los ejes: disponibilidad, integridad, privacidad y revisión; contrario a [[DEC-0-09]]. |

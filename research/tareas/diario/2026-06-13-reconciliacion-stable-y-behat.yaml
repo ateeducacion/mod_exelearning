@@ -16,7 +16,7 @@ resumen: >-
 acciones:
   - "Maturity → STABLE (item 3): docs/RELEASE_CHECKLIST.md reformulado como gate de release STABLE (Q2): título, blockquote inicial y §11 dejan de decir que MATURITY_BETA es 'current'; se indica que el plugin es STABLE desde DEC-77-01 (PR 77) y que la checklist es ahora la lista de verificación por release. docs/AUDIT_FOLLOWUP.md: TL;DR, fila O1, fila de open-items (marcada Done) y nota final pasan a STABLE. README.md:247: 'beta→stable release gate' → 'STABLE release gate'. DEC-34-01, DEC-77-01 y status.yaml intactos (append-only)."
   - "Behat note (item 4): docs/RELEASE_CHECKLIST.md elimina la afirmación falsa 'no behat script is defined in composer.json'; la tabla 'How to run the checks' añade filas 'composer behat' (composer.json:32) y 'composer coverage' (composer.json:33); la nota explica composer behat / make behat (Makefile:106-108) / vendor/bin/behat / moodle-plugin-ci behat."
-  - "Behat nuevos (Q1=implementar): tests/behat/mod_exelearning_management.feature (duplicar+borrar la actividad, adaptado de mod/h5pactivity duplicate_delete_h5pactivity.feature; round-trip de ajustes en el form de edición vía id_maxattempt, adaptado de h5pactivity_grade_settings.feature). tests/behat/mod_exelearning_grades.feature (puntuaciones sembradas llegan al grader report, adaptado de la aserción user-grades de h5pactivity_grade_settings.feature; usa el modelo per-item por defecto DEC-0008 y el paso custom 'the following eXeLearning SCORM scores exist'). Reutilizan tests/generator/lib.php (packagefilepath, maxattempt) y la fixture research/fixtures/elpx/multipage-gradable.elpx; sin cambios de generador."
+  - "Behat nuevos (Q1=implementar): tests/behat/mod_exelearning_management.feature (duplicar+borrar la actividad, adaptado de mod/h5pactivity duplicate_delete_h5pactivity.feature; round-trip de ajustes en el form de edición vía id_maxattempt, adaptado de h5pactivity_grade_settings.feature). tests/behat/mod_exelearning_grades.feature (puntuaciones sembradas llegan al grader report, adaptado de la aserción user-grades de h5pactivity_grade_settings.feature; usa el modelo per-item por defecto DEC-0-08 y el paso custom 'the following eXeLearning SCORM scores exist'). Reutilizan tests/generator/lib.php (packagefilepath, maxattempt) y la fixture research/fixtures/elpx/multipage-gradable.elpx; sin cambios de generador."
   - "Verificado que el camino de notas cruza al gradebook: apply_item_scores() (track.php:470) → apply_one() → grade_update() (track.php:661) en modelo per-item; y que backup/moodle2 existe (duplicación válida)."
   - "NO portado (la respuesta honesta a 'qué podemos copiar/adaptar'): el add-activity por UI con subida de fichero (add_exescorm.feature) requiere @javascript + filemanager + 'I switch to ..._object iframe', y este plugin evita @javascript porque el iframe del paquete + el shim SCORM dejan XHR pendientes que cuelgan el driver JS (documentado en mod_exelearning.feature); exescorm_availability.feature depende de timeopen/timeclose y de texto 'Opened:/Closes:', campos que este plugin NO tiene (la disponibilidad por restrict access es core, no del módulo); los features específicos de H5P (content bank, edición inline, tipos de resultado, deployment) no aplican."
   - "Licencias (Rule 12): todas las fuentes de inspiración son GPLv3 (Moodle core + plugins ateeducacion), compatibles; no se vendora ni copia fichero alguno externo, los escenarios usan fixtures propias."
@@ -35,8 +35,8 @@ pendientes:
 relacionados:
   - DEC-77-01
   - DEC-34-01
-  - DEC-0008
-  - DEC-0007
+  - DEC-0-08
+  - DEC-0-07
   - DEC-5-01
   - DEC-74-01
   - REPO-004

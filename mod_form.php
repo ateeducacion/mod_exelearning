@@ -92,7 +92,7 @@ class mod_exelearning_mod_form extends moodleform_mod {
         $mform->setDefault('gradeenabled', 1);
         $mform->addHelpButton('gradeenabled', 'gradeenabled', 'mod_exelearning');
 
-        // Gradebook columns model (DEC-0008).
+        // Gradebook columns model (DEC-0-08).
         $mform->addElement(
             'select',
             'grademodel',
@@ -125,7 +125,7 @@ class mod_exelearning_mod_form extends moodleform_mod {
         $mform->setDefault('grademin', 0);
 
         // Passing grade for the overall: feeds Moodle's completion-by-grade
-        // ("require passing grade"), SCORM style (DEC-0010).
+        // ("require passing grade"), SCORM style (DEC-0-10).
         $mform->addElement(
             'text',
             'gradepass',
@@ -169,14 +169,14 @@ class mod_exelearning_mod_form extends moodleform_mod {
 
         // Attempts management: how multiple student attempts are limited, combined
         // into the gradebook grade, and reviewed. Kept in its own section so the
-        // grade settings above are not overcrowded (DEC-0007, DEC-13-09).
+        // grade settings above are not overcrowded (DEC-0-07, DEC-13-09).
         $mform->addElement(
             'header',
             'attemptssection',
             get_string('attemptsmanagementheading', 'mod_exelearning')
         );
 
-        // Attempt limit per student (DEC-0007 phase 2): 0 = unlimited.
+        // Attempt limit per student (DEC-0-07 phase 2): 0 = unlimited.
         $mform->addElement(
             'text',
             'maxattempt',
@@ -187,7 +187,7 @@ class mod_exelearning_mod_form extends moodleform_mod {
         $mform->setDefault('maxattempt', 0);
         $mform->addHelpButton('maxattempt', 'maxattempt', 'mod_exelearning');
 
-        // Attempt aggregation (DEC-0007): how the student's attempt history is
+        // Attempt aggregation (DEC-0-07): how the student's attempt history is
         // combined for the gradebook grade.
         $methodoptions = [];
         foreach (\mod_exelearning\local\attempts::grademethod_options() as $val => $strkey) {
@@ -202,7 +202,7 @@ class mod_exelearning_mod_form extends moodleform_mod {
         $mform->setDefault('grademethod', \mod_exelearning\local\attempts::GRADE_HIGHEST);
         $mform->addHelpButton('grademethod', 'grademethod', 'mod_exelearning');
 
-        // Student attempt review (DEC-0007 phase 2).
+        // Student attempt review (DEC-0-07 phase 2).
         $reviewoptions = [];
         foreach (\mod_exelearning\local\attempts::reviewmode_options() as $val => $strkey) {
             $reviewoptions[$val] = get_string($strkey, 'mod_exelearning');

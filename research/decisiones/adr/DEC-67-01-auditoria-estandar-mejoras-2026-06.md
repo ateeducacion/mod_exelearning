@@ -1,29 +1,20 @@
 ---
 id: DEC-67-01
-titulo: "Auditoría estándar de repositorio (2026-06-11): 9 mejoras implementadas + hallazgos descartados"
-estado: Aceptada
-fecha: 2026-06-12
+title: "Auditoría estándar de repositorio (2026-06-11): 9 mejoras implementadas + hallazgos descartados"
+status: Accepted
+date: 2026-06-12
 tracking_issue: 67
 legacy_id: DEC-0049
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
-relacionados:
-  - DEC-4-01
-  - DEC-34-01
-  - DEC-26-01
-  - DEC-12-01
-  - DEC-0007
-  - DEC-25-01
-  - DEC-11-01
-  - DEC-18-01
-  - DEC-17-01
-  - DEC-0004
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-4-01, DEC-34-01, DEC-26-01, DEC-12-01, DEC-0-07, DEC-25-01, DEC-11-01, DEC-18-01, DEC-17-01, DEC-0-04]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-67-01: Auditoría estándar de repositorio (2026-06-11): 9 mejoras implementadas + hallazgos descartados
@@ -57,11 +48,11 @@ Todas fusionadas a `main` el 2026-06-12.
 | 001 | Endurecer el parseo de `config.xml` de estilos (quitar `LIBXML_NOENT`) | P1 | #46 | [[DEC-26-01]] |
 | 002 | Declarar el editor empaquetado en el `thirdpartylibs.xml` del ZIP de release | P1 | #47 | — |
 | 003 | Fidelidad de backup/restore (`contenthash` + usuarios no mapeables) | P1 | #48 | [[DEC-12-01]] |
-| 004 | Serializar la asignación de intentos (lock de concurrencia) | P2 | #49 | [[DEC-0007]] |
-| 005 | La participación del profesor respeta el `grademethod` | P2 | #50 | [[DEC-0007]] |
+| 004 | Serializar la asignación de intentos (lock de concurrencia) | P2 | #49 | [[DEC-0-07]] |
+| 005 | La participación del profesor respeta el `grademethod` | P2 | #50 | [[DEC-0-07]] |
 | 006 | Recálculo masivo de notas en lote (matar el N+1) | P2 | #51 | [[DEC-25-01]] |
 | 007 | Extracción ZIP compartida y endurecida (`zip_utils` + barrido) | P2 | #52 | [[DEC-4-01]] |
-| 008 | Descarga del informe de intentos (`\core\dataformat`) | P3 | #53 | [[DEC-0007]] |
+| 008 | Descarga del informe de intentos (`\core\dataformat`) | P3 | #53 | [[DEC-0-07]] |
 | 009 | Behat: borrado de intento + separate-groups | P3 | #54 | — |
 
 ### Detalle (qué y por qué)
@@ -88,7 +79,7 @@ Todas fusionadas a `main` el 2026-06-12.
   actual), nunca bloquea.
 - **005 / #50 — participación vs grademethod.** La línea de participación del profesor
   fijaba `MAX(scaledscore)`, mientras el libro de notas agrega según el `grademethod`
-  ([[DEC-0007]]); con cualquier método ≠ *highest* la media de portada divergía del libro.
+  ([[DEC-0-07]]); con cualquier método ≠ *highest* la media de portada divergía del libro.
   Fix: respeta el método. Extrae el `switch` a `attempts::aggregate_values()` (pura),
   que 006 reutiliza.
 - **006 / #51 — N+1 de recálculo.** `exelearning_update_grades($exe, 0)` hacía
@@ -125,7 +116,7 @@ Todas fusionadas a `main` el 2026-06-12.
 - **Commitear `composer.lock`:** tooling solo-dev; CI construye su propio entorno
   moodle-plugin-ci. Convención de repo-plugin aceptable.
 - **PHP 8.1 en CI tras EOL:** la matriz sigue la política de soporte de Moodle 4.5 LTS
-  (el plugin debe correr donde corre Moodle); por diseño ([[DEC-0004]]).
+  (el plugin debe correr donde corre Moodle); por diseño ([[DEC-0-04]]).
 - **Unificar manejo de errores entre endpoints:** tres endpoints sirven a tres audiencias
   (AJAX JSON, warnings WS, redirects web); abstraerlo añade indirección sin reducir bugs.
 - **Migración `html_writer` → Mustache en view/report:** esfuerzo alto, hoy bien escapado;

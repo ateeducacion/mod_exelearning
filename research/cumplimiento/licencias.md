@@ -1,7 +1,7 @@
 # Licencias — mod_exelearning
 
 `mod_exelearning` se distribuye bajo **GPL-3.0-or-later** (decisión registrada en
-DEC-0002), compatible con Moodle. Lo declara también `composer.json`
+DEC-0-02), compatible con Moodle. Lo declara también `composer.json`
 (`"license": "GPL-3.0-or-later"`).
 
 ## Dependencias y su licencia
@@ -40,7 +40,7 @@ DEC-0002), compatible con Moodle. Lo declara también `composer.json`
 - **pipwerks** `SCORM_API_wrapper.js` y `SCOFunctions.js` (`assets/scorm/`): declarados
   **MIT** en el `thirdpartylibs.xml` committeado. MIT es compatible con GPL-3.0-or-later.
 - **Licencia del propio plugin**: GPL-3.0-or-later, declarada en `composer.json` y en las
-  cabeceras de los ficheros (DEC-0002).
+  cabeceras de los ficheros (DEC-0-02).
 
 ### NO APLICA
 

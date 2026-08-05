@@ -1,24 +1,26 @@
 ---
-id: DEC-0002
-titulo: "Política de clones externos y compatibilidad de licencias"
-estado: Aceptada
-fecha: 2026-05-28
-agentes:
+id: DEC-0-02
+tracking_issue: 0
+legacy_id: DEC-0002
+title: "Política de clones externos y compatibilidad de licencias"
+status: Accepted
+date: 2026-05-28
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-001
   - REPO-002
   - REPO-003
   - REPO-004
   - REPO-005
-experimentos: []
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-7
+experiments: []
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-7
 ---
 
-# DEC-0002: Política de clones externos y compatibilidad de licencias
+# DEC-0-02: Política de clones externos y compatibilidad de licencias
 
 ## Contexto
 

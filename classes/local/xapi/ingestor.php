@@ -29,7 +29,7 @@ use mod_exelearning\local\track;
  * `grade_update()` and `completion_info` — so xAPI and SCORM grades cannot diverge.
  * `track::ingest()` itself is left untouched (the SCORM productive path).
  *
- * Trust model (DEC-0063): the caller has already authenticated the Moodle session and
+ * Trust model (DEC-0-18): the caller has already authenticated the Moodle session and
  * resolved the instance; this class ignores the statement's actor/authority/stored
  * (grading is attributed to the caller's `$userid`), rejects an `object.id` that does
  * not resolve to a registered iDevice of *this* instance, validates the score range,
@@ -59,7 +59,7 @@ class ingestor {
      * @param array     $statement    The decoded xAPI statement.
      * @param string    $registration Attempt-grouping token injected by the host (the
      *                                xAPI registration; shares the SCORM sessiontoken axis).
-     * @param bool      $ispreview    When true, acknowledge without grading (DEC-0006).
+     * @param bool      $ispreview    When true, acknowledge without grading (DEC-0-06).
      * @return array Result map: always has 'ok'. May add ignored|lifecycle|duplicate|
      *         noop|mode|error|verb|attempt|objectid|peritem|rawscore|status.
      */
@@ -88,11 +88,11 @@ class ingestor {
         // injected/forwarded over whatever the statement carries.
         $registration = ($registration !== '') ? $registration : (string) ($norm['registration'] ?? '');
 
-        // Preview (DEC-0006): acknowledge, never grade, never consume idempotency.
+        // Preview (DEC-0-06): acknowledge, never grade, never consume idempotency.
         if ($ispreview) {
             return ['ok' => true, 'mode' => 'preview', 'verb' => $norm['verb']];
         }
-        // Idempotency (DEC-0063 §7): a statement.id already processed is not re-applied.
+        // Idempotency (DEC-0-18 §7): a statement.id already processed is not re-applied.
         if ($DB->record_exists('exelearning_tracking_events', ['statementid' => $norm['statementid']])) {
             return ['ok' => true, 'duplicate' => true, 'verb' => $norm['verb']];
         }
@@ -112,7 +112,7 @@ class ingestor {
         }
 
         // An answered for an objectid this instance does not expose is rejected loudly
-        // (DEC-0063 §4) — unlike the SCORM path, which silently drops unknown ids.
+        // (DEC-0-18 §4) — unlike the SCORM path, which silently drops unknown ids.
         if ($norm['verb'] === 'answered' && !self::objectid_registered($exe->id, (string) $norm['objectid'])) {
             return ['ok' => false, 'error' => 'unknownobjectid', 'verb' => 'answered'];
         }
@@ -141,7 +141,7 @@ class ingestor {
                 'itemnumber'    => 0,
             ]) : false;
 
-            // Attempt cap (DEC-0007 phase 2): a fresh registration over the cap is rejected.
+            // Attempt cap (DEC-0-07 phase 2): a fresh registration over the cap is rejected.
             $maxattempt = (int) ($exe->maxattempt ?? 0);
             if ($maxattempt > 0) {
                 $sessionknown = ($registration !== '') && $DB->record_exists(
@@ -234,7 +234,7 @@ class ingestor {
 
     /**
      * Whether an objectid resolves to a registered (non-deleted) grade item of the
-     * instance — the ownership/identity check (DEC-5-01 / DEC-0063 §4).
+     * instance — the ownership/identity check (DEC-5-01 / DEC-0-18 §4).
      *
      * @param int    $exelearningid
      * @param string $objectid

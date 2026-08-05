@@ -33,7 +33,7 @@ evidencia:
 pendientes:
   - "Confirmar en la matriz CI que core_external\\util::validate_courses y helper_for_get_mods_by_courses existen en MOODLE_405_STABLE (verificado en 5.0 local; los usa mod_exeweb)."
   - "phpcs preexistente en classes/local/embedded_editor_installer.php:304 (2 warnings, no tocado; editor fuera de alcance)."
-  - "Limpieza/extracción del stack del editor embebido compartido: fuera de alcance por decisión (ver RIE-013/DEC-0036)."
+  - "Limpieza/extracción del stack del editor embebido compartido: fuera de alcance por decisión (ver RIE-013/DEC-0-17)."
 relacionados:
   - DEC-26-01
   - DEC-26-02

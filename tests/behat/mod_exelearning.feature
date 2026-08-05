@@ -78,7 +78,7 @@ Feature: View a mod_exelearning activity and its attempts report
     And I should see "90.00 / 100.00"
     And I should see "30.00 / 100.00"
 
-  # Delete flow (DEC-0007 phase 2, server-rendered, no @javascript): the delete
+  # Delete flow (DEC-0-07 phase 2, server-rendered, no @javascript): the delete
   # link carries its own server-side sesskey in the URL. Following it renders the
   # confirmation page; pressing Continue exercises the capability + sesskey +
   # recalculation redirect path end to end.
@@ -132,7 +132,7 @@ Feature: View a mod_exelearning activity and its attempts report
     Then I should see "Student One"
     And I should not see "Student Two"
 
-  # DEC-0007 download: with at least one attempt recorded, the teacher report
+  # DEC-0-07 download: with at least one attempt recorded, the teacher report
   # offers the core dataformat selector (CSV/Excel/ODS/JSON). The empty-state
   # scenario above already asserts no selector appears with no attempts. The
   # objectid is the trueorfalse iDevice registered by the default fixture

@@ -331,5 +331,5 @@ jobs:
       # tests run first, so a broken checker cannot pass everything silently.
       - name: Validate decision records
         run: |
-          python3 research/tools/test_check_decisions.py
-          python3 research/tools/check_decisions.py check
+          python3 research/tools/architecture_records_test.py
+          python3 research/tools/architecture_records.py check

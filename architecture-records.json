@@ -1,0 +1,14 @@
+{
+  "prefix": "DEC",
+  "records_dir": "research/decisiones/adr",
+  "changes_dir": "research/decisiones/cambios",
+  "legacy_patterns": [
+    "\\b(?:DEC|ADR|SDD)-[0-9]{4}(?!-[0-9]{2})\\b"
+  ],
+  "legacy_allowlist": [
+    "research/decisiones/mapa-migracion-ids.md",
+    "research/decisiones/README.md",
+    "research/tools/architecture_records_test.py",
+    "research/tareas/diario/2026-06-17-adr-validacion-xapi-y-2.0.yaml"
+  ]
+}

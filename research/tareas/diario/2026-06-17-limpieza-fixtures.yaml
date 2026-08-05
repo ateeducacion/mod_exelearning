@@ -22,5 +22,5 @@ pendientes:
   - "REFERENCE-INSTEAD pendiente sólo conceptual: si se quisiera, las fixtures retiradas citadas en FTE-008/AN-004/EXP-001 se regeneran con el bloque del README; la cita en prosa sigue siendo válida sin el binario."
   - "Tier 5 restante NO ejecutado: EXP-002/003 screenshots (experimentos/) se dejan; endurecer test_schema_validation.py (enum estado); rol decisiones_bloqueantes vs adrs.yaml."
 relacionados:
-  - DEC-0002
+  - DEC-0-02
   - DEC-13-10

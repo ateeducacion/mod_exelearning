@@ -1,27 +1,27 @@
 ---
-id: DEC-0012
-titulo: "Re-escaneo de iDevices y re-sincronización del libro tras guardar en el editor embebido"
-estado: Aceptada
-fecha: 2026-05-29
-agentes:
+id: DEC-0-12
+tracking_issue: 0
+legacy_id: DEC-0012
+title: "Re-escaneo de iDevices y re-sincronización del libro tras guardar en el editor embebido"
+status: Accepted
+date: 2026-05-29
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-005
-relacionados:
-  - DEC-0007
-  - DEC-0008
-  - DEC-0009
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-0-07, DEC-0-08, DEC-0-09]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
-# DEC-0012: Re-escaneo de iDevices y re-sincronización del libro tras guardar en el editor embebido
+# DEC-0-12: Re-escaneo de iDevices y re-sincronización del libro tras guardar en el editor embebido
 
 ## Contexto
 
-El editor embebido de eXeLearning (DEC-0009) permite al profesor editar el
+El editor embebido de eXeLearning (DEC-0-09) permite al profesor editar el
 recurso desde la propia actividad ("Edit with eXeLearning") y guardar con
 "Save to Moodle". El guardado va a `editor/save.php`, que recibe el `.elpx`
 exportado, lo almacena en la filearea `package` con itemid = nueva revisión y
@@ -29,7 +29,7 @@ sube `exelearning.revision`.
 
 Al editar, el profesor puede **añadir o quitar iDevices calificables** (un
 `trueorfalse`, un `guess`, etc.). Cada iDevice calificable es una columna del
-libro de calificaciones (patrón multi-itemnumber, AN-007 / DEC-0008).
+libro de calificaciones (patrón multi-itemnumber, AN-007 / DEC-0-08).
 
 ## Problema
 

@@ -1,23 +1,20 @@
 ---
 id: DEC-34-02
-titulo: "Transformación del paquete en tiempo de servido (eliminar la reescritura del HTML en extracción)"
-estado: Propuesta
-fecha: 2026-06-10
+title: "Transformación del paquete en tiempo de servido (eliminar la reescritura del HTML en extracción)"
+status: Proposed
+date: 2026-06-10
 tracking_issue: 34
 legacy_id: DEC-0045
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
-relacionados:
-  - DEC-13-11
-  - DEC-13-01
-  - DEC-17-01
-  - DEC-0019
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-fable-5
+related:
+  adrs: [DEC-13-11, DEC-13-01, DEC-17-01, DEC-0-16]
+ai_assistance:
+  tool: claude-code
+  model: claude-fable-5
 ---
 
 # DEC-34-02: Transformación del paquete en tiempo de servido (eliminar la reescritura del HTML en extracción)

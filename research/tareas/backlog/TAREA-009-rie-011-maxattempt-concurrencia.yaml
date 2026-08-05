@@ -14,7 +14,7 @@ pasos:
   - "Añadir test de concurrencia o, si no es viable, test unitario del guard."
 relacionados:
   - RIE-011
-  - DEC-0007
+  - DEC-0-07
   - DEC-6-01
 criterios_aceptacion:
   - "Dos page-loads concurrentes no crean más intentos que `maxattempt`."

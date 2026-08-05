@@ -30,7 +30,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-// DEC-0008 (rev. 2026-05-29): gradebook columns model. Two mutually-exclusive
+// DEC-0-08 (rev. 2026-05-29): gradebook columns model. Two mutually-exclusive
 // presentations; the "both" mode was removed. Default is per-iDevice.
 define('EXELEARNING_GRADEMODEL_OVERALL', 0); // Overall grade only (itemnumber=0).
 define('EXELEARNING_GRADEMODEL_PERITEM', 1); // One column per gradable iDevice (default).
@@ -772,7 +772,7 @@ function exelearning_package_emits_xapi(int $contextid, int $revision): bool {
  * existed — is treated as enabled, matching the configcheckbox default.
  *
  * This is NOT cmi5 and NOT an external-LRS integration; SCORM 1.2 stays the compatibility
- * path for packages without the emitter (DEC-0003).
+ * path for packages without the emitter (DEC-0-03).
  *
  * @return bool
  */
@@ -875,7 +875,7 @@ function exelearning_warn_if_grade_items_capped(array $delta): void {
 /**
  * Recalculates a student's gradebook grades from their attempt history,
  * respecting grademethod and grademodel. Used after deleting an attempt
- * (DEC-0007 phase 2). If an item has no remaining attempts, clears its grade
+ * (DEC-0-07 phase 2). If an item has no remaining attempts, clears its grade
  * (rawgrade=null).
  *
  * Single-user façade kept for its existing callers (report.php attempt deletion,
@@ -898,9 +898,9 @@ function exelearning_recalculate_user_grades(stdClass $instance, int $userid): v
  * This replaces the former users × items N+1 (one SELECT and one grade_update()
  * per user per item).
  *
- * Aggregation respects grademethod (DEC-0007, via attempts::aggregate_values()) and
+ * Aggregation respects grademethod (DEC-0-07, via attempts::aggregate_values()) and
  * the grademodel column rules: PERITEM has no overall column (DEC-25-01), OVERALL has
- * no per-iDevice columns (DEC-0008). A user with no attempts for an item gets a null
+ * no per-iDevice columns (DEC-0-08). A user with no attempts for an item gets a null
  * rawgrade, clearing any stale grade.
  *
  * @param stdClass $instance

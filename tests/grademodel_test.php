@@ -27,7 +27,7 @@ require_once($CFG->dirroot . '/mod/exelearning/lib.php');
 require_once($CFG->libdir . '/gradelib.php');
 
 /**
- * Unit tests for the gradebook columns model (DEC-0008) and grade recalculation.
+ * Unit tests for the gradebook columns model (DEC-0-08) and grade recalculation.
  *
  * @package    mod_exelearning
  * @category   test

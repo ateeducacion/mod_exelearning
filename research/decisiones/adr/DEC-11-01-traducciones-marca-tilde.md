@@ -1,22 +1,21 @@
 ---
 id: DEC-11-01
-titulo: "Traducciones es/ca/eu/gl: reuso de hermanos + marca «~» para traducción automática pendiente de revisión"
-estado: Aceptada
-fecha: 2026-06-02
+title: "Traducciones es/ca/eu/gl: reuso de hermanos + marca «~» para traducción automática pendiente de revisión"
+status: Accepted
+date: 2026-06-02
 tracking_issue: 11
 legacy_id: DEC-0020
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-001
   - REPO-002
-relacionados:
-  - DEC-0005
-  - DEC-0009
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-0-05, DEC-0-09]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-11-01: Traducciones es/ca/eu/gl: reuso de hermanos + marca «~» para traducción automática pendiente de revisión

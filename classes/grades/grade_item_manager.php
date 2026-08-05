@@ -56,7 +56,7 @@ final class grade_item_manager {
         require_once($CFG->libdir . '/gradelib.php');
 
         // The overall (itemnumber=0) gradebook column only exists in OVERALL mode for a
-        // graded activity (DEC-0008, DEC-25-01). Core's grade_update_mod_grades() calls
+        // graded activity (DEC-0-08, DEC-25-01). Core's grade_update_mod_grades() calls
         // this function UNCONDITIONALLY (before exelearning_update_grades()) on every
         // regrade — cron needsupdate, course reset "remove all grades", grade-item
         // unlock, user-undelete history recovery — so without this guard a PERITEM or

@@ -1,21 +1,20 @@
 ---
 id: DEC-110-01
-titulo: "La página de estilos queda como endpoint de acciones: se elimina el gestor visible duplicado"
-estado: Aceptada
-fecha: 2026-07-24
+title: "La página de estilos queda como endpoint de acciones: se elimina el gestor visible duplicado"
+status: Accepted
+date: 2026-07-24
 tracking_issue: 110
 legacy_id: DEC-0067
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-004
-relacionados:
-  - DEC-67-01
-  - DEC-108-01
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-fable-5
+related:
+  adrs: [DEC-67-01, DEC-108-01]
+ai_assistance:
+  tool: claude-code
+  model: claude-fable-5
 ---
 
 # DEC-110-01: La página de estilos queda como endpoint de acciones: se elimina el gestor visible duplicado

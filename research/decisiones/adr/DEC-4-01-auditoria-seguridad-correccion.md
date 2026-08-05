@@ -1,24 +1,20 @@
 ---
 id: DEC-4-01
-titulo: "Auditoría de seguridad y corrección multi-agente: 21 hallazgos (18 corregidos, 3 diferidos)"
-estado: Aceptada
-fecha: 2026-06-01
+title: "Auditoría de seguridad y corrección multi-agente: 21 hallazgos (18 corregidos, 3 diferidos)"
+status: Accepted
+date: 2026-06-01
 tracking_issue: 4
 legacy_id: DEC-0016
-agentes:
+deciders:
   - erseco
   - claude-code
-fuentes:
+sources:
   - REPO-005
-relacionados:
-  - DEC-0007
-  - DEC-0008
-  - DEC-0009
-  - DEC-0010
-  - DEC-0012
-herramienta_ia:
-  interfaz: claude-code
-  modelo: claude-opus-4-8
+related:
+  adrs: [DEC-0-07, DEC-0-08, DEC-0-09, DEC-0-10, DEC-0-12]
+ai_assistance:
+  tool: claude-code
+  model: claude-opus-4-8
 ---
 
 # DEC-4-01: Auditoría de seguridad y corrección multi-agente: 21 hallazgos (18 corregidos, 3 diferidos)
@@ -30,7 +26,7 @@ sidebar, califica vía puente SCORM 1.2 → `track.php` → `grade_update`
 multi-itemnumber, editor embebido instalable desde GitHub), se ejecutó una
 **auditoría de seguridad y corrección** sobre el código **propio** del plugin.
 Quedó fuera de alcance el código vendorado (`editor/`, `exelearning/`, `dist/`,
-`assets/scorm/`, wrappers pipwerks/SCORM), conforme a DEC-0002.
+`assets/scorm/`, wrappers pipwerks/SCORM), conforme a DEC-0-02.
 
 PR de implementación: `ateeducacion/mod_exelearning#4`, rama
 `fix/critical-bugs-audit`, commit `43b4735`.
@@ -89,7 +85,7 @@ porqué (norma de codificación del repo).
 
 - **`gradepass` ausente de `db/install.xml`.** Sólo lo añadía `db/upgrade.php`
   (stage 5), así que en **instalaciones nuevas** se descartaba silenciosamente y
-  la finalización por aprobado (DEC-0010) nunca disparaba. Añadido a la tabla
+  la finalización por aprobado (DEC-0-10) nunca disparaba. Añadido a la tabla
   (hace pasar `grademodel_test::test_gradepass_propagates_to_overall` en BD nueva).
 - **Re-extracción del `.elpx` en cada vista (DoS auto-infligido).** El self-heal
   de `view.php`, al estar condicionado a "no hay grade item calificable",
@@ -159,7 +155,7 @@ descartarse.
 
 **Por qué se difiere:** una corrección correcta exige un mapeo estable por
 `objectid` que requiere (a) cambiar el productor vendorado (prohibido por
-DEC-0002) o (b) un rediseño del puente (p. ej. que el shim envíe el `objectid`),
+DEC-0-02) o (b) un rediseño del puente (p. ej. que el shim envíe el `objectid`),
 lo que **alteraría el comportamiento de calificación ya verificado**. Es una
 decisión de diseño → **merece un ADR propio** (futuro DEC) y verificación e2e en
 navegador del N real que emite el editor. No se aplica un parche a ciegas.
