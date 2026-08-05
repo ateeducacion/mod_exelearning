@@ -28,8 +28,8 @@ require_once($CFG->dirroot . '/mod/exelearning/lib.php');
 require_once($CFG->libdir . '/gradelib.php');
 
 /**
- * Unit tests for the grade category selector (DEC-0034) and the per-iDevice
- * gradebook model with no overall column (DEC-0038, supersedes DEC-0035).
+ * Unit tests for the grade category selector (DEC-19-01) and the per-iDevice
+ * gradebook model with no overall column (DEC-25-01, supersedes DEC-19-02).
  *
  * @package    mod_exelearning
  * @category   test
@@ -97,7 +97,7 @@ final class grades_test extends advanced_testcase {
     /**
      * The configured grade category is applied to every grade item of the
      * activity (overall + per-iDevice), since grade_update() ignores categoryid
-     * and the placement is done with grade_item::set_parent() (DEC-0034).
+     * and the placement is done with grade_item::set_parent() (DEC-19-01).
      */
     public function test_gradecat_places_all_items_in_category(): void {
         $this->resetAfterTest();
@@ -114,7 +114,7 @@ final class grades_test extends advanced_testcase {
         ]);
 
         // The two gradable iDevices (1, 2) must sit under the category. PERITEM
-        // has no overall item (DEC-0038).
+        // has no overall item (DEC-25-01).
         foreach ([1, 2] as $itemnumber) {
             $item = $this->fetch_item($instance, $itemnumber);
             $this->assertInstanceOf(grade_item::class, $item);
@@ -156,8 +156,8 @@ final class grades_test extends advanced_testcase {
     }
 
     /**
-     * In PERITEM there is no overall grade item at all (DEC-0038): the root cause
-     * of the DEC-0035 problem (a hidden item that aggregates and blanks the
+     * In PERITEM there is no overall grade item at all (DEC-25-01): the root cause
+     * of the DEC-19-02 problem (a hidden item that aggregates and blanks the
      * student's total) is gone. The per-iDevice grades are published, included in
      * aggregation, and the student's course total is computed from them.
      */
@@ -182,7 +182,7 @@ final class grades_test extends advanced_testcase {
         $this->assertEqualsWithDelta(70.0, (float) $grades->items[1]->grades[$student->id]->grade, 0.0001);
 
         // The per-iDevice grade is included in aggregation (not excluded): there is
-        // no hidden overall to blank the student's total anymore (DEC-0038).
+        // no hidden overall to blank the student's total anymore (DEC-25-01).
         $peritemgrade = grade_grade::fetch([
             'itemid' => $this->fetch_item($instance, 1)->id,
             'userid' => $student->id,
@@ -222,7 +222,7 @@ final class grades_test extends advanced_testcase {
      * recreates the gradebook columns empty on a model switch, so without the
      * republish every student's grade vanished from the gradebook until they
      * resubmitted, even though exelearning_attempt still held the scores (B2,
-     * DEC-0044).
+     * DEC-34-01).
      *
      * @covers ::exelearning_update_grades
      */
@@ -258,7 +258,7 @@ final class grades_test extends advanced_testcase {
     /**
      * Changing the aggregation method (grademethod) must re-aggregate the already
      * published grades from the attempt history, not leave them computed with the
-     * old method (B2, DEC-0044).
+     * old method (B2, DEC-34-01).
      *
      * @covers ::exelearning_update_grades
      */
@@ -291,7 +291,7 @@ final class grades_test extends advanced_testcase {
      * exelearning_update_grades() — the second half of the gradebook contract that
      * core's grade_update_mod_grades() requires — re-publishes every attempting
      * user's grade from the attempt history when called for all users (B2b,
-     * DEC-0044). Without it, core grade reset/grab/unlock silently dropped grades.
+     * DEC-34-01). Without it, core grade reset/grab/unlock silently dropped grades.
      *
      * @covers ::exelearning_update_grades
      */
@@ -328,9 +328,9 @@ final class grades_test extends advanced_testcase {
     /**
      * Core's grade_update_mod_grades() calls exelearning_grade_item_update($instance)
      * unconditionally before exelearning_update_grades() on every regrade. In PERITEM
-     * there is no overall column (DEC-0038), so neither the direct call nor the core
+     * there is no overall column (DEC-25-01), so neither the direct call nor the core
      * regrade path may create a phantom overall (itemnumber 0) that would inflate the
-     * course total (B2b follow-up, DEC-0044).
+     * course total (B2b follow-up, DEC-34-01).
      *
      * @covers ::exelearning_grade_item_update
      */
@@ -362,7 +362,7 @@ final class grades_test extends advanced_testcase {
      * 0..MAX(itemnumber) and calling grade_update(['reset']) blindly inserted a
      * bare unnamed column for every itemnumber without a live grade item — in
      * PERITEM the overall (0) never exists, so a reset created a phantom overall
-     * column that inflated the course total (B3, DEC-0044).
+     * column that inflated the course total (B3, DEC-34-01).
      *
      * @covers ::exelearning_reset_gradebook
      */

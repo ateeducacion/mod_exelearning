@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Self-test for scripts/check-version.sh: exercises the validator against
-# fixture version.php / upgrade.php files so the version policy (DEC-0068) is
+# fixture version.php / upgrade.php files so the version policy (DEC-111-01) is
 # enforced by CI, not by convention. Packaging invariants (working tree
 # untouched, packaged version.php identical to the committed one) live in
 # scripts/check-package.sh.
@@ -84,4 +84,4 @@ if [ "$fail" -ne 0 ]; then
     echo "check-version self-test FAILED." >&2
     exit 1
 fi
-echo "OK: check-version.sh enforces the DEC-0068 version policy."
+echo "OK: check-version.sh enforces the DEC-111-01 version policy."

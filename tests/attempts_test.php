@@ -226,7 +226,7 @@ final class attempts_test extends advanced_testcase {
     }
 
     /**
-     * participation_summary aggregates per the grademethod (DEC-0007), so the
+     * participation_summary aggregates per the grademethod (DEC-0-07), so the
      * front-page mean matches the gradebook instead of always using the best.
      */
     public function test_participation_summary_respects_grademethod(): void {
@@ -253,7 +253,7 @@ final class attempts_test extends advanced_testcase {
 
     /**
      * aggregate_values applies the five GRADE_* methods to an ordered list and
-     * returns null for the empty list (DEC-0007).
+     * returns null for the empty list (DEC-0-07).
      */
     public function test_aggregate_values(): void {
         // Ordered by attempt ASC: first 0.6, last 0.7, highest 0.9, lowest 0.6.

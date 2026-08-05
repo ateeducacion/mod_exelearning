@@ -4,12 +4,12 @@ tema: "Issue #29: GeoGebra no detectado como calificable"
 entradas:
   - "Analizado el issue #29 y el paquete adjunto `afectadosparche.zip`: interactive-video, trueorfalse y adaptative-quiz exponen `isScorm=1`; GeoGebra no expone `isScorm`, pero sí la clase `auto-geogebra-scorm`."
   - "Contrastado con el runtime upstream de eXeLearning (`geogebra-activity/export/geogebra-activity.js`): `auto-geogebra-scorm` activa botón de guardado, `registerActivity(options)` y opciones runtime con `isScorm: 2`."
-  - "Decisión registrada en DEC-0043: detectar GeoGebra calificable por `auto-geogebra-scorm`, sin volver a detección por whitelist ni añadir `exe-scorm` al body."
+  - "Decisión registrada en DEC-29-01: detectar GeoGebra calificable por `auto-geogebra-scorm`, sin volver a detección por whitelist ni añadir `exe-scorm` al body."
   - "Implementación propuesta con TDD: test de regresión para GeoGebra marcado/no marcado + helper acotado en `classes/local/package.php`."
 relacionados:
-  - DEC-0022
-  - DEC-0037
-  - DEC-0039
-  - DEC-0042
-  - DEC-0043
+  - DEC-13-01
+  - DEC-13-10
+  - DEC-26-01
+  - DEC-13-11
+  - DEC-29-01
   - "issue #29"

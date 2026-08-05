@@ -17,7 +17,7 @@
 /**
  * Grade item lifecycle helpers for mod_exelearning.
  *
- * Extracted verbatim from lib.php (DEC-0054): create/guard the overall grade
+ * Extracted verbatim from lib.php (DEC-71-01): create/guard the overall grade
  * item, format per-iDevice column names, remove all grade items and place every
  * item under the configured grade category. lib.php keeps thin delegators with
  * the original `exelearning_*` signatures (Moodle calls
@@ -56,12 +56,12 @@ final class grade_item_manager {
         require_once($CFG->libdir . '/gradelib.php');
 
         // The overall (itemnumber=0) gradebook column only exists in OVERALL mode for a
-        // graded activity (DEC-0008, DEC-0038). Core's grade_update_mod_grades() calls
+        // graded activity (DEC-0-08, DEC-25-01). Core's grade_update_mod_grades() calls
         // this function UNCONDITIONALLY (before exelearning_update_grades()) on every
         // regrade — cron needsupdate, course reset "remove all grades", grade-item
         // unlock, user-undelete history recovery — so without this guard a PERITEM or
         // ungraded activity would get a phantom overall column that inflates the course
-        // total (B2b follow-up, DEC-0044). When the overall must not exist, delete any
+        // total (B2b follow-up, DEC-34-01). When the overall must not exist, delete any
         // stray one instead of creating it.
         $grademodel = (int) ($exelearning->grademodel ?? EXELEARNING_GRADEMODEL_PERITEM);
         if (empty($exelearning->gradeenabled) || $grademodel !== EXELEARNING_GRADEMODEL_OVERALL) {
@@ -115,13 +115,13 @@ final class grade_item_manager {
         // title comes from author-controlled content.xml and is unbounded; combined
         // with an up-to-255-char activity name it can exceed 255 and throw a
         // dml_write_exception on sync — which, via the view.php self-heal, is a
-        // student-facing fatal (B5, DEC-0044). core_text::substr is multibyte-safe and
+        // student-facing fatal (B5, DEC-34-01). core_text::substr is multibyte-safe and
         // deterministic, so re-sync does not thrash the stored name.
         return \core_text::substr($name, 0, 255);
     }
 
     /**
-     * Removes all gradebook items of an activity (master grading switch off, DEC-0029).
+     * Removes all gradebook items of an activity (master grading switch off, DEC-13-07).
      *
      * Soft-deletes the plugin's grade-item mapping rows and deletes the matching Moodle
      * grade items, including the overall item (itemnumber 0), so nothing shows in the
@@ -167,7 +167,7 @@ final class grade_item_manager {
     /**
      * Places every grade item of the activity under the configured grade category.
      *
-     * The grade category selector (DEC-0034) is stored on exelearning.gradecat, but
+     * The grade category selector (DEC-19-01) is stored on exelearning.gradecat, but
      * grade_update() silently ignores the categoryid key (it is not in its allowed
      * field list), so the parent category must be set with grade_item::set_parent() —
      * the same API course/modlib.php uses for core's "Grade category" dropdown.

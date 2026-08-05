@@ -7,7 +7,7 @@ url_upstream: "https://github.com/adlnet/Moodle-mod_cmi5launch"
 commit_consultado: "main @ 9c7d90da44035839a239380fcc2e0c7aa6910a85 (consultado 2026-06-17)"
 fecha_consulta: 2026-06-17
 licencia: "GPL-3.0-or-later (cabeceras .php) / Apache-2.0 (LICENSE raíz) — ver §Riesgos"
-rol_para_mod_exelearning: "Implementación Moodle de referencia del pipeline statement→nota (agregación highest/average, 'highest score wins por sesión', registration como ancla de intento, backup del tracking). Rol: referencia, NO dependencia. Sustenta AN-014, DEC-0032 y DEC-0015."
+rol_para_mod_exelearning: "Implementación Moodle de referencia del pipeline statement→nota (agregación highest/average, 'highest score wins por sesión', registration como ancla de intento, backup del tracking). Rol: referencia, NO dependencia. Sustenta AN-014, DEC-17-01 y DEC-0-15."
 herramienta_ia:
   interfaz: claude-code
   modelo: claude-opus-4-8
@@ -74,7 +74,7 @@ herramienta_ia:
 - **Sidebar/TOC:** N/A (lanza a un player externo; no embebe HTML con sidebar nativa como `mod_exelearning`).
 - **Grading:** agregado en **un único** grade item (`itemnumber=0`). `mod_exelearning` lo supera con multi-item.
 - **Tracking:** cmi5 (perfil xAPI) **vía LRS externo + player**; modelo *pull* (polling). `mod_exelearning`:
-  xAPI por `postMessage` same-origin, *push*, ingesta server-side (DEC-0032).
+  xAPI por `postMessage` same-origin, *push*, ingesta server-side (DEC-17-01).
 - **Backup/restore:** completo de `session/au/usercourse/config`; **pero no se observó el conditional `userinfo`**
   envolviendo el tracking (`[PENDIENTE]` verificar línea a línea — ver AN-014/M8).
 - **Editor embebido:** N/A.
@@ -84,7 +84,7 @@ herramienta_ia:
 1. **`highest score wins` por (registration, sesión)** (`progress.php::cmi5launch_retrieve_score`) → adoptable
    en el endpoint de `mod_exelearning` cuando lleguen varios `answered` del mismo iDevice/registration
    (regla de selección, distinta del dedup por `statement.id`). Ver AN-014/M3.
-2. **Agregación jerárquica con `grademethod` configurable** (`grade_helpers.php`) → refuerza DEC-0015 y el
+2. **Agregación jerárquica con `grademethod` configurable** (`grade_helpers.php`) → refuerza DEC-0-15 y el
    `aggregate_values` existente (`classes/local/attempts.php:324-342`, highest/average/first/last/lowest).
 3. **`registration` como ancla de correlación** intento↔statements (`usercourse.registrationid`) → valida el
    mapeo `registration↔sessiontoken` del plan (`view.php:401`, `random_string(20)`).
@@ -101,7 +101,7 @@ herramienta_ia:
 - **Diferencia de modelo:** requiere **player externo + LRS**; el estado passed/failed/completed lo decide el
   **player**, no el plugin. Muchos detalles de `cmi5_connectors` (tenant/token/registration) **no son
   trasladables** a `mod_exelearning` (sin player). `[INTERPRETACION]` Como `mod_exelearning` no tiene player,
-  **debe decidir passed/failed en el servidor** (umbral/`gradepass`, espíritu DEC-0018) — ver AN-014/M4.
+  **debe decidir passed/failed en el servidor** (umbral/`gradepass`, espíritu DEC-6-01) — ver AN-014/M4.
 - **Sin idempotencia por `statement.id`** (no persiste statements): `mod_exelearning` mejora ese punto con
   `exelearning_tracking_events` (`statementid` UNIQUE) opcional.
 - Las firmas de función provienen de WebFetch sobre los `.php` crudos (resumido por un modelo), no de lectura

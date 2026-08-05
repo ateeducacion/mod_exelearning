@@ -146,7 +146,7 @@ Go to:
     {your/moodle/dirroot}/admin/settings.php?section=modsettingexelearning
 
 All settings live on a single admin page (see
-[DEC-0009](./research/decisiones/adr/DEC-0009-solo-editor-embebido.md) for the
+[DEC-0-09](./research/decisiones/adr/DEC-0-09-solo-editor-embebido.md) for the
 rationale of dropping the eXeLearning Online integration — only the embedded
 editor remains):
 
@@ -196,12 +196,12 @@ Playwright, loads the real shim/relay against an opaque-origin harness).
 
 The editor has exactly one source: the pre-built copy shipped inside the release
 ZIP at `dist/static/`
-([DEC-0065](./research/decisiones/adr/DEC-0065-editor-empaquetado-solo-en-release.md)).
+([DEC-106-01](./research/decisiones/adr/DEC-106-01-editor-empaquetado-solo-en-release.md)).
 There is nothing to install, update or repair at runtime — the plugin never
 downloads editor code after installation, so everything it serves is part of the
 reviewed release package, and a given plugin version always ships one known
 editor build (pinned to the matching editor tag,
-[DEC-0058](./research/decisiones/adr/DEC-0058-fijar-editor-tag-en-release.md)).
+[DEC-78-01](./research/decisiones/adr/DEC-78-01-fijar-editor-tag-en-release.md)).
 
 Administrators cannot update the editor independently: updating the editor means
 installing the next plugin release. When the bundle is absent (a source checkout)
@@ -216,21 +216,21 @@ When a teacher uploads a `.elpx`, the plugin extracts the package and detects
 gradable iDevices from `content.xml`. The default gradebook model is **per-iDevice
 only**: one visible column per detected gradable iDevice (`itemnumber=1..N`) and
 **no overall column** — the two models are symmetric, with no hidden overall stub
-([DEC-0038](./research/decisiones/adr/DEC-0038-sin-columna-overall-en-peritem.md)).
+([DEC-25-01](./research/decisiones/adr/DEC-25-01-sin-columna-overall-en-peritem.md)).
 Pass-grade completion targets a registered gradable item directly (Moodle's
 completion-by-grade). The teacher can switch the activity to **overall only** when a
 single aggregated grade is preferred (SCORM-style). The former "both" mode was
-removed in [DEC-0008](./research/decisiones/adr/DEC-0008-grade-aggregation-y-feedback.md)
+removed in [DEC-0-08](./research/decisiones/adr/DEC-0-08-grade-aggregation-y-feedback.md)
 to avoid double-counting and gradebook complexity. See
 [docs/GRADEBOOK.md](https://github.com/exelearning/moodle-mod_exelearning/blob/main/docs/GRADEBOOK.md) for the full model.
 
 Each submission is stored as an **attempt** (see
-[DEC-0007](./research/decisiones/adr/DEC-0007-gestion-intentos.md)); the
+[DEC-0-07](./research/decisiones/adr/DEC-0-07-gestion-intentos.md)); the
 gradebook value is the configured aggregation (highest / average / first / last
 / lowest). You can cap the number of attempts, let students review their past
 attempts, and delete attempts from the teacher report (the grade is
 recalculated). Completion can require a passing grade (SCORM-style, see
-[DEC-0010](./research/decisiones/adr/DEC-0010-finalizacion-estilo-scorm.md)).
+[DEC-0-10](./research/decisiones/adr/DEC-0-10-finalizacion-estilo-scorm.md)).
 
 Grading runtime uses a SCORM 1.2 bridge whose isolation depends on the **package
 iframe security mode**
@@ -250,7 +250,7 @@ secure serving + CSP hardening. xAPI support via `core_xapi` is on the roadmap.
 The plugin exposes external functions for the official Moodle App and other
 external clients, all registered under `MOODLE_OFFICIAL_MOBILE_SERVICE` and
 enforcing context, login and capabilities in code
-([DEC-0040](./research/decisiones/adr/DEC-0040-mobile-external-api.md)):
+([DEC-26-02](./research/decisiones/adr/DEC-26-02-mobile-external-api.md)):
 
 | Function | Type | Capability | Purpose |
 |---|---|---|---|
@@ -273,12 +273,12 @@ ingestion is on the roadmap. The navigable package content itself is served via
 
 See `research/decisiones/adr/` for the full set of ADRs. Highlights:
 
-* [DEC-0003](./research/decisiones/adr/DEC-0003-estandar-tracking-y-multi-grade-items.md) — tracking standard and multi-grade-items (SCORM 1.2 now, xAPI roadmap).
-* [DEC-0006](./research/decisiones/adr/DEC-0006-modos-preview-grading.md) — preview vs grading modes (done).
-* [DEC-0007](./research/decisiones/adr/DEC-0007-gestion-intentos.md) — multi-attempt support (done).
-* [DEC-0008](./research/decisiones/adr/DEC-0008-grade-aggregation-y-feedback.md) — overall vs per-iDevice grade aggregation (done).
-* [DEC-0009](./research/decisiones/adr/DEC-0009-solo-editor-embebido.md) — embedded editor only, no eXeLearning Online (done).
-* [DEC-0010](./research/decisiones/adr/DEC-0010-finalizacion-estilo-scorm.md) — SCORM-style completion by passing grade (done).
+* [DEC-0-03](./research/decisiones/adr/DEC-0-03-estandar-tracking-y-multi-grade-items.md) — tracking standard and multi-grade-items (SCORM 1.2 now, xAPI roadmap).
+* [DEC-0-06](./research/decisiones/adr/DEC-0-06-modos-preview-grading.md) — preview vs grading modes (done).
+* [DEC-0-07](./research/decisiones/adr/DEC-0-07-gestion-intentos.md) — multi-attempt support (done).
+* [DEC-0-08](./research/decisiones/adr/DEC-0-08-grade-aggregation-y-feedback.md) — overall vs per-iDevice grade aggregation (done).
+* [DEC-0-09](./research/decisiones/adr/DEC-0-09-solo-editor-embebido.md) — embedded editor only, no eXeLearning Online (done).
+* [DEC-0-10](./research/decisiones/adr/DEC-0-10-finalizacion-estilo-scorm.md) — SCORM-style completion by passing grade (done).
 
 ## Technical documentation
 

@@ -23,7 +23,7 @@ herramienta_ia:
 ## Qué es
 
 > **[ACTUALIZACION 2026-06-17]** **PREG-001** (identificadores estables de iDevice) está **resuelta**
-> (DEC-0017, PR upstream #1791; doc oficial `elpx-format/ids.md`). El `[PENDIENTE: confirmar lista actual]` de
+> (DEC-5-01, PR upstream #1791; doc oficial `elpx-format/ids.md`). El `[PENDIENTE: confirmar lista actual]` de
 > formatos de más abajo se da por cerrado contra las fixtures reales del repo (`research/fixtures/elpx/`,
 > `scorm-export/`, `web-export/`). Esta ficha es la **autoritativa** para la estructura del `.elpx` extraído
 > (`content.xml` + `theme/` + `content/`), frente al diagrama web temprano de REPO-005.
@@ -190,7 +190,7 @@ para evidencia de que el export SCORM actual agrega.
 
 ## Soporte para multi-grade-items
 
-Depende del export: ver FTE-001/FTE-002/FTE-004 según la decisión que tome DEC-0003.
+Depende del export: ver FTE-001/FTE-002/FTE-004 según la decisión que tome DEC-0-03.
 
 ## Soporte para navegación/sidebar
 

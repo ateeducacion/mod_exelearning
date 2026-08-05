@@ -26,7 +26,7 @@ namespace mod_exelearning\local;
  *    string. It is the single PHP source of truth for that format and mirrors the
  *    JavaScript parser in the `view.php` SCORM shim.
  *  - {@see self::apply_item_scores()} routes per-iDevice scores to the gradebook by
- *    the stable `objectid` captured client-side (DEC-0017 / RIE-007), instead of by
+ *    the stable `objectid` captured client-side (DEC-5-01 / RIE-007), instead of by
  *    the page-local index N the producer emits — which collides across pages.
  *
  * @package    mod_exelearning
@@ -43,8 +43,8 @@ class track {
      *
      * The caller is responsible for authentication, capability and context checks;
      * this method trusts neither the client's overall score (it recomputes it from
-     * the per-iDevice objectid map when one is supplied, DEC-0018) nor the client's
-     * itemnumbers (scores are routed by stable objectid, DEC-0017, and an objectid
+     * the per-iDevice objectid map when one is supplied, DEC-6-01) nor the client's
+     * itemnumbers (scores are routed by stable objectid, DEC-5-01, and an objectid
      * the package does not expose is ignored). Scores are clamped to the instance
      * grade range and the attempt cap (maxattempt) is enforced.
      *
@@ -53,7 +53,7 @@ class track {
      * @param \stdClass $cm        The course_module record (for completion).
      * @param int       $userid    The grading user.
      * @param array     $payload   Decoded payload: {cmi:{...}, session?:string, itemscores?:array}.
-     * @param bool      $ispreview When true, acknowledge the score without grading (DEC-0006).
+     * @param bool      $ispreview When true, acknowledge the score without grading (DEC-0-06).
      * @return array Result map: always has 'ok'. May add noop|mode|error|attempt|rawscore|status|peritem.
      */
     public static function ingest(
@@ -69,7 +69,7 @@ class track {
         require_once($CFG->libdir . '/completionlib.php');
 
         $cmi = (isset($payload['cmi']) && is_array($payload['cmi'])) ? $payload['cmi'] : [];
-        // Page-load session token (DEC-0007): groups auto-commits into one attempt.
+        // Page-load session token (DEC-0-07): groups auto-commits into one attempt.
         $sessiontoken = isset($payload['session'])
                 ? substr(clean_param((string) $payload['session'], PARAM_ALPHANUMEXT), 0, 255) : '';
         $rawscore = $cmi['cmi.core.score.raw'] ?? $cmi['cmi.score.raw'] ?? null;
@@ -92,12 +92,12 @@ class track {
         }
         $score = max($grademin, min($grademax, $score));
 
-        // Preview mode: do NOT update the gradebook; only acknowledge (DEC-0006).
+        // Preview mode: do NOT update the gradebook; only acknowledge (DEC-0-06).
         if ($ispreview) {
             return ['ok' => true, 'mode' => 'preview', 'rawscore' => $score, 'status' => $status];
         }
 
-        // Per-iDevice routing: prefer the stable objectid map (DEC-0017); fall back
+        // Per-iDevice routing: prefer the stable objectid map (DEC-5-01); fall back
         // to the page-local index from cmi.suspend_data only when none is supplied.
         $itemscores = (isset($payload['itemscores']) && is_array($payload['itemscores']))
                 ? $payload['itemscores'] : [];
@@ -174,7 +174,7 @@ class track {
                 'itemnumber'    => 0,
             ]) : false;
 
-            // Attempt limit (DEC-0007 phase 2): a fresh session over the cap is rejected.
+            // Attempt limit (DEC-0-07 phase 2): a fresh session over the cap is rejected.
             $maxattempt = (int) ($exe->maxattempt ?? 0);
             if ($maxattempt > 0) {
                 $sessionknown = ($sessiontoken !== '') && $DB->record_exists(
@@ -202,7 +202,7 @@ class track {
             }
 
             // 2) Overall (itemnumber=0): recompute from the per-iDevice scores when an
-            // objectid map was supplied (DEC-0018), never trusting the client overall.
+            // objectid map was supplied (DEC-6-01), never trusting the client overall.
             if ($itemscores !== []) {
                 $overallpct = self::recompute_overall_pct($itemscores);
                 if ($overallpct !== null) {
@@ -211,7 +211,7 @@ class track {
                         debugging(
                             'mod_exelearning: overall recomputed from itemscores (' . $recomputed
                                 . ') diverges from cmi.core.score.raw (' . $score
-                                . '); using the recomputed value (DEC-0018).',
+                                . '); using the recomputed value (DEC-6-01).',
                             DEBUG_DEVELOPER
                         );
                     }
@@ -224,7 +224,7 @@ class track {
             $scaledoverall = attempts::aggregate_scaled($exe->id, $userid, 0, $grademethod);
             $finaloverall = ($scaledoverall === null) ? $score : ($scaledoverall * $grademax);
 
-            // Publish the aggregated overall grade ONLY in OVERALL mode (DEC-0038): in
+            // Publish the aggregated overall grade ONLY in OVERALL mode (DEC-25-01): in
             // PERITEM the per-iDevice grades carry the gradebook.
             $result = GRADE_UPDATE_OK;
             if ($grademodel === EXELEARNING_GRADEMODEL_OVERALL) {
@@ -254,11 +254,11 @@ class track {
                 $completion->update_state($cm, COMPLETION_UNKNOWN, $userid);
             }
 
-            // Observability events (DEC-0051, extending DEC-0041): emitted only now the
+            // Observability events (DEC-68-01, extending DEC-26-03): emitted only now the
             // attempt is persisted, so the preview / no-op / over-cap commits that
             // returned earlier never reach the logstore. Both are once-per-attempt
             // LEVEL_PARTICIPATING learner events (begin + outcome), NOT per-commit — the
-            // ~500 ms autocommit would flood the log, which is why DEC-0041 rejected a
+            // ~500 ms autocommit would flood the log, which is why DEC-26-03 rejected a
             // per-commit event. The shared pipeline means the web (track.php) and mobile
             // (save_track) paths emit the same signal.
             self::emit_tracking_events(
@@ -298,7 +298,7 @@ class track {
      * attempt_started (on the commit that creates the attempt) and attempt_completed
      * (on the commit that first moves the attempt into a terminal status). Kept out of
      * ingest() to keep that method focused; both events are part of the public
-     * observability contract (DEC-0051, extending DEC-0041) and are deliberately NOT
+     * observability contract (DEC-68-01, extending DEC-26-03) and are deliberately NOT
      * per-commit.
      *
      * @param \stdClass    $exe            The exelearning instance record.
@@ -358,7 +358,7 @@ class track {
      * The producer (`public/app/common/common.js`) serialises one entry per scored
      * iDevice as `{N}. "{title}"; {scoreLabel}: {S}%; {weightLabel}: {W}%`, joined
      * by ".\t". N is the page-local DOM index of the iDevice (NOT our itemnumber);
-     * see DEC-0017. The score/weight labels are localised, hence the `[^:]+` parts.
+     * see DEC-5-01. The score/weight labels are localised, hence the `[^:]+` parts.
      *
      * @param string $suspend Raw cmi.suspend_data value.
      * @return array Map of page-local N (int) to ['title' => string, 'scorepct' => float,
@@ -413,7 +413,7 @@ class track {
     /**
      * Recomputes the overall score (0..100) from the per-iDevice objectid scores.
      *
-     * DEC-0018 / RIE-007 residual: the producer's `cmi.core.score.raw`
+     * DEC-6-01 / RIE-007 residual: the producer's `cmi.core.score.raw`
      * (`getFinalScore`) is corrupt under a multi-page `cmi.suspend_data` collision,
      * but the per-iDevice scores the shim captures by stable objectid are not. This
      * derives the overall as the weighted mean of each item's `scorepct` by its
@@ -448,7 +448,7 @@ class track {
     }
 
     /**
-     * Routes per-iDevice scores to the gradebook by stable objectid (DEC-0017).
+     * Routes per-iDevice scores to the gradebook by stable objectid (DEC-5-01).
      *
      * `$itemscores` is keyed by the iDevice objectid (the `.idevice_node` element id
      * the client shim reads from the iframe DOM, which equals `<odeIdeviceId>` in
@@ -526,7 +526,7 @@ class track {
      * Only correct for a single-page package whose iDevices are all gradable (see
      * RIE-007): when two gradable iDevices on different pages share the same
      * page-local N they collide here, so this is used only when the client shim
-     * supplied no objectid map. Preserves the pre-DEC-0017 behaviour exactly.
+     * supplied no objectid map. Preserves the pre-DEC-5-01 behaviour exactly.
      *
      * @param \stdClass $exe          The exelearning instance record.
      * @param int       $userid       The grading user.
@@ -655,7 +655,7 @@ class track {
         // Gradebook grade = aggregation of attempts according to grademethod.
         $scaled = attempts::aggregate_scaled($exe->id, $userid, $itemnumber, $ctx['grademethod']);
         $finalitem = ($scaled === null) ? $rawitem : ($scaled * $grademax);
-        // In "overall only" mode per-iDevice columns are not published (DEC-0008),
+        // In "overall only" mode per-iDevice columns are not published (DEC-0-08),
         // but the attempt IS recorded for the report.
         if ($ctx['grademodel'] !== EXELEARNING_GRADEMODEL_OVERALL) {
             grade_update(

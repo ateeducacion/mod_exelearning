@@ -11,7 +11,7 @@ acciones:
   - "Pobladas 8 fichas FTE (SCORM 1.2/2004, xAPI, cmi5, LTI 1.3 AGS, Moodle Grade API, core_xapi, formato paquete eXeLearning). Consultas Context7 quedan como TAREA-002."
   - "Escritas 4 notas de análisis (sidebar rendering, multi-grade-items, xAPI handler, ELP/ELPX vs ZIP)."
   - "Creada matriz cualitativa de estándares de tracking (sin veredicto)."
-  - "Aceptadas DEC-0001 (metodología) y DEC-0002 (clones externos). DEC-0003 (estándar de tracking) en estado Propuesta."
+  - "Aceptadas DEC-0-01 (metodología) y DEC-0-02 (clones externos). DEC-0-03 (estándar de tracking) en estado Propuesta."
   - "Visión arquitectónica preliminar publicada como [HIPOTESIS]."
   - "Tareas TAREA-001..005 y preguntas PREG-001/002 creadas."
   - "Cumplimiento: stubs iniciales de accesibilidad, privacidad, licencias."
@@ -30,4 +30,4 @@ proximos_pasos:
   - TAREA-002 (Context7 sobre estándares).
   - TAREA-003 (EXP-001).
   - TAREA-004 (EXP-002).
-  - TAREA-005 (cerrar DEC-0003).
+  - TAREA-005 (cerrar DEC-0-03).

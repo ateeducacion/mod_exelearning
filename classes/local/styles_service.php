@@ -494,7 +494,7 @@ class styles_service {
     public static function parse_config_xml(string $source): array {
         // A style config.xml never carries a DTD: reject any DOCTYPE/ENTITY
         // outright so entity expansion is impossible, matching the hardened
-        // content.xml parser policy (DEC-0039). LIBXML_NOENT was removed: the
+        // content.xml parser policy (DEC-26-01). LIBXML_NOENT was removed: the
         // flag ENABLES entity substitution despite its name.
         if (preg_match('/<!(?:DOCTYPE|ENTITY)/i', $source)) {
             throw new \moodle_exception('stylesupload_badxml', 'mod_exelearning');

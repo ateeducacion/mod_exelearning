@@ -26,7 +26,7 @@ global $CFG;
 require_once($CFG->dirroot . '/mod/exelearning/lib.php');
 
 /**
- * Unit tests for the mod_exescorm migration source handler (issue #13 #3, DEC-0050).
+ * Unit tests for the mod_exescorm migration source handler (issue #13 #3, DEC-13-12).
  *
  * mod_exescorm is not installed in CI; the handler is driven against a simulated
  * `package` filearea (itemid 0). Classification distinguishes a direct .elpx package
@@ -168,7 +168,7 @@ final class exescorm_source_test extends advanced_testcase {
 
     /**
      * A synchronized source is unsupported even when a local package snapshot exists:
-     * migrating it would break the sync relationship with its external URL (DEC-0050).
+     * migrating it would break the sync relationship with its external URL (DEC-13-12).
      */
     public function test_localsync_is_unsupported_even_with_local_package(): void {
         [, $ctxid] = $this->create_empty_target();

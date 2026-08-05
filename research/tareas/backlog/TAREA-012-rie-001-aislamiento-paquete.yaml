@@ -16,10 +16,10 @@ pasos:
 relacionados:
   - RIE-001
   - AN-008
-  - DEC-0003
-  - DEC-0017
+  - DEC-0-03
+  - DEC-5-01
 criterios_aceptacion:
   - "Opciones comparadas con impacto funcional y operativo."
   - "Recomendación documentada como ADR o nota AN."
   - "No se degrada la preservación de sidebar nativa."
-notas: "Riesgo medio, probabilidad baja; importante antes de estabilizar. CERRADA (Done) por DEC-0019 (2026-06-02): investigación de aislamiento completada; roadmap de hardening documentado (no implementado por decisión). Ver status.yaml (cierre) y TODO.md (Cerrado)."
+notas: "Riesgo medio, probabilidad baja; importante antes de estabilizar. CERRADA (Done) por DEC-0-16 (2026-06-02): investigación de aislamiento completada; roadmap de hardening documentado (no implementado por decisión). Ver status.yaml (cierre) y TODO.md (Cerrado)."

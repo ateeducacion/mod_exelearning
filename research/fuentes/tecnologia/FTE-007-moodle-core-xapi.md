@@ -11,7 +11,7 @@ context7:
   fecha: 2026-05-28
   version_devuelta: "Moodle 5.2 dev docs"
 fecha_consulta: 2026-05-28
-relevancia_para_mod_exelearning: "Pieza central si DEC-0003 elige xAPI: handler que mod_exelearning extiende para recibir statements desde el iframe del paquete."
+relevancia_para_mod_exelearning: "Pieza central si DEC-0-03 elige xAPI: handler que mod_exelearning extiende para recibir statements desde el iframe del paquete."
 herramienta_ia:
   interfaz: claude-code
   modelo: claude-opus-4-7

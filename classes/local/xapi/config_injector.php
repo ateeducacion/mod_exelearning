@@ -17,7 +17,7 @@
 namespace mod_exelearning\local\xapi;
 
 /**
- * Hardens the served package's xAPI config (DEC-0064, RIE-013).
+ * Hardens the served package's xAPI config (DEC-85-01, RIE-013).
  *
  * The upstream emitter (`exe_xapi.js`) reads `window.exeXapi` and posts statements to
  * `parentOrigin || '*'`. When served by Moodle the host knows its own origin, so this

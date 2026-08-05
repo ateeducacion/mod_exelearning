@@ -86,7 +86,7 @@ final class lib_test extends advanced_testcase {
         $this->assertSame([1, 2], $itemnumbers);
 
         // Default model is PERITEM: there is no overall (itemnumber=0) column
-        // (DEC-0038); only the per-iDevice columns 1 and 2 are present.
+        // (DEC-25-01); only the per-iDevice columns 1 and 2 are present.
         $overall = grade_item::fetch([
             'itemtype'     => 'mod',
             'itemmodule'   => 'exelearning',
@@ -113,7 +113,7 @@ final class lib_test extends advanced_testcase {
     }
 
     /**
-     * Create-from-scratch (issue #13 #1, DEC-0024): an instance can be added with
+     * Create-from-scratch (issue #13 #1, DEC-13-03): an instance can be added with
      * no uploaded package. It is created cleanly with no stored package, no
      * content and no grade items, ready to be authored in the embedded editor.
      */
@@ -142,7 +142,7 @@ final class lib_test extends advanced_testcase {
     /**
      * A multi-page package registers one grade item per gradable iDevice, keyed by
      * the iDevice's stable objectid, even when those iDevices live on different
-     * pages and share the same page-local DOM index (the RIE-007 / DEC-0017 case).
+     * pages and share the same page-local DOM index (the RIE-007 / DEC-5-01 case).
      */
     public function test_multipage_detects_distinct_objectids_per_page(): void {
         global $DB;
@@ -208,7 +208,7 @@ final class lib_test extends advanced_testcase {
     }
 
     /**
-     * grademodel PERITEM: no overall column (DEC-0038), per-iDevice columns present.
+     * grademodel PERITEM: no overall column (DEC-25-01), per-iDevice columns present.
      */
     public function test_grademodel_peritem(): void {
         $instance = $this->create_activity(['grademodel' => EXELEARNING_GRADEMODEL_PERITEM]);
@@ -303,7 +303,7 @@ final class lib_test extends advanced_testcase {
 
     /**
      * Saving the settings form after an embedded-editor save must NOT destroy the
-     * stored .elpx (B1, DEC-0044). The editor stores the package at itemid=revision
+     * stored .elpx (B1, DEC-34-01). The editor stores the package at itemid=revision
      * (deleting itemid 0); a subsequent settings submit carries a non-empty but
      * file-less filemanager draft, which previously wiped every package itemid and
      * left the activity unrecoverable. The guard keeps the stored package and
@@ -467,7 +467,7 @@ final class lib_test extends advanced_testcase {
      * author-controlled page title from content.xml plus the iDevice type, so it
      * can exceed the char(255) column. It must be clamped, not thrown as a
      * dml_write_exception that aborts add/update and white-screens the view.php
-     * self-heal for students (B5, DEC-0044).
+     * self-heal for students (B5, DEC-34-01).
      *
      * @covers ::exelearning_grade_item_name
      */
@@ -493,7 +493,7 @@ final class lib_test extends advanced_testcase {
     }
 
     /**
-     * The completion-by-grade validation stopgap (B7, DEC-0044) clears core's
+     * The completion-by-grade validation stopgap (B7, DEC-34-01) clears core's
      * badcompletiongradeitemnumber error only for a real gradebook column and only
      * when "require passing grade" is off, never masking the legitimate
      * pass-grade-required check. Tested as a pure helper so the coverage does not
@@ -545,7 +545,7 @@ final class lib_test extends advanced_testcase {
     }
 
     /**
-     * The serve-time guard patch (issue #13 / DEC-0042) removes the
+     * The serve-time guard patch (issue #13 / DEC-13-11) removes the
      * `body.exe-scorm` condition from the form/scrambled-list SAVE guard so they
      * save on `isScorm > 0` like every other gradable iDevice, leaves the
      * init-time guard (the `ldata.isScorm` variant) and unrelated files untouched,
@@ -598,7 +598,7 @@ final class lib_test extends advanced_testcase {
     }
 
     /**
-     * Future-proofing canary (issue #13 / DEC-0042): after extracting a package
+     * Future-proofing canary (issue #13 / DEC-13-11): after extracting a package
      * with many iDevice types, NO served iDevice JS may still gate its score-save
      * on `body.exe-scorm`. The patch strips the two known offenders (form,
      * scrambled-list); if a future eXeLearning release ships another iDevice with
@@ -652,7 +652,7 @@ final class lib_test extends advanced_testcase {
             $offenders,
             'An iDevice still gates its score-save on body.exe-scorm after extraction. '
                 . 'Add its save guard to exelearning_patch_idevice_save_guards() '
-                . '(issue #13 / DEC-0042): ' . implode(', ', $offenders)
+                . '(issue #13 / DEC-13-11): ' . implode(', ', $offenders)
         );
     }
 
@@ -678,7 +678,7 @@ final class lib_test extends advanced_testcase {
     /**
      * Re-syncing the same package reports no changes; a stored hash that no
      * longer matches the package (simulating an in-place options edit) is
-     * reported as "changed" and the stored hash is refreshed (DEC-0021).
+     * reported as "changed" and the stored hash is refreshed (DEC-12-01).
      */
     public function test_sync_delta_detects_edited_options(): void {
         global $DB;
@@ -853,7 +853,7 @@ final class lib_test extends advanced_testcase {
     }
 
     /**
-     * Gradebook deep-link (issue #13 #4, DEC-0023): exelearning_grade_item_view_url()
+     * Gradebook deep-link (issue #13 #4, DEC-13-02): exelearning_grade_item_view_url()
      * maps an itemnumber to its iDevice objectid so grade.php can forward the click
      * straight to that iDevice; itemnumber 0 and unknown numbers fall back to the
      * activity front page.
@@ -924,7 +924,7 @@ final class lib_test extends advanced_testcase {
 
     /**
      * exelearning_package_has_content_xml() recognises a real package and rejects a
-     * plain .zip that does not contain content.xml (issue #13, DEC-0027).
+     * plain .zip that does not contain content.xml (issue #13, DEC-16-01).
      */
     public function test_package_has_content_xml(): void {
         $this->resetAfterTest();
@@ -938,7 +938,7 @@ final class lib_test extends advanced_testcase {
 
     /**
      * A .zip package that contains content.xml is extracted and its gradable
-     * iDevices detected exactly like an .elpx (issue #13, DEC-0027).
+     * iDevices detected exactly like an .elpx (issue #13, DEC-16-01).
      */
     public function test_zip_package_detected_like_elpx(): void {
         global $DB;
@@ -977,7 +977,7 @@ final class lib_test extends advanced_testcase {
     }
 
     /**
-     * Master grading switch off (DEC-0029): no grade items are registered even when
+     * Master grading switch off (DEC-13-07): no grade items are registered even when
      * the package has gradable iDevices, and no overall grade item exists.
      */
     public function test_gradeenabled_off_creates_no_grade_items(): void {
@@ -1001,7 +1001,7 @@ final class lib_test extends advanced_testcase {
 
     /**
      * Toggling grading off on an activity that already has grade items soft-deletes
-     * them (deleted=1, columns removed) while preserving attempt history (DEC-0029).
+     * them (deleted=1, columns removed) while preserving attempt history (DEC-13-07).
      */
     public function test_gradeenabled_toggle_off_softdeletes_and_preserves_attempts(): void {
         global $DB;
@@ -1049,7 +1049,7 @@ final class lib_test extends advanced_testcase {
 
     /**
      * The gradebook "grade analysis" destination is role-based (issue #13 #4,
-     * DEC-0028): a teacher/grader lands on the attempts report; a student is
+     * DEC-13-06): a teacher/grader lands on the attempts report; a student is
      * deep-linked to the specific iDevice in the content.
      */
     public function test_grade_analysis_url_role_based(): void {
@@ -1075,7 +1075,7 @@ final class lib_test extends advanced_testcase {
         $this->assertArrayNotHasKey('userid', $teacherurl->params());
 
         // With a userid (forwarded by the gradebook "grade analysis" link), the
-        // teacher is deep-linked to that student's attempts (DEC-0028).
+        // teacher is deep-linked to that student's attempts (DEC-13-06).
         $teacheruseridurl = exelearning_grade_analysis_url($instance, (int) $cm->id, 1, $context, (int) $student->id);
         $this->assertStringContainsString('/mod/exelearning/report.php', $teacheruseridurl->out(false));
         $this->assertEquals($student->id, $teacheruseridurl->params()['userid']);

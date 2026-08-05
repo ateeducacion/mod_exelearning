@@ -259,7 +259,7 @@ describe('createScormApi state machine', () => {
         expect(body.itemscores).toEqual({ 'ide-aaa': { scorepct: 60, weighted: 30, title: 'Quiz' } });
     });
 
-    it('disableTracking keeps window.API alive but POSTs nothing (xAPI-primary, DEC-0064)', () => {
+    it('disableTracking keeps window.API alive but POSTs nothing (xAPI-primary, DEC-85-01)', () => {
         const xhr = makeXhr(200);
         const { api } = createScormApi(baseConfig({ disableTracking: true, xhrFactory: () => xhr }));
         // The SCORM contract still answers so pipwerks/iDevices run normally...

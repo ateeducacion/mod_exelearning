@@ -17,9 +17,9 @@
 /**
  * mod_exelearning admin settings.
  *
- * DEC-0009: embedded editor mode only. Integration with eXeLearning Online
+ * DEC-0-09: embedded editor mode only. Integration with eXeLearning Online
  * was discarded to avoid external dependencies. The editor itself ships inside
- * the release package (DEC-0065) and has no runtime management; this page only
+ * the release package (DEC-106-01) and has no runtime management; this page only
  * manages defined styles, gated by the
  * `mod/exelearning:manageembeddededitor` capability.
  *
@@ -30,7 +30,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-// Register the styles action endpoint. Hidden from the admin menu (DEC-0067):
+// Register the styles action endpoint. Hidden from the admin menu (DEC-110-01):
 // styles are managed on this settings page; admin/styles.php only processes the
 // enable/disable/delete links (they cannot be forms nested inside the settings
 // form) and hosts the delete confirmation. The registration must stay — it is
@@ -46,7 +46,7 @@ $ADMIN->add('modsettings', new admin_externalpage(
 
 // Register the site-wide migration tool only when a sibling plugin (mod_exeweb /
 // mod_exescorm) is installed, so admins can bulk-migrate their activities into
-// eXeLearning (issue #13 #3, DEC-0026). Registered outside the $fulltree guard.
+// eXeLearning (issue #13 #3, DEC-13-05). Registered outside the $fulltree guard.
 $exelearninginstalledmods = \core_component::get_plugin_list('mod');
 if (isset($exelearninginstalledmods['exeweb']) || isset($exelearninginstalledmods['exescorm'])) {
     $ADMIN->add('modsettings', new admin_externalpage(
@@ -157,7 +157,7 @@ if ($ADMIN->fulltree) {
         0
     ));
 
-    // Settings for the xAPI ingestion channel (DEC-0064).
+    // Settings for the xAPI ingestion channel (DEC-85-01).
     $settings->add(new admin_setting_heading(
         'mod_exelearning/xapiheading',
         get_string('xapisettings', 'mod_exelearning'),

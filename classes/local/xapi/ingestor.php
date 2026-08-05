@@ -20,7 +20,7 @@ use mod_exelearning\local\attempts;
 use mod_exelearning\local\track;
 
 /**
- * Ingests one xAPI statement into the existing grade pipeline (DEC-0032/DEC-0064).
+ * Ingests one xAPI statement into the existing grade pipeline (DEC-17-01/DEC-85-01).
  *
  * This is the xAPI counterpart of the SCORM `track::ingest()` orchestration. It does
  * NOT add a parallel model: it normalises the statement to the same `itemscores`
@@ -29,7 +29,7 @@ use mod_exelearning\local\track;
  * `grade_update()` and `completion_info` — so xAPI and SCORM grades cannot diverge.
  * `track::ingest()` itself is left untouched (the SCORM productive path).
  *
- * Trust model (DEC-0063): the caller has already authenticated the Moodle session and
+ * Trust model (DEC-0-18): the caller has already authenticated the Moodle session and
  * resolved the instance; this class ignores the statement's actor/authority/stored
  * (grading is attributed to the caller's `$userid`), rejects an `object.id` that does
  * not resolve to a registered iDevice of *this* instance, validates the score range,
@@ -38,8 +38,8 @@ use mod_exelearning\local\track;
  *
  * The overall (`itemnumber=0`) is taken from the package `passed/failed/completed`
  * statement — the producer's *weighted* finalScore — because per-iDevice `answered`
- * statements carry no weight (DEC-0064); it is validated and clamped server-side
- * rather than blindly trusted (spirit of DEC-0018).
+ * statements carry no weight (DEC-85-01); it is validated and clamped server-side
+ * rather than blindly trusted (spirit of DEC-6-01).
  *
  * @package    mod_exelearning
  * @copyright  2026 ATE (Área de Tecnología Educativa)
@@ -59,7 +59,7 @@ class ingestor {
      * @param array     $statement    The decoded xAPI statement.
      * @param string    $registration Attempt-grouping token injected by the host (the
      *                                xAPI registration; shares the SCORM sessiontoken axis).
-     * @param bool      $ispreview    When true, acknowledge without grading (DEC-0006).
+     * @param bool      $ispreview    When true, acknowledge without grading (DEC-0-06).
      * @return array Result map: always has 'ok'. May add ignored|lifecycle|duplicate|
      *         noop|mode|error|verb|attempt|objectid|peritem|rawscore|status.
      */
@@ -88,11 +88,11 @@ class ingestor {
         // injected/forwarded over whatever the statement carries.
         $registration = ($registration !== '') ? $registration : (string) ($norm['registration'] ?? '');
 
-        // Preview (DEC-0006): acknowledge, never grade, never consume idempotency.
+        // Preview (DEC-0-06): acknowledge, never grade, never consume idempotency.
         if ($ispreview) {
             return ['ok' => true, 'mode' => 'preview', 'verb' => $norm['verb']];
         }
-        // Idempotency (DEC-0063 §7): a statement.id already processed is not re-applied.
+        // Idempotency (DEC-0-18 §7): a statement.id already processed is not re-applied.
         if ($DB->record_exists('exelearning_tracking_events', ['statementid' => $norm['statementid']])) {
             return ['ok' => true, 'duplicate' => true, 'verb' => $norm['verb']];
         }
@@ -103,7 +103,7 @@ class ingestor {
             return ['ok' => true, 'lifecycle' => true, 'verb' => $norm['verb']];
         }
 
-        // Master grading switch (DEC-0029): with grading off there are no grade items,
+        // Master grading switch (DEC-13-07): with grading off there are no grade items,
         // so the statement routes nowhere — a no-op, consistent with rejecting an
         // unknown objectid. Still recorded for audit/idempotency.
         if (empty($exe->gradeenabled)) {
@@ -112,7 +112,7 @@ class ingestor {
         }
 
         // An answered for an objectid this instance does not expose is rejected loudly
-        // (DEC-0063 §4) — unlike the SCORM path, which silently drops unknown ids.
+        // (DEC-0-18 §4) — unlike the SCORM path, which silently drops unknown ids.
         if ($norm['verb'] === 'answered' && !self::objectid_registered($exe->id, (string) $norm['objectid'])) {
             return ['ok' => false, 'error' => 'unknownobjectid', 'verb' => 'answered'];
         }
@@ -141,7 +141,7 @@ class ingestor {
                 'itemnumber'    => 0,
             ]) : false;
 
-            // Attempt cap (DEC-0007 phase 2): a fresh registration over the cap is rejected.
+            // Attempt cap (DEC-0-07 phase 2): a fresh registration over the cap is rejected.
             $maxattempt = (int) ($exe->maxattempt ?? 0);
             if ($maxattempt > 0) {
                 $sessionknown = ($registration !== '') && $DB->record_exists(
@@ -172,14 +172,14 @@ class ingestor {
                 self::maybe_emit_started($exe, $course, $cm, $userid, $attempt, $attemptexisted);
             } else {
                 // Package verb: the overall (itemnumber=0). Take the producer's weighted
-                // finalScore, validate-and-clamp to the grade range (DEC-0064/DEC-0018).
+                // finalScore, validate-and-clamp to the grade range (DEC-85-01/DEC-6-01).
                 $overall = max($grademin, min($grademax, ((float) $norm['overallpct'] / 100.0) * $grademax));
                 $status = (string) $norm['status'];
                 attempts::record_item($exe->id, $userid, $attempt, 0, $overall, $grademax, $status, $registration);
                 $scaledoverall = attempts::aggregate_scaled($exe->id, $userid, 0, $grademethod);
                 $finaloverall = ($scaledoverall === null) ? $overall : ($scaledoverall * $grademax);
 
-                // Publish the aggregated overall ONLY in OVERALL mode (DEC-0038); in
+                // Publish the aggregated overall ONLY in OVERALL mode (DEC-25-01); in
                 // PERITEM the per-iDevice columns carry the gradebook and the overall
                 // item exists only for completionpassgrade.
                 if ($grademodel === EXELEARNING_GRADEMODEL_OVERALL) {
@@ -204,7 +204,7 @@ class ingestor {
                 $result['rawscore'] = $finaloverall;
                 $result['status'] = $status;
 
-                // Recompute completion (completionpassgrade / DEC-0052), then the
+                // Recompute completion (completionpassgrade / DEC-69-01), then the
                 // once-per-attempt lifecycle events (start + outcome).
                 $completion = new \completion_info($course);
                 if ($completion->is_enabled($cm)) {
@@ -234,7 +234,7 @@ class ingestor {
 
     /**
      * Whether an objectid resolves to a registered (non-deleted) grade item of the
-     * instance — the ownership/identity check (DEC-0017 / DEC-0063 §4).
+     * instance — the ownership/identity check (DEC-5-01 / DEC-0-18 §4).
      *
      * @param int    $exelearningid
      * @param string $objectid
@@ -293,7 +293,7 @@ class ingestor {
 
     /**
      * Fires attempt_started once, only on the commit that creates the attempt
-     * (mirrors the SCORM path's observability contract, DEC-0051).
+     * (mirrors the SCORM path's observability contract, DEC-68-01).
      *
      * @param \stdClass $exe
      * @param \stdClass $course
@@ -328,7 +328,7 @@ class ingestor {
 
     /**
      * Fires attempt_completed once, only on the transition into a terminal status
-     * (mirrors the SCORM path's observability contract, DEC-0051).
+     * (mirrors the SCORM path's observability contract, DEC-68-01).
      *
      * @param \stdClass    $exe
      * @param \stdClass    $course

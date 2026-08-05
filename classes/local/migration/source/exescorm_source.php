@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Read-only migration source for mod_exescorm (issue #13 #3, DEC-0050).
+ * Read-only migration source for mod_exescorm (issue #13 #3, DEC-13-12).
  *
  * @package    mod_exelearning
  * @copyright  2026 ATE (Área de Tecnología Educativa)
@@ -57,7 +57,7 @@ final class exescorm_source implements source_interface {
      * Periodically-synced package type: although mod_exescorm keeps a local snapshot
      * at package/0, the activity stays in sync with an external URL, so migrating it
      * to a static eXeLearning snapshot would break that relationship. Treated as
-     * non-migratable (DEC-0050). Mirrors EXESCORM_TYPE_LOCALSYNC (mod_exescorm/lib.php).
+     * non-migratable (DEC-13-12). Mirrors EXESCORM_TYPE_LOCALSYNC (mod_exescorm/lib.php).
      *
      * @var string
      */

@@ -14,7 +14,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * xAPI statement listener for the eXeLearning player (DEC-0064, single source of truth).
+ * xAPI statement listener for the eXeLearning player (DEC-85-01, single source of truth).
  *
  * For packages that bundle the upstream xAPI emitter (eXeLearning PR #1867), grading
  * flows through xAPI instead of the SCORM bridge: the emitter posts

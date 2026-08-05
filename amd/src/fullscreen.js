@@ -16,7 +16,7 @@
 /**
  * Fullscreen toggle for the eXeLearning package iframe.
  *
- * Drives the Fullscreen API on the activity iframe (issue #13 #6, DEC-0024). The
+ * Drives the Fullscreen API on the activity iframe (issue #13 #6, DEC-13-03). The
  * iframe already advertises allow="fullscreen"; this module wires the toolbar
  * button to request/exit fullscreen (with a vendor-prefixed fallback) and keeps
  * the button's aria-pressed state in sync with the fullscreen status.

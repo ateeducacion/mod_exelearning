@@ -1,11 +1,11 @@
 # Matriz comparativa de estándares de tracking candidatos para mod_exelearning.
-# Estado: CERRADA. DEC-0003 acepta SCORM 1.2 como tracking vigente suficiente,
+# Estado: CERRADA. DEC-0-03 acepta SCORM 1.2 como tracking vigente suficiente,
 # servido por shim propio sobre el ELPX nativo; xAPI queda como hoja de ruta en
-# DEC-0014.
+# DEC-0-14.
 
 titulo: "Estándar de tracking + multi-grade-items"
 fecha: 2026-05-28
-decision_relacionada: DEC-0003
+decision_relacionada: DEC-0-03
 estado: cerrada
 
 # Escala cuantitativa 0-5:
@@ -64,7 +64,7 @@ opciones:
       aporta ventaja suficiente frente al puente SCORM 1.2 ya verificado.
   xapi:
     elegible_como_tracking_vigente: false
-    bloqueo: "eXeLearning no emite xAPI hoy; requiere soporte upstream o puente futuro (DEC-0014)."
+    bloqueo: "eXeLearning no emite xAPI hoy; requiere soporte upstream o puente futuro (DEC-0-14)."
     multi_grade_items: 5
     preservacion_sidebar_nativa: 5
     granularidad_score: 5
@@ -74,7 +74,7 @@ opciones:
     futuro_vs_legacy: 5
     total_ponderado: 106
     notas: >-
-      Mejor encaje teórico y futura hoja de ruta (DEC-0014), pero no es el
+      Mejor encaje teórico y futura hoja de ruta (DEC-0-14), pero no es el
       tracking vigente porque eXeLearning no emite xAPI hoy.
   cmi5:
     elegible_como_tracking_vigente: false
@@ -106,8 +106,8 @@ opciones:
       de Moodle con sidebar nativa. Sólo tendría sentido para un servicio externo.
 
 veredicto: >-
-  DEC-0003 acepta SCORM 1.2 como tracking vigente suficiente entre las opciones
+  DEC-0-03 acepta SCORM 1.2 como tracking vigente suficiente entre las opciones
   elegibles hoy porque maximiza adopción real, preserva la sidebar nativa y
   mantiene complejidad asumible. xAPI puntúa mejor como arquitectura futura, pero
   no es elegible como tracking vigente mientras eXeLearning no emita statements;
-  queda condicionado a soporte upstream y se documenta en DEC-0014.
+  queda condicionado a soporte upstream y se documenta en DEC-0-14.

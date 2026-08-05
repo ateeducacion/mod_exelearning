@@ -27,7 +27,7 @@ require_once($CFG->dirroot . '/mod/exelearning/lib.php');
 require_once($CFG->libdir . '/gradelib.php');
 
 /**
- * Unit tests for the gradebook columns model (DEC-0008) and grade recalculation.
+ * Unit tests for the gradebook columns model (DEC-0-08) and grade recalculation.
  *
  * @package    mod_exelearning
  * @category   test
@@ -93,7 +93,7 @@ final class grademodel_test extends advanced_testcase {
 
     /**
      * PERITEM model (the default): per-iDevice columns exist and there is NO
-     * overall column at all (DEC-0038). The per-iDevice items are visible and so
+     * overall column at all (DEC-25-01). The per-iDevice items are visible and so
      * usable as completiongradeitemnumber targets (workshop model).
      */
     public function test_peritem_creates_per_idevice_columns_no_overall(): void {
@@ -106,7 +106,7 @@ final class grademodel_test extends advanced_testcase {
         $this->assertInstanceOf(grade_item::class, $this->fetch_item($instance, 2));
 
         // The overall itemnumber=0 does not exist under the per-iDevice model:
-        // no hidden "extra grade" column shown to teachers (DEC-0038).
+        // no hidden "extra grade" column shown to teachers (DEC-25-01).
         $this->assertFalse($this->fetch_item($instance, 0));
     }
 
@@ -147,7 +147,7 @@ final class grademodel_test extends advanced_testcase {
 
     /**
      * Switching OVERALL → PERITEM on update removes the overall column entirely
-     * (DEC-0038) and exposes the per-iDevice columns.
+     * (DEC-25-01) and exposes the per-iDevice columns.
      */
     public function test_switch_overall_to_peritem_swaps_columns(): void {
         $instance = $this->create_activity(['grademodel' => EXELEARNING_GRADEMODEL_OVERALL]);
@@ -178,7 +178,7 @@ final class grademodel_test extends advanced_testcase {
     }
 
     /**
-     * Workshop-style completion (DEC-0038): in PERITEM a per-iDevice grade item is
+     * Workshop-style completion (DEC-25-01): in PERITEM a per-iDevice grade item is
      * a valid completiongradeitemnumber target — it exists, is visible and carries
      * a grademax so Moodle can evaluate "require (passing) grade" against it. The
      * overall (item 0) is not needed for completion in this model.

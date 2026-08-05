@@ -19,7 +19,7 @@ namespace mod_exelearning\local\migration;
 use advanced_testcase;
 
 /**
- * Unit tests for the migration_result value object (issue #13 #3, DEC-0050).
+ * Unit tests for the migration_result value object (issue #13 #3, DEC-13-12).
  *
  * @package    mod_exelearning
  * @category   test

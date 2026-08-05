@@ -7,7 +7,7 @@ fuentes:
   - FTE-001
   - FTE-008
 relacionados:
-  - DEC-0003
+  - DEC-0-03
   - AN-005
   - PREG-001
   - PREG-002
@@ -105,6 +105,6 @@ Más complejo y frágil — se descarta para v1.
 ## [PENDIENTE]
 
 - EXP-002 implementa el camino "parsear content.xml + registrar N grade items".
-  Es el cierre práctico de DEC-0003.
+  Es el cierre práctico de DEC-0-03.
 - PREG-002 sigue abierta como propuesta upstream a medio plazo (que eXeLearning
   emita statements xAPI o `cmi.objectives.{n}` con `<objectid>` estable).

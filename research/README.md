@@ -19,7 +19,7 @@ trazabilidad total, separación de capas (hechos / interpretación / decisión).
 | [`fuentes/tecnologia/`](./fuentes/tecnologia/) | Fichas de estándares y APIs (SCORM, xAPI, cmi5, LTI AGS, Moodle grade API, core_xapi, formato de paquete eXeLearning) | `FTE-NNN` |
 | [`analisis/notas/`](./analisis/notas/) | Notas de análisis e interpretación | `AN-NNN` |
 | [`analisis/matrices/`](./analisis/matrices/) | Matrices de decisión en YAML | — |
-| [`decisiones/adr/`](./decisiones/adr/) | Architecture Decision Records | `DEC-NNNN` |
+| [`decisiones/adr/`](./decisiones/adr/) | Architecture Decision Records | `DEC-<nº-seguimiento>-<NN>` |
 | [`experimentos/resultados/`](./experimentos/resultados/) | Experimentos reproducibles (comando, commit, entorno, métricas) | `EXP-NNN` |
 | [`tareas/backlog/`](./tareas/backlog/) | Tareas operativas | `TAREA-NNN` |
 | [`tareas/diario/`](./tareas/diario/) | Diario diario `YYYY-MM-DD.yaml` | — |
@@ -42,10 +42,18 @@ trazabilidad total, separación de capas (hechos / interpretación / decisión).
 1. Identificar la carpeta correcta según el tipo (hecho → `fuentes/`, interpretación →
    `analisis/`, decisión → `decisiones/adr/`, etc.).
 2. Copiar la plantilla relevante de [`plantillas/`](./plantillas/).
-3. Asignar el siguiente ID libre en la serie (consultar `docs/indices/` para el último usado).
-   **Importante:** comprobar también ramas/worktrees de PR abiertos antes de fijar el número (p. ej.
-   `feature/secure-iframe-scorm-bridge` usa `DEC-0059..0062` aún no en `main`), para no reutilizar IDs.
+3. Asignar el ID.
+   - **Decisiones (`DEC-`):** no hay contador global. El ID lo da el **número de
+     seguimiento de GitHub** del cambio (su issue, o su PR si no tiene issue) más una
+     secuencia local de dos dígitos: `DEC-<nº>-<NN>`. Ver
+     [`decisiones/README.md`](./decisiones/README.md). Nunca abrir un issue sólo para
+     obtener un número.
+   - **Resto de series** (`REPO-`, `FTE-`, `AN-`, `EXP-`, `TAREA-`, `PREG-`, `RIE-`):
+     siguiente ID libre en la serie (consultar `docs/indices/` para el último usado).
+     **Importante:** comprobar también ramas/worktrees de PR abiertos antes de fijar el
+     número, para no reutilizar IDs.
 4. Rellenar campos. Si falta un dato, escribir `[PENDIENTE: <descripción>]`.
 5. Añadir entrada de tarea o diario en [`tareas/`](./tareas/).
-6. Ejecutar `python3 tools/build_indexes.py` y `python3 tools/test_schema_validation.py`.
+6. Ejecutar `python3 tools/build_indexes.py`, `python3 tools/test_schema_validation.py`
+   y `make architecture-check`.
 7. Commit con mensaje convencional (`docs(research): añadir FTE-009 sobre …`).

@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Configurable source_interface stub for migration tests (issue #13 #3, DEC-0050).
+ * Configurable source_interface stub for migration tests (issue #13 #3, DEC-13-12).
  *
  * @package    mod_exelearning
  * @copyright  2026 ATE (Área de Tecnología Educativa)

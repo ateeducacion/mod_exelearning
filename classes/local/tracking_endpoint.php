@@ -65,9 +65,9 @@ final class tracking_endpoint {
      * Builds the config handed to js/scorm_tracker.js createScormApi().
      *
      * @param int $cmid Course module id.
-     * @param string $mode grading|preview (DEC-0006).
+     * @param string $mode grading|preview (DEC-0-06).
      * @param string $session Per-page attempt token, groups one page load's writes.
-     * @param bool $disabletracking Keep window.API alive but inert for xAPI-primary packages (DEC-0064).
+     * @param bool $disabletracking Keep window.API alive but inert for xAPI-primary packages (DEC-85-01).
      * @return array Config, JSON-encoded by the caller into the page.
      */
     public static function scorm_config(int $cmid, string $mode, string $session, bool $disabletracking): array {
@@ -84,7 +84,7 @@ final class tracking_endpoint {
      * Builds the config handed to js/xapi_listener.js createListener().
      *
      * @param int $cmid Course module id.
-     * @param string $mode grading|preview (DEC-0006).
+     * @param string $mode grading|preview (DEC-0-06).
      * @param string $registration Attempt-grouping token, shared with the SCORM tracker.
      * @param string $hostorigin Trusted host origin the statements must come from (RIE-013).
      * @return array Config, JSON-encoded by the caller into the page.

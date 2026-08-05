@@ -28,7 +28,7 @@ global $CFG;
 require_once($CFG->dirroot . '/mod/exelearning/lib.php');
 
 /**
- * Unit tests for the mod_exelearning custom completion rule (DEC-0052).
+ * Unit tests for the mod_exelearning custom completion rule (DEC-69-01).
  *
  * Covers the module-level `completionstatusrequired` rule: the activity is marked
  * complete when the user has an attempt whose status reaches the required value.
@@ -261,7 +261,7 @@ final class completion_test extends advanced_testcase {
     }
 
     /**
-     * The module supports completion rules (DEC-0052).
+     * The module supports completion rules (DEC-69-01).
      */
     public function test_supports_completion_has_rules(): void {
         $this->assertTrue(exelearning_supports(FEATURE_COMPLETION_HAS_RULES));

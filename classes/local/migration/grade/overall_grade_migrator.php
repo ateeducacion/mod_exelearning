@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Copies source final grades into the target overall grade item (issue #13 #3, DEC-0050).
+ * Copies source final grades into the target overall grade item (issue #13 #3, DEC-13-12).
  *
  * @package    mod_exelearning
  * @copyright  2026 ATE (Área de Tecnología Educativa)

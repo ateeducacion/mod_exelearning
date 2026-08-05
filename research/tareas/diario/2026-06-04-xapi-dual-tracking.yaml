@@ -4,22 +4,22 @@ agente: claude-code
 resumen: >-
   PR1 documental de la capa de ingesta dual SCORM 1.2 + xAPI. Verificado que el PR upstream
   exelearning/exelearning#1867 (draft) añade exe_xapi.js, que emite statements xAPI por
-  postMessage ({type:'exe-xapi-statement', statement}) y/o LRS. Esto reactiva DEC-0014.
-  Decisión (DEC-0032, Propuesta): xAPI ingiere reutilizando la tubería existente
+  postMessage ({type:'exe-xapi-statement', statement}) y/o LRS. Esto reactiva DEC-0-14.
+  Decisión (DEC-17-01, Propuesta): xAPI ingiere reutilizando la tubería existente
   (exelearning_attempt plano + objectid→itemnumber), sin tablas cabecera/detalle (respeta
-  DEC-0007). Sin código de plugin en este PR.
+  DEC-0-07). Sin código de plugin en este PR.
 acciones:
   - "Auditado el tracking actual: view.php shim window.API + track.php (apply_item_scores/record_item/grade_update) + classes/local/{track,attempts,package}.php."
   - "Leído el contrato real de exe_xapi.js + exe_xapi.test.js del PR #1867 @59b9b9b (del código, no del resumen; corregido el error 'sin envoltorio type')."
   - "Context7 /adlnet/xapi-spec (2026-06-04): confirmada conformidad de verbos / result.score / context."
-  - "Creadas FTE-011 (contrato emisor), AN-012 (mapeo + modelo de confianza), DEC-0032 (decisión), EXP-004 (traza), TAREA-015 (impl PR2)."
+  - "Creadas FTE-011 (contrato emisor), AN-012 (mapeo + modelo de confianza), DEC-17-01 (decisión), EXP-004 (traza), TAREA-015 (impl PR2)."
   - "Creadas docs técnicas en inglés: docs/{scorm-shim-current-flow,tracking-architecture,xapi-integration-plan}.md."
-  - "Reconciliados los IDs con main (que avanzó a d682d7c): DEC-0028→DEC-0032, AN-011→AN-012, EXP-003→EXP-004 para evitar colisión; integrado gradeenabled (DEC-0029)."
+  - "Reconciliados los IDs con main (que avanzó a d682d7c): DEC-13-06→DEC-17-01, AN-011→AN-012, EXP-003→EXP-004 para evitar colisión; integrado gradeenabled (DEC-13-07)."
   - "Regenerados índices (build_indexes.py) y validado frontmatter (test_schema_validation.py)."
 evidencia:
   - "research/fuentes/tecnologia/FTE-011-exelearning-emision-xapi.md"
   - "research/analisis/notas/AN-012-mapeo-xapi-a-tuberia-existente.md"
-  - "research/decisiones/adr/DEC-0032-ingesta-dual-scorm-xapi.md"
+  - "research/decisiones/adr/DEC-17-01-ingesta-dual-scorm-xapi.md"
   - "research/experimentos/resultados/EXP-004-traza-xapi-paquete.yaml"
   - "research/tareas/backlog/TAREA-015-impl-ingesta-xapi.yaml"
   - "docs/tracking-architecture.md"
@@ -29,12 +29,12 @@ pendientes:
   - "PR2 (TAREA-015): listener AMD + endpoint + normalizador + handler/eventos opcionales + tests, gated a que #1867 congele el contrato."
   - "Captura en vivo de postMessage dentro de Moodle (EXP-004 fase viva)."
 relacionados:
-  - DEC-0032
-  - DEC-0014
-  - DEC-0003
-  - DEC-0007
-  - DEC-0017
-  - DEC-0029
+  - DEC-17-01
+  - DEC-0-14
+  - DEC-0-03
+  - DEC-0-07
+  - DEC-5-01
+  - DEC-13-07
   - FTE-011
   - AN-012
   - EXP-004

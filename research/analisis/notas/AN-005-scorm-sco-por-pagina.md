@@ -7,7 +7,7 @@ fuentes:
   - FTE-001
   - FTE-008
 relacionados:
-  - DEC-0003
+  - DEC-0-03
   - AN-001
   - AN-002
   - PREG-001
@@ -25,7 +25,7 @@ Inspección de `research/fixtures/scorm-export/really-simple_scorm12/imsmanifest
 como un SCO independiente** (`<resource adlcp:scormtype="sco" href="html/page-N.html">`).
 Para el sample mínimo, 6 páginas ⇒ 6 SCOs. Esto desbloquea **multi-grade-items a
 nivel de página sin requerir ningún cambio aguas arriba**, abriendo un Plan B
-realista para DEC-0003.
+realista para DEC-0-03.
 
 ## Hechos citados
 
@@ -98,7 +98,7 @@ de los iDevices calificables presentes en esa página.
 - La sidebar nativa de eXeLearning se preserva como en AN-001 (sigue siendo HTML+JS
   del paquete).
 
-Esto redibuja DEC-0003:
+Esto redibuja DEC-0-03:
 
 - **Plan A (xAPI)**: granularidad por iDevice, requiere cambios upstream o shim JS.
 - **Plan B (SCORM 1.2 con SCO-as-grade-item)**: granularidad por página, cero cambios

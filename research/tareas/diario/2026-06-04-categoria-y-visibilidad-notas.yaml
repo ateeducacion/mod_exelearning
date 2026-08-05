@@ -7,7 +7,7 @@ resumen: >-
   confirmado (mod_form usa standard_coursemodule_elements y no hay campo gradecat ni
   columna ni categoryid en grade_update). (#2) Profesor y alumno ven items distintos y el
   alumno percibe que sus notas no aparecen: causa raíz = en peritem el item overall
-  itemnumber=0 se mantiene OCULTO para completionpassgrade (DEC-0010) y, al seguir
+  itemnumber=0 se mantiene OCULTO para completionpassgrade (DEC-0-10) y, al seguir
   agregando, Moodle vacía el total del alumno por el ajuste por defecto
   grade_report_user_showtotalsifcontainhidden=0 (HIDE_TOTAL_IF_CONTAINS_HIDDEN); además el
   profesor lo ve por moodle/grade:viewhidden. Decisiones del usuario: #1 categoría plana
@@ -16,23 +16,23 @@ resumen: >-
 acciones:
   - "Investigación grade API (Context7 /moodle/moodle + lectura de core, FTE-012): grade_update ignora categoryid (allowlist) → mover con grade_item::set_parent; exclusión de agregación sólo por-nota con grade_grade::set_excluded (robusta en todos los métodos); get_hiding_affected salta las excluidas → excluir el overall deja de vaciar el total; default del ajuste de totales = 0 (vaciar)."
   - "#1 gradecat: columna exelearning.gradecat (install.xml + db/upgrade.php stage 2026060401); selector en mod_form.php reutilizando strings core (gradecategoryonmodform) + grade_get_categories_menu; disabledIf gradeenabled; data_preprocessing precarga desde la categoría real del overall; helper exelearning_apply_grade_category (set_parent a todos los items) llamado al final de exelearning_sync_grade_items."
-  - "#2 visibilidad: helper exelearning_exclude_overall_grade (peritem → set_excluded(true) sobre la nota overall) llamado desde track.php y exelearning_recalculate_user_grades; migración de notas overall existentes en el stage 2026060401. version.php intacto (centinela DEC-0030)."
+  - "#2 visibilidad: helper exelearning_exclude_overall_grade (peritem → set_excluded(true) sobre la nota overall) llamado desde track.php y exelearning_recalculate_user_grades; migración de notas overall existentes en el stage 2026060401. version.php intacto (centinela DEC-13-08)."
   - "Tests PHPUnit tests/grades_test.php (categoría: coloca y mueve; exclusión: overall excluido y per-item no en peritem, overall NO excluido en modo overall)."
   - "Verificación en vivo (Docker, Moodle 5.0.7): upgrade real OK (stage 2026060401), y con la API del core OVERALL excluded=1 / PERITEM excluded=0 / COURSE TOTAL blanked_by_hidden=NO (fixed) / items bajo la categoría elegida. phpcs --standard=moodle limpio."
 evidencia:
-  - "research/decisiones/adr/DEC-0034-categoria-de-calificacion.md"
-  - "research/decisiones/adr/DEC-0035-visibilidad-notas-alumno-peritem.md"
+  - "research/decisiones/adr/DEC-19-01-categoria-de-calificacion.md"
+  - "research/decisiones/adr/DEC-19-02-visibilidad-notas-alumno-peritem.md"
   - "research/fuentes/tecnologia/FTE-012-moodle-grade-api-categoria-exclusion.md"
   - "lib.php (exelearning_apply_grade_category, exelearning_exclude_overall_grade)"
   - "mod_form.php, track.php, db/install.xml, db/upgrade.php, tests/grades_test.php"
 pendientes:
   - "phpunit en la matriz CI (no ejecutable en la imagen de demo; verificado el comportamiento equivalente en vivo)."
 relacionados:
-  - DEC-0034
-  - DEC-0035
+  - DEC-19-01
+  - DEC-19-02
   - FTE-012
-  - DEC-0008
-  - DEC-0010
-  - DEC-0017
-  - DEC-0029
-  - DEC-0031
+  - DEC-0-08
+  - DEC-0-10
+  - DEC-5-01
+  - DEC-13-07
+  - DEC-13-09

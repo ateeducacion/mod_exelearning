@@ -17,7 +17,7 @@
 /**
  * Action endpoint for the eXeLearning styles managed on the plugin settings page.
  *
- * This is deliberately NOT a management page (DEC-0067). Styles are managed on
+ * This is deliberately NOT a management page (DEC-110-01). Styles are managed on
  * the plugin settings page, where the upload control sits inside the settings
  * form and actually saves; a second visible manager here duplicated the widgets
  * — including an upload control with no form around it, which silently discarded

@@ -17,9 +17,9 @@
 /**
  * SCORM wrapper loader injection for extracted eXeLearning packages.
  *
- * Extracted verbatim from lib.php (DEC-0054). The HTML mutation logic is
+ * Extracted verbatim from lib.php (DEC-71-01). The HTML mutation logic is
  * unchanged; lib.php keeps a thin delegator. See the known-debt note in
- * docs/ARCHITECTURE.md and DEC-0045/DEC-0046 for the planned exit.
+ * docs/ARCHITECTURE.md and DEC-34-02/DEC-36-01 for the planned exit.
  *
  * @package    mod_exelearning
  * @copyright  2026 ATE (Área de Tecnología Educativa)

@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Builds the target eXeLearning activity for a migration (issue #13 #3, DEC-0050).
+ * Builds the target eXeLearning activity for a migration (issue #13 #3, DEC-13-12).
  *
  * @package    mod_exelearning
  * @copyright  2026 ATE (Área de Tecnología Educativa)
@@ -33,7 +33,7 @@ use mod_exelearning\local\attempts;
  * Mirrors the add_moduleinfo() flow the activity form uses. The package is left empty;
  * the caller imports the content afterwards. The source idnumber is deliberately not
  * copied: the source survives in the same course, so copying it would create a
- * course-wide duplicate (DEC-0050).
+ * course-wide duplicate (DEC-13-12).
  */
 final class activity_builder {
     /**

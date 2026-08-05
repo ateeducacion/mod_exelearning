@@ -125,7 +125,7 @@ final class styles_service_test extends advanced_testcase {
 
     /**
      * parse_config_xml() rejects internal entity declarations (billion-laughs
-     * style entity expansion) per the hardened parser policy (DEC-0039).
+     * style entity expansion) per the hardened parser policy (DEC-26-01).
      */
     public function test_parse_config_xml_rejects_entity_declarations(): void {
         $this->expectException(\moodle_exception::class);
@@ -135,7 +135,7 @@ final class styles_service_test extends advanced_testcase {
     }
 
     /**
-     * parse_config_xml() rejects a DOCTYPE declaration outright (DEC-0039).
+     * parse_config_xml() rejects a DOCTYPE declaration outright (DEC-26-01).
      */
     public function test_parse_config_xml_rejects_doctype(): void {
         $this->expectException(\moodle_exception::class);
@@ -484,7 +484,7 @@ final class styles_service_test extends advanced_testcase {
         global $CFG;
         $this->resetAfterTest();
 
-        // Point the resolver at a bundled editor carrying a themes manifest (DEC-0065).
+        // Point the resolver at a bundled editor carrying a themes manifest (DEC-106-01).
         $src = make_temp_directory('mod_exelearning/bt-' . random_string(6)) . '/static';
         make_writable_directory($src . '/app');
         make_writable_directory($src . '/data');

@@ -5,30 +5,30 @@ fecha: 2026-05-29
 agente: claude-code
 prioridad: alta
 objetivo: >-
-  Redactar un ADR (DEC-0015) que justifique por qué mod_exelearning plantea la
+  Redactar un ADR (DEC-0-15) que justifique por qué mod_exelearning plantea la
   multicalificación (N grade items por iDevice): motivación, ventajas e
   inconvenientes frente a mod_exeweb y mod_exescorm, si simplifica o complica,
   DAFO, comparación con mod_scorm (core), mod_h5pactivity y otros, y veredicto
   (¿merece la pena?). A partir de ese ADR, generar un informe PDF ejecutivo de
   lo averiguado, lo resuelto, los pasos futuros y el porqué de todo.
 pasos:
-  - "Escribir DEC-0015 con: contexto/motivación, ventajas vs mod_exeweb (sin notas) y vs mod_exescorm (1 nota)."
+  - "Escribir DEC-0-15 con: contexto/motivación, ventajas vs mod_exeweb (sin notas) y vs mod_exescorm (1 nota)."
   - "Análisis de complejidad (¿más simple o más complejo?) con la deuda técnica real (shim SCORM 1.2, content.xml, RIE-006, MAX=100)."
   - "DAFO (Debilidades, Amenazas, Fortalezas, Oportunidades)."
   - "Tabla comparativa: mod_exeweb / mod_exescorm / mod_scorm / mod_h5pactivity / mod_exelearning (calificación, sidebar, tracking, intentos, edición, granularidad)."
-  - "Veredicto razonado: ¿merece la pena? con matices y hoja de ruta (xAPI nativo DEC-0014)."
+  - "Veredicto razonado: ¿merece la pena? con matices y hoja de ruta (xAPI nativo DEC-0-14)."
   - "Generar informe PDF ejecutivo (docs/): hallazgos, resuelto, pasos futuros, porqué."
 relacionados:
-  - DEC-0003
-  - DEC-0007
-  - DEC-0008
-  - DEC-0014
+  - DEC-0-03
+  - DEC-0-07
+  - DEC-0-08
+  - DEC-0-14
   - FTE-001
   - FTE-006
   - FTE-007
   - FTE-008
 criterios_aceptacion:
-  - "DEC-0015 en research/decisiones/adr/ con DAFO y tabla comparativa."
+  - "DEC-0-15 en research/decisiones/adr/ con DAFO y tabla comparativa."
   - "Veredicto explícito (merece la pena / no) con justificación."
   - "Informe PDF en docs/ legible y con el porqué de las decisiones."
 notas: "Solicitado por erseco (2026-05-29). El ADR es la base del informe PDF."

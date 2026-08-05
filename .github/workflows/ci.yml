@@ -317,7 +317,7 @@ jobs:
           flags: javascript
           disable_search: true
 
-  # Guards for the release pipeline. Static (DEC-0058): a published release must
+  # Guards for the release pipeline. Static (DEC-78-01): a published release must
   # build the embedded editor from the matching editor TAG, never from the moving
   # `main` branch, so two builds of the same plugin tag always bundle the same
   # editor. Executable: the packager itself is run, because its stamping and
@@ -332,10 +332,20 @@ jobs:
       - name: Validate release workflow editor pinning
         run: bash scripts/check-release-workflow.sh
 
-      - name: Validate version metadata (DEC-0068)
+      - name: Validate version metadata (DEC-111-01)
         run: |
           bash scripts/check-version-selftest.sh
           bash scripts/check-version.sh
 
       - name: Validate release packaging
         run: bash scripts/check-package.sh
+
+      # Decision records: the identifier is the GitHub tracking number of the
+      # change (its issue, or its PR when there is none). This validates the
+      # filename grammar, the frontmatter, the supersession graph and that no
+      # retired identifier survives anywhere in the tree. The checker's own unit
+      # tests run first, so a broken checker cannot pass everything silently.
+      - name: Validate decision records
+        run: |
+          node research/tools/architecture-records.mts list >/dev/null
+          node research/tools/architecture-records.mts check

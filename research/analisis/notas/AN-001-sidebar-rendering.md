@@ -8,7 +8,7 @@ fuentes:
   - REPO-005
   - FTE-008
 relacionados:
-  - DEC-0003
+  - DEC-0-03
 herramienta_ia:
   interfaz: claude-code
   modelo: claude-opus-4-7

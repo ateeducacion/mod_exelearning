@@ -59,7 +59,25 @@ def list_yaml(dir_: Path) -> list[Path]:
     return sorted(p for p in dir_.glob("*.yaml") if p.is_file())
 
 
-def index_md(dir_: Path, root: Path) -> list[dict]:
+DECISION_ID_RE = re.compile(r"^DEC-(\d+)(?:-(\d{2}))?$")
+
+
+def decision_sort_key(item: dict) -> tuple:
+    """Ordena decisiones por número de seguimiento y secuencia local.
+
+    `DEC-4-01` va antes que `DEC-13-01`, que el orden lexicográfico del nombre de
+    archivo invertiría. Los identificadores retirados `DEC-NNNN` (los registros del
+    arranque, sin número de seguimiento) se agrupan delante conservando su orden.
+    """
+    m = DECISION_ID_RE.match(str(item.get("id", "")))
+    if not m:
+        return (2, 0, 0, str(item.get("id", "")))
+    if m.group(2) is None:
+        return (0, int(m.group(1)), 0, "")
+    return (1, int(m.group(1)), int(m.group(2)), "")
+
+
+def index_md(dir_: Path, root: Path, sort_key=None) -> list[dict]:
     out = []
     for p in list_md(dir_):
         fm = parse_frontmatter(p.read_text(encoding="utf-8"))
@@ -70,6 +88,8 @@ def index_md(dir_: Path, root: Path) -> list[dict]:
             "fecha": fm.get("fecha"),
             "ruta": str(p.relative_to(root)),
         })
+    if sort_key is not None:
+        out.sort(key=sort_key)
     return out
 
 
@@ -106,7 +126,7 @@ def main() -> int:
         "repos.yaml":         index_md(root / "fuentes" / "repositorios", root),
         "fuentes.yaml":       index_md(root / "fuentes" / "tecnologia", root),
         "notas.yaml":         index_md(root / "analisis" / "notas", root),
-        "adrs.yaml":          index_md(root / "decisiones" / "adr", root),
+        "adrs.yaml":          index_md(root / "decisiones" / "adr", root, decision_sort_key),
         "tareas.yaml":        index_yaml(root / "tareas" / "backlog", root),
         "preguntas.yaml":     index_yaml(root / "tareas" / "preguntas", root),
         "experimentos.yaml":  index_yaml(root / "experimentos" / "resultados", root),

@@ -7,7 +7,7 @@ fuentes:
   - FTE-003
   - FTE-007
 relacionados:
-  - DEC-0003
+  - DEC-0-03
 herramienta_ia:
   interfaz: claude-code
   modelo: claude-opus-4-7

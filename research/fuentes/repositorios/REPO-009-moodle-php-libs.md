@@ -7,7 +7,7 @@ url_upstream: "https://github.com/adlnet/Moodle-PHP-Libs"
 commit_consultado: "main @ 908d7298e8bf70700c2dcac74b6d2732617d3f4b (consultado 2026-06-17)"
 fecha_consulta: 2026-06-17
 licencia: "Sin licencia agregada declarada (GitHub API license:null; 404 en /LICENSE). Cada subcarpeta vendor conserva la suya."
-rol_para_mod_exelearning: "Ninguno operativo. Ficha de DESCARTE: deja por escrito que NO es candidato a dependencia (regla 'no vendorar', DEC-0002) y que no contiene código xAPI. Rol: ignore."
+rol_para_mod_exelearning: "Ninguno operativo. Ficha de DESCARTE: deja por escrito que NO es candidato a dependencia (regla 'no vendorar', DEC-0-02) y que no contiene código xAPI. Rol: ignore."
 herramienta_ia:
   interfaz: claude-code
   modelo: claude-opus-4-8
@@ -54,7 +54,7 @@ herramienta_ia:
 
 - **Sin licencia agregada** (`license: null`, 404 en `LICENSE`): redistribuir el bloque es **legalmente
   ambiguo**, aunque cada paquete interno sea OSI. **Choca de frente con la regla «no vendorar»** del proyecto
-  (DEC-0002). → **No vendorar.**
+  (DEC-0-02). → **No vendorar.**
 - Su modelo de uso (cmi5-launch + LRS externo de `mod_cmi5launch`) es **justo el que `mod_exelearning` NO
   sigue** (recurso HTML embebido, grading multi-item server-side). Utilidad como referencia de diseño: baja.
 - `[verificado parcialmente]` No se inspeccionó recursivamente cada subcarpeta vendor (límites API/WebFetch),

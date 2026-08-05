@@ -5,8 +5,8 @@ fecha: 2026-05-28
 fuentes:
   - REPO-004
 relacionados:
-  - DEC-0003
-  - DEC-0004
+  - DEC-0-03
+  - DEC-0-04
   - AN-001
   - AN-005
   - AN-007
@@ -196,8 +196,8 @@ Convención:
 
 ## Consecuencias
 
-- DEC-0004 (build/CI) no se ve afectado.
-- DEC-0003 (Plan B: SCO-as-page + content.xml + multi-itemnumber) sigue siendo
+- DEC-0-04 (build/CI) no se ve afectado.
+- DEC-0-03 (Plan B: SCO-as-page + content.xml + multi-itemnumber) sigue siendo
   la dirección correcta. Esta nota refuerza el Plan B y mata definitivamente
   cualquier tentación de "copiar el SCORM player entero" (no necesario y
   contraproducente).

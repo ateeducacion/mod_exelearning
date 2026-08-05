@@ -116,7 +116,7 @@ final class backup_restore_test extends advanced_testcase {
         \mod_exelearning\local\attempts::record_item($instance->id, $student->id, 1, 1, 80.0, 100.0, 'completed', 'sx');
 
         // Stamp a known contenthash on a source grade item: it backs the
-        // stale-grades warning (DEC-0021) and must round-trip through backup.
+        // stale-grades warning (DEC-12-01) and must round-trip through backup.
         $DB->set_field(
             'exelearning_grade_item',
             'contenthash',
@@ -143,7 +143,7 @@ final class backup_restore_test extends advanced_testcase {
         $this->assertSame($srcobjectids, $restoredobjectids);
 
         // The stamped contenthash round-tripped: the stale-grades warning
-        // metadata (DEC-0021) survives backup/restore instead of going NULL.
+        // metadata (DEC-12-01) survives backup/restore instead of going NULL.
         $restoredrow = $DB->get_record('exelearning_grade_item', [
             'exelearningid' => $restoredinstance->id, 'itemnumber' => 1,
         ], '*', MUST_EXIST);
@@ -157,11 +157,11 @@ final class backup_restore_test extends advanced_testcase {
     }
 
     /**
-     * A deliberately ungraded activity (gradeenabled=0, DEC-0029) must stay
+     * A deliberately ungraded activity (gradeenabled=0, DEC-13-07) must stay
      * ungraded after a backup/restore. The master grading switch and the grade
      * category were missing from the backup field list, so the restored copy fell
      * back to the install.xml default (gradeenabled=1) and re-created gradebook
-     * columns on first view (B4, DEC-0044).
+     * columns on first view (B4, DEC-34-01).
      */
     public function test_backup_restore_preserves_gradeenabled_off(): void {
         global $DB;
@@ -192,7 +192,7 @@ final class backup_restore_test extends advanced_testcase {
     }
 
     /**
-     * The custom completion rule config (completionstatusrequired, DEC-0052) must
+     * The custom completion rule config (completionstatusrequired, DEC-69-01) must
      * round-trip through backup/restore so the restored copy keeps the rule.
      */
     public function test_backup_restore_preserves_completionstatusrequired(): void {
