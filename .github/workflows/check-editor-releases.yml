@@ -100,7 +100,7 @@ jobs:
 
           git add .editor-version blueprint.json version.php
           git commit -m "Prepare plugin release $TAG"
-          git push origin "$BRANCH"
+          git push --force origin "$BRANCH"
 
           BODY=$(cat <<EOF
           ## Summary
