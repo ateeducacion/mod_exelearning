@@ -1,18 +1,16 @@
 ---
 name: Release
 
-# Builds the distributable ZIP for a published GitHub release (or a manual test
-# build). Under the DEC-111-01 version policy this workflow VALIDATES metadata and
-# never mutates it: the release-preparation PR commits the final
-# $plugin->version / $plugin->release before the tag is created, the tag points
-# at that exact commit, and the package ships version.php verbatim. Nothing here
-# derives a version from the runner date, the run date, the tag date or the
-# release publication date — rebuilding the same tag always produces the same
-# version.php. This workflow never commits or pushes.
+# Builds the distributable ZIP for a published GitHub release, a merged automated
+# release-preparation PR, or a manual test build. Release metadata is always
+# committed before the plugin tag exists and version.php ships byte-identical to
+# the reviewed commit.
 
 on:
   release:
     types: [published]
+  pull_request:
+    types: [closed]
   workflow_dispatch:
     inputs:
       editor_repo_url:
@@ -35,12 +33,20 @@ on:
 
 permissions:
   contents: write
+  pull-requests: read
 
 jobs:
   build_and_upload:
+    if: >-
+      github.event_name != 'pull_request' ||
+      (github.event.pull_request.merged == true &&
+      startsWith(github.event.pull_request.head.ref, 'release/editor-v'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.ref }}
+          fetch-depth: 0
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -50,43 +56,70 @@ jobs:
           if [ "${{ github.event_name }}" = "release" ]; then
             RAW_TAG="${GITHUB_REF##*/}"
             VERSION_TAG="${RAW_TAG#v}"
-            echo "RELEASE_TAG=${VERSION_TAG}" >> $GITHUB_ENV
-            echo "EXELEARNING_EDITOR_REPO_URL=https://github.com/exelearning/exelearning.git" >> $GITHUB_ENV
-            # Build the editor from the matching editor tag so the embedded
-            # editor reports the final release version (not a nightly/alpha build)
-            # and two builds of the same plugin tag always bundle the same editor.
-            echo "EXELEARNING_EDITOR_REF=v${VERSION_TAG}" >> $GITHUB_ENV
-            echo "EXELEARNING_EDITOR_REF_TYPE=tag" >> $GITHUB_ENV
+            echo "PUBLISH_RELEASE=true" >> "$GITHUB_ENV"
+            echo "CREATE_PLUGIN_TAG=false" >> "$GITHUB_ENV"
+            echo "RELEASE_TAG=${VERSION_TAG}" >> "$GITHUB_ENV"
+            echo "EXELEARNING_EDITOR_REPO_URL=https://github.com/exelearning/exelearning.git" >> "$GITHUB_ENV"
+            echo "EXELEARNING_EDITOR_REF=v${VERSION_TAG}" >> "$GITHUB_ENV"
+            echo "EXELEARNING_EDITOR_REF_TYPE=tag" >> "$GITHUB_ENV"
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            RAW_TAG="${{ github.event.pull_request.head.ref }}"
+            RAW_TAG="${RAW_TAG#release/editor-}"
+            VERSION_TAG="${RAW_TAG#v}"
+            echo "PUBLISH_RELEASE=true" >> "$GITHUB_ENV"
+            echo "CREATE_PLUGIN_TAG=true" >> "$GITHUB_ENV"
+            echo "RELEASE_TAG=${VERSION_TAG}" >> "$GITHUB_ENV"
+            echo "EXELEARNING_EDITOR_REPO_URL=https://github.com/exelearning/exelearning.git" >> "$GITHUB_ENV"
+            echo "EXELEARNING_EDITOR_REF=v${VERSION_TAG}" >> "$GITHUB_ENV"
+            echo "EXELEARNING_EDITOR_REF_TYPE=tag" >> "$GITHUB_ENV"
           else
-            # Manual test build: version.php on a development branch carries
-            # release = 'dev', and check-version validates exactly that. To test
-            # the full release path, run this from a release-preparation branch
-            # whose version.php already carries the final release, tag it, and
-            # publish the release instead.
-            echo "RELEASE_TAG=dev" >> $GITHUB_ENV
-            echo "EXELEARNING_EDITOR_REPO_URL=${{ github.event.inputs.editor_repo_url }}" >> $GITHUB_ENV
-            echo "EXELEARNING_EDITOR_REF=${{ github.event.inputs.editor_ref }}" >> $GITHUB_ENV
-            echo "EXELEARNING_EDITOR_REF_TYPE=${{ github.event.inputs.editor_ref_type }}" >> $GITHUB_ENV
+            echo "PUBLISH_RELEASE=false" >> "$GITHUB_ENV"
+            echo "CREATE_PLUGIN_TAG=false" >> "$GITHUB_ENV"
+            echo "RELEASE_TAG=dev" >> "$GITHUB_ENV"
+            echo "EXELEARNING_EDITOR_REPO_URL=${{ github.event.inputs.editor_repo_url }}" >> "$GITHUB_ENV"
+            echo "EXELEARNING_EDITOR_REF=${{ github.event.inputs.editor_ref }}" >> "$GITHUB_ENV"
+            echo "EXELEARNING_EDITOR_REF_TYPE=${{ github.event.inputs.editor_ref_type }}" >> "$GITHUB_ENV"
           fi
 
-      - name: Validate release metadata (DEC-111-01)
+      - name: Validate release metadata
         run: |
-          if [ "${{ github.event_name }}" = "release" ]; then
-            # The checked-out commit must be exactly the tagged commit, and
-            # version.php must already carry the final release (never 'dev'):
-            # check-version.sh asserts release == tag (without 'v'), the
-            # 10-digit monotonic version, and the savepoint bound.
-            RAW_TAG="${GITHUB_REF##*/}"
-            TAGGED_SHA="$(git rev-parse "refs/tags/${RAW_TAG}^{commit}")"
-            HEAD_SHA="$(git rev-parse HEAD)"
-            if [ "$TAGGED_SHA" != "$HEAD_SHA" ]; then
-              echo "Checked-out commit $HEAD_SHA is not the tagged commit $TAGGED_SHA" >&2
-              exit 1
-            fi
-            bash scripts/check-version.sh --release "${RELEASE_TAG}"
+          if [ "$PUBLISH_RELEASE" = "true" ]; then
+            bash scripts/check-version.sh --release "$RELEASE_TAG"
           else
             bash scripts/check-version.sh
           fi
+
+      - name: Create plugin tag for merged preparation PR
+        if: env.CREATE_PLUGIN_TAG == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v${RELEASE_TAG}"
+          HEAD_SHA=$(git rev-parse HEAD)
+
+          if git rev-parse "refs/tags/$TAG" >/dev/null 2>&1; then
+            TAGGED_SHA=$(git rev-parse "refs/tags/$TAG^{commit}")
+            if [ "$TAGGED_SHA" != "$HEAD_SHA" ]; then
+              echo "Tag $TAG already points to $TAGGED_SHA, not merged commit $HEAD_SHA" >&2
+              exit 1
+            fi
+            echo "Tag $TAG already points to the merged commit."
+          else
+            git tag "$TAG" "$HEAD_SHA"
+            git push origin "$TAG"
+          fi
+
+      - name: Verify tagged commit
+        if: env.PUBLISH_RELEASE == 'true'
+        run: |
+          TAG="v${RELEASE_TAG}"
+          TAGGED_SHA=$(git rev-parse "refs/tags/$TAG^{commit}")
+          HEAD_SHA=$(git rev-parse HEAD)
+          if [ "$TAGGED_SHA" != "$HEAD_SHA" ]; then
+            echo "Checked-out commit $HEAD_SHA is not the tagged commit $TAGGED_SHA" >&2
+            exit 1
+          fi
+          bash scripts/check-version.sh --release "$RELEASE_TAG"
 
       - name: Build static editor
         run: make build-editor
@@ -100,10 +133,13 @@ jobs:
           name: mod_exelearning-${{ env.RELEASE_TAG }}
           path: mod_exelearning-${{ env.RELEASE_TAG }}.zip
 
-      - name: Upload ZIP to release
-        if: github.event_name == 'release'
+      - name: Create or update GitHub release
+        if: env.PUBLISH_RELEASE == 'true'
         uses: softprops/action-gh-release@v3
         with:
+          tag_name: v${{ env.RELEASE_TAG }}
+          name: v${{ env.RELEASE_TAG }}
+          generate_release_notes: true
           files: mod_exelearning-${{ env.RELEASE_TAG }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
