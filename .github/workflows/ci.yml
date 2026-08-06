@@ -345,6 +345,21 @@ jobs:
       # filename grammar, the frontmatter, the supersession graph and that no
       # retired identifier survives anywhere in the tree. The checker's own unit
       # tests run first, so a broken checker cannot pass everything silently.
+      - name: Architecture validator matches core
+        run: |
+          # The validator is a verbatim copy of the canonical file in
+          # exelearning/exelearning. Fix it there and re-copy — never edit it
+          # here, or the copies drift apart silently.
+          curl -fsSL --retry 3 \
+            https://raw.githubusercontent.com/exelearning/exelearning/main/scripts/architecture-records.mts \
+            -o /tmp/architecture-records.core.mts
+          if ! diff -u /tmp/architecture-records.core.mts research/tools/architecture-records.mts; then
+            echo "::error file=research/tools/architecture-records.mts::drifted from exelearning/exelearning@main."
+            echo "Re-copy it from core; do not patch it here."
+            exit 1
+          fi
+          echo "In sync with core ($(shasum -a 256 research/tools/architecture-records.mts | cut -c1-16)…)."
+
       - name: Validate decision records
         run: |
           node research/tools/architecture-records.mts list >/dev/null
