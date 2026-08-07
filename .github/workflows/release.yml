@@ -1,16 +1,21 @@
 ---
 name: Release
 
-# Builds the distributable ZIP for a published GitHub release (or a manual test
-# build). Under the DEC-111-01 version policy this workflow VALIDATES metadata and
-# never mutates it: the release-preparation PR commits the final
-# $plugin->version / $plugin->release before the tag is created, the tag points
-# at that exact commit, and the package ships version.php verbatim. Nothing here
-# derives a version from the runner date, the run date, the tag date or the
-# release publication date — rebuilding the same tag always produces the same
-# version.php. This workflow never commits or pushes.
+# Builds the distributable ZIP for a published GitHub release, a merged automated
+# release-preparation PR, or a manual test build. Automated publication is
+# triggered by the .editor-version change landing on main, so unrelated pull
+# requests do not create skipped Release workflow runs. Release metadata is
+# always committed before the plugin tag exists and version.php ships
+# byte-identical to the reviewed release commit. After an automated release is
+# published, the same workflow advances main to the next real Moodle version and
+# switches $plugin->release back to dev; the published tag remains immutable.
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - .editor-version
   release:
     types: [published]
   workflow_dispatch:
@@ -41,6 +46,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -50,43 +57,67 @@ jobs:
           if [ "${{ github.event_name }}" = "release" ]; then
             RAW_TAG="${GITHUB_REF##*/}"
             VERSION_TAG="${RAW_TAG#v}"
-            echo "RELEASE_TAG=${VERSION_TAG}" >> $GITHUB_ENV
-            echo "EXELEARNING_EDITOR_REPO_URL=https://github.com/exelearning/exelearning.git" >> $GITHUB_ENV
-            # Build the editor from the matching editor tag so the embedded
-            # editor reports the final release version (not a nightly/alpha build)
-            # and two builds of the same plugin tag always bundle the same editor.
-            echo "EXELEARNING_EDITOR_REF=v${VERSION_TAG}" >> $GITHUB_ENV
-            echo "EXELEARNING_EDITOR_REF_TYPE=tag" >> $GITHUB_ENV
+            echo "PUBLISH_RELEASE=true" >> "$GITHUB_ENV"
+            echo "CREATE_PLUGIN_TAG=false" >> "$GITHUB_ENV"
+            echo "RELEASE_TAG=${VERSION_TAG}" >> "$GITHUB_ENV"
+            echo "EXELEARNING_EDITOR_REPO_URL=https://github.com/exelearning/exelearning.git" >> "$GITHUB_ENV"
+            echo "EXELEARNING_EDITOR_REF=v${VERSION_TAG}" >> "$GITHUB_ENV"
+            echo "EXELEARNING_EDITOR_REF_TYPE=tag" >> "$GITHUB_ENV"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            RAW_TAG=$(tr -d '[:space:]' < .editor-version)
+            VERSION_TAG="${RAW_TAG#v}"
+            echo "PUBLISH_RELEASE=true" >> "$GITHUB_ENV"
+            echo "CREATE_PLUGIN_TAG=true" >> "$GITHUB_ENV"
+            echo "RELEASE_TAG=${VERSION_TAG}" >> "$GITHUB_ENV"
+            echo "EXELEARNING_EDITOR_REPO_URL=https://github.com/exelearning/exelearning.git" >> "$GITHUB_ENV"
+            echo "EXELEARNING_EDITOR_REF=v${VERSION_TAG}" >> "$GITHUB_ENV"
+            echo "EXELEARNING_EDITOR_REF_TYPE=tag" >> "$GITHUB_ENV"
           else
-            # Manual test build: version.php on a development branch carries
-            # release = 'dev', and check-version validates exactly that. To test
-            # the full release path, run this from a release-preparation branch
-            # whose version.php already carries the final release, tag it, and
-            # publish the release instead.
-            echo "RELEASE_TAG=dev" >> $GITHUB_ENV
-            echo "EXELEARNING_EDITOR_REPO_URL=${{ github.event.inputs.editor_repo_url }}" >> $GITHUB_ENV
-            echo "EXELEARNING_EDITOR_REF=${{ github.event.inputs.editor_ref }}" >> $GITHUB_ENV
-            echo "EXELEARNING_EDITOR_REF_TYPE=${{ github.event.inputs.editor_ref_type }}" >> $GITHUB_ENV
+            echo "PUBLISH_RELEASE=false" >> "$GITHUB_ENV"
+            echo "CREATE_PLUGIN_TAG=false" >> "$GITHUB_ENV"
+            echo "RELEASE_TAG=dev" >> "$GITHUB_ENV"
+            echo "EXELEARNING_EDITOR_REPO_URL=${{ github.event.inputs.editor_repo_url }}" >> "$GITHUB_ENV"
+            echo "EXELEARNING_EDITOR_REF=${{ github.event.inputs.editor_ref }}" >> "$GITHUB_ENV"
+            echo "EXELEARNING_EDITOR_REF_TYPE=${{ github.event.inputs.editor_ref_type }}" >> "$GITHUB_ENV"
           fi
 
-      - name: Validate release metadata (DEC-111-01)
+      - name: Validate release metadata
         run: |
-          if [ "${{ github.event_name }}" = "release" ]; then
-            # The checked-out commit must be exactly the tagged commit, and
-            # version.php must already carry the final release (never 'dev'):
-            # check-version.sh asserts release == tag (without 'v'), the
-            # 10-digit monotonic version, and the savepoint bound.
-            RAW_TAG="${GITHUB_REF##*/}"
-            TAGGED_SHA="$(git rev-parse "refs/tags/${RAW_TAG}^{commit}")"
-            HEAD_SHA="$(git rev-parse HEAD)"
-            if [ "$TAGGED_SHA" != "$HEAD_SHA" ]; then
-              echo "Checked-out commit $HEAD_SHA is not the tagged commit $TAGGED_SHA" >&2
-              exit 1
-            fi
-            bash scripts/check-version.sh --release "${RELEASE_TAG}"
+          if [ "$PUBLISH_RELEASE" = "true" ]; then
+            bash scripts/check-version.sh --release "$RELEASE_TAG"
           else
             bash scripts/check-version.sh
           fi
+
+      - name: Create plugin tag for merged preparation PR
+        if: env.CREATE_PLUGIN_TAG == 'true'
+        run: |
+          TAG="v${RELEASE_TAG}"
+          HEAD_SHA=$(git rev-parse HEAD)
+
+          if git rev-parse "refs/tags/$TAG" >/dev/null 2>&1; then
+            TAGGED_SHA=$(git rev-parse "refs/tags/$TAG^{commit}")
+            if [ "$TAGGED_SHA" != "$HEAD_SHA" ]; then
+              echo "Tag $TAG already points to $TAGGED_SHA, not merged commit $HEAD_SHA" >&2
+              exit 1
+            fi
+            echo "Tag $TAG already points to the merged commit."
+          else
+            git tag "$TAG" "$HEAD_SHA"
+            git push origin "$TAG"
+          fi
+
+      - name: Verify tagged commit
+        if: env.PUBLISH_RELEASE == 'true'
+        run: |
+          TAG="v${RELEASE_TAG}"
+          TAGGED_SHA=$(git rev-parse "refs/tags/$TAG^{commit}")
+          HEAD_SHA=$(git rev-parse HEAD)
+          if [ "$TAGGED_SHA" != "$HEAD_SHA" ]; then
+            echo "Checked-out commit $HEAD_SHA is not the tagged commit $TAGGED_SHA" >&2
+            exit 1
+          fi
+          bash scripts/check-version.sh --release "$RELEASE_TAG"
 
       - name: Build static editor
         run: make build-editor
@@ -100,10 +131,87 @@ jobs:
           name: mod_exelearning-${{ env.RELEASE_TAG }}
           path: mod_exelearning-${{ env.RELEASE_TAG }}.zip
 
-      - name: Upload ZIP to release
-        if: github.event_name == 'release'
+      - name: Create or update GitHub release
+        if: env.PUBLISH_RELEASE == 'true'
         uses: softprops/action-gh-release@v3
         with:
+          tag_name: v${{ env.RELEASE_TAG }}
+          name: v${{ env.RELEASE_TAG }}
+          generate_release_notes: true
           files: mod_exelearning-${{ env.RELEASE_TAG }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Return main to development
+        if: github.event_name == 'push' && env.PUBLISH_RELEASE == 'true'
+        run: |
+          set -euo pipefail
+
+          RELEASE_COMMIT=$(git rev-parse "v${RELEASE_TAG}^{commit}")
+          git fetch origin main
+          git checkout -B post-release-dev origin/main
+
+          if ! git merge-base --is-ancestor "$RELEASE_COMMIT" HEAD; then
+            echo "Release commit $RELEASE_COMMIT is not an ancestor of current main; refusing to update version.php." >&2
+            exit 1
+          fi
+
+          CURRENT_VERSION=$(python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          content = Path("version.php").read_text()
+          match = re.search(r"^\$plugin->version\s*=\s*(\d+);", content, re.MULTILINE)
+          if not match:
+              raise SystemExit("Could not read $plugin->version from version.php")
+          print(match.group(1))
+          PY
+          )
+          CURRENT_PREFIX=${CURRENT_VERSION%??}
+          CURRENT_SEQUENCE=${CURRENT_VERSION#????????}
+          TODAY_PREFIX=$(date -u +%Y%m%d)
+
+          if [ "$TODAY_PREFIX" -gt "$CURRENT_PREFIX" ]; then
+            NEXT_VERSION="${TODAY_PREFIX}00"
+          else
+            NEXT_SEQUENCE=$((10#$CURRENT_SEQUENCE + 1))
+            if [ "$NEXT_SEQUENCE" -gt 99 ]; then
+              echo "Cannot allocate another Moodle version for date prefix $CURRENT_PREFIX" >&2
+              exit 1
+            fi
+            NEXT_VERSION=$(printf '%s%02d' "$CURRENT_PREFIX" "$NEXT_SEQUENCE")
+          fi
+
+          NEXT_VERSION="$NEXT_VERSION" python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          path = Path("version.php")
+          content = path.read_text()
+          content, version_count = re.subn(
+              r"^\$plugin->version\s*=.*$",
+              f"$plugin->version   = {os.environ['NEXT_VERSION']};",
+              content,
+              count=1,
+              flags=re.MULTILINE,
+          )
+          content, release_count = re.subn(
+              r"^\$plugin->release\s*=.*$",
+              "$plugin->release   = 'dev';",
+              content,
+              count=1,
+              flags=re.MULTILINE,
+          )
+          if version_count != 1 or release_count != 1:
+              raise SystemExit("Could not update development metadata in version.php")
+          path.write_text(content)
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add version.php
+          git commit -m "Start development after v${RELEASE_TAG}"
+
+          bash scripts/check-version.sh
+          git push origin HEAD:main

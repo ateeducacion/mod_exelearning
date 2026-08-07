@@ -38,7 +38,7 @@
       "step": "unzip",
       "comment": "Deploy the eXeLearning static editor at blueprint level (DEC-106-01): the plugin has no runtime downloader, so the playground fetches the pinned release asset once through the github-proxy (CORS) via the fast JS transport, before the site is used. The asset wraps everything in a 'static/' folder, so extracting into 'dist' yields 'dist/static/...', the only source embedded_editor_source_resolver serves. Pinned to match .editor-version (an exact tag, never a moving branch) for deterministic previews.",
       "destination": "/www/moodle/mod/exelearning/dist",
-      "data": { "url": "https://github-proxy.exelearning.dev/?repo=exelearning/exelearning&release=v4.0.2&asset=exelearning-static-v4.0.2.zip" }
+      "data": { "url": "https://github-proxy.exelearning.dev/?repo=exelearning/exelearning&release=v4.0.3&asset=exelearning-static-v4.0.3.zip" }
     },
     {
       "step": "setConfigs",

@@ -1,6 +1,6 @@
 ---
 id: DEC-111-01
-title: "Versión Moodle real y monótona en main: fin del centinela; el empaquetado valida y nunca reescribe"
+title: "Versión Moodle real y monótona en main: fin del centinela; releases reproducibles y retorno automático a desarrollo"
 status: Accepted
 date: 2026-07-24
 tracking_issue: 111
@@ -19,7 +19,7 @@ ai_assistance:
   model: claude-fable-5
 ---
 
-# DEC-111-01: Versión Moodle real y monótona en main: fin del centinela; el empaquetado valida y nunca reescribe
+# DEC-111-01: Versión Moodle real y monótona en main: fin del centinela; releases reproducibles y retorno automático a desarrollo
 
 > Supersede a [DEC-13-08](DEC-13-08-version-sentinela-en-main.md).
 
@@ -45,57 +45,73 @@ amanzano3ip destaparon el coste real:
    [[DEC-78-01]] y [[DEC-106-01]] persiguen para el editor.
 4. **Soporte a ciegas**: `9999999999` no delata qué código corre un sitio.
 
+Tras adoptar versiones reales surgió una segunda fricción: el flujo inicial exigía dos
+PRs por release (preparación y vuelta a `dev`) y el watcher diario solo sincronizaba el
+pin del editor. Eso mantenía la reproducibilidad, pero hacía manual una secuencia que es
+mecánica y repetible.
+
 ## Decisión
 
-1. **`main` lleva siempre una versión Moodle real y monótona** (`YYYYMMDDXX`). En el
-   momento del cambio: `2026072401` — el mínimo válido, estrictamente mayor que el
-   savepoint más alto (`2026072400`). **El marcador de desarrollo vive en
-   `$plugin->release = 'dev'`**, que es informativo y no participa del protocolo de
-   upgrade; nunca en `$plugin->version`.
+1. **`main` lleva siempre una versión Moodle real y monótona** (`YYYYMMDDXX`). El marcador
+   de desarrollo vive en `$plugin->release = 'dev'`, que es informativo y no participa
+   del protocolo de upgrade; nunca en `$plugin->version`.
 2. **La versión se incrementa cuando Moodle deba detectar un cambio**: `db/`, `classes/`,
    JS (fuente o builds), settings, strings, tareas, capabilities, servicios externos y
    demás metadatos sensibles a caché. Siempre estrictamente mayor que la última release
    publicada y que todo `upgrade_mod_savepoint()` / guard `$oldversion <` de
    `db/upgrade.php`.
-3. **El empaquetado valida y nunca muta**: `scripts/package.sh` deja de calcular versión
-   por fecha y de reescribir `version.php` en el índice temporal — el ZIP lleva el
-   `version.php` **committeado, byte a byte** (lo asserta `check-package.sh`). El resto
-   del índice temporal (editor en `dist/static/`, `thirdpartylibs.xml` del paquete,
-   marcadores `~`, `.distignore`, `git archive`) no cambia.
-4. **Flujo de release en orden estricto**: (1) PR de preparación que committea versión
-   final + release semver en `version.php` → (2) merge → (3) tag sobre ese commit exacto
-   → (4) build y publicación del ZIP desde el tag → (5) PR de vuelta a desarrollo
-   (`release = 'dev'`, versión al siguiente valor válido). Los workflows **no** empujan a
-   `main` ni modifican `version.php` tras crear el tag; `release.yml` verifica que el
-   commit chequeado es el taggeado, que `release` no es `dev` y que casa con el tag.
-5. **Guard ejecutable**: `scripts/check-version.sh` (con self-test en CI) rechaza
+3. **El empaquetado valida y nunca muta**: `scripts/package.sh` no calcula la versión por
+   fecha ni reescribe `version.php`; el ZIP lleva el `version.php` **committeado, byte a
+   byte**. El tag de una release contiene exactamente los metadatos que se distribuyen.
+4. **El watcher del editor prepara la release, no la publica directamente**. Cuando
+   `exelearning/exelearning` publica `vX.Y.Z`, el workflow diario abre un único PR de
+   preparación que actualiza conjuntamente `.editor-version`, el pin de Moodle
+   Playground y `version.php` con una versión Moodle real y `$plugin->release = 'X.Y.Z'`.
+   La publicación sigue requiriendo revisión humana y merge de ese PR.
+5. **El merge del PR de preparación dispara la publicación por contenido, no por cierre
+   de PR**. `release.yml` escucha únicamente pushes a `main` que cambien
+   `.editor-version`; así los PRs no relacionados no generan ejecuciones `skipped`. El
+   workflow valida los metadatos, crea `vX.Y.Z` sobre ese commit exacto, construye el
+   editor desde el tag homónimo, genera el ZIP reproducible y publica la GitHub Release.
+6. **El mismo workflow retorna `main` a desarrollo tras publicar correctamente**. Una vez
+   creados tag, ZIP y GitHub Release, actualiza solo `version.php` en `main`: incrementa
+   `$plugin->version` al siguiente valor real válido y cambia `$plugin->release` a
+   `'dev'`. Valida ese estado antes del push. El tag permanece apuntando al commit de
+   release y no se modifica.
+7. **No hay bucle de release**: el commit post-release no cambia `.editor-version`, de
+   modo que no satisface el filtro del workflow de publicación. El commit se denomina
+   `Start development after vX.Y.Z` y representa explícitamente el comienzo del siguiente
+   ciclo de desarrollo.
+8. **Guard ejecutable**: `scripts/check-version.sh` (con self-test en CI) rechaza
    centinelas en ambas direcciones, exige 10 dígitos con estructura de fecha plausible,
    impone la cota de savepoints (estricta en dev, `>=` en release), y en release exige
    `release` = tag sin la `v`. `make package` depende de esa validación.
-6. El workflow diario del editor deja de crear releases automáticas y de empujar a
-   `main`: ahora abre un **PR de sincronización** del pin (`.editor-version` +
-   blueprint); la release del plugin es siempre una decisión humana con el flujo anterior.
 
 ## Consecuencias
 
-- Positivas: instalar desde el repo deja de brickear sitios (el caso que el PR 100
-  diagnosticó correctamente); dos builds del mismo tag son idénticos también en
-  `version.php`; el número instalado delata el código; el flujo de release queda auditable
-  (metadatos committeados antes del tag, workflows solo-lectura).
-- Para contribuidores: un PR que toque algo que Moodle deba detectar **debe subir
-  `$plugin->version`** (la CI lo recuerda vía guard cuando la cota de savepoints lo
-  fuerce; para el resto es disciplina documentada en DEVELOPMENT.md).
-- Para quien gestiona releases: dos PRs por release (preparación y vuelta a dev) a cambio
-  de reproducibilidad y de no tener nunca un tag cuyo contenido no exista en `main`.
+- Positivas: instalar desde el repo deja de brickear sitios; dos builds del mismo tag son
+  idénticos también en `version.php`; el número instalado delata el código; cada release
+  pasa por un PR revisable; la publicación y el retorno a desarrollo son automáticos.
+- El historial queda explícito: el commit taggeado representa la release y el siguiente
+  commit de `main` representa el nuevo estado `dev` con una versión Moodle superior.
+- Los PRs ordinarios no provocan ejecuciones omitidas del workflow Release porque el
+  trigger depende del cambio de `.editor-version` en `main`.
+- Para contribuidores: un PR que toque algo que Moodle deba detectar debe subir
+  `$plugin->version`; el estado normal de `main` tras cada publicación vuelve a ser
+  `release = 'dev'` automáticamente.
+- Si la protección de `main` impide el push del commit post-release, la release ya
+  publicada sigue siendo válida e inmutable, pero el fallo debe resolverse antes de
+  continuar el desarrollo para restaurar `main` a `dev`.
 - Los sitios que instalaron el centinela `9999999999` siguen atascados hasta intervención
-  manual (documentado; este cambio evita crear nuevos casos).
+  manual; esta decisión evita crear nuevos casos.
 
 ## Alternativas consideradas
 
 | Alternativa | Por qué se rechaza |
 |---|---|
-| Mantener DEC-13-08 tal cual | Brickea instalaciones reales y produce builds no reproducibles; DIR-03 lo señala y el PR 100 lo demostró en su propio sitio de pruebas. |
+| Mantener DEC-13-08 tal cual | Brickea instalaciones reales y produce builds no reproducibles. |
 | Centinela bajo (`0`, `1`, `99999`, `000001`) | Rompe el protocolo de upgrade en la otra dirección: versión < savepoints existentes. |
-| El `2026070701` del PR 100 | Diagnóstico correcto, valor inválido: menor que el savepoint `2026072400` ya presente. |
-| Estampar en el workflow en vez de en package.sh | Misma mutación con otro uniforme: el tag seguiría sin contener su propia versión y la reproducibilidad seguiría dependiendo de la fecha de ejecución. |
-| Versión derivada del tag al empaquetar | El commit taggeado no contendría su versión real; imposible verificar el tag contra su contenido, y quien instala desde el checkout sigue sin versión válida. |
+| Estampar `version.php` durante el empaquetado | El tag no contendría los mismos metadatos que el ZIP y reconstruirlo dejaría de ser una operación verificable. |
+| Publicar directamente desde el watcher sin PR | Elimina la revisión humana justo en el punto que fija los metadatos finales y el contenido que se va a etiquetar. |
+| Escuchar `pull_request: closed` y filtrar con `if` | Crea una ejecución `Release` omitida por cada PR cerrado que no sea una preparación de release. |
+| Segundo PR automático para volver a `dev` | Añade ruido y otro ciclo de CI para una mutación completamente mecánica que puede validarse y aplicarse al final del mismo workflow. |
