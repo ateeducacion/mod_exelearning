@@ -2,15 +2,20 @@
 name: Release
 
 # Builds the distributable ZIP for a published GitHub release, a merged automated
-# release-preparation PR, or a manual test build. Release metadata is always
-# committed before the plugin tag exists and version.php ships byte-identical to
-# the reviewed commit.
+# release-preparation PR, or a manual test build. Automated publication is
+# triggered by the .editor-version change landing on main, so unrelated pull
+# requests do not create skipped Release workflow runs. Release metadata is
+# always committed before the plugin tag exists and version.php ships
+# byte-identical to the reviewed commit.
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - .editor-version
   release:
     types: [published]
-  pull_request:
-    types: [closed]
   workflow_dispatch:
     inputs:
       editor_repo_url:
@@ -33,19 +38,13 @@ on:
 
 permissions:
   contents: write
-  pull-requests: read
 
 jobs:
   build_and_upload:
-    if: >-
-      github.event_name != 'pull_request' ||
-      (github.event.pull_request.merged == true &&
-      startsWith(github.event.pull_request.head.ref, 'release/editor-v'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.pull_request.merge_commit_sha || github.ref }}
           fetch-depth: 0
 
       - name: Setup Bun
@@ -62,9 +61,8 @@ jobs:
             echo "EXELEARNING_EDITOR_REPO_URL=https://github.com/exelearning/exelearning.git" >> "$GITHUB_ENV"
             echo "EXELEARNING_EDITOR_REF=v${VERSION_TAG}" >> "$GITHUB_ENV"
             echo "EXELEARNING_EDITOR_REF_TYPE=tag" >> "$GITHUB_ENV"
-          elif [ "${{ github.event_name }}" = "pull_request" ]; then
-            RAW_TAG="${{ github.event.pull_request.head.ref }}"
-            RAW_TAG="${RAW_TAG#release/editor-}"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            RAW_TAG=$(tr -d '[:space:]' < .editor-version)
             VERSION_TAG="${RAW_TAG#v}"
             echo "PUBLISH_RELEASE=true" >> "$GITHUB_ENV"
             echo "CREATE_PLUGIN_TAG=true" >> "$GITHUB_ENV"
@@ -91,8 +89,6 @@ jobs:
 
       - name: Create plugin tag for merged preparation PR
         if: env.CREATE_PLUGIN_TAG == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="v${RELEASE_TAG}"
           HEAD_SHA=$(git rev-parse HEAD)
