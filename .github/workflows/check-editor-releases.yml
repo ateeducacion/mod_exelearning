@@ -1,14 +1,10 @@
 ---
 name: Check Editor Releases
 
-# Watches exelearning/exelearning for a new editor release and opens a SYNC
-# PULL REQUEST updating .editor-version and the playground blueprint pin.
-#
-# It deliberately does NOT build a package, publish a plugin release or push to
-# main any more (DEC-111-01): releases follow the release-preparation flow — a
-# human PR commits the final version.php, the tag points at that commit, and
-# release.yml builds from the tag. This workflow only keeps the editor pin in
-# sync and leaves the release decision to a maintainer.
+# Watches exelearning/exelearning for a new editor release and opens one release
+# preparation pull request. The PR pins the editor and commits the final Moodle
+# version metadata. Merging that reviewed PR lets release.yml tag the exact merge
+# commit, build the reproducible ZIP and publish the GitHub release.
 
 on:
   schedule:
@@ -20,7 +16,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  sync_editor_pin:
+  prepare_release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -33,11 +29,11 @@ jobs:
           LATEST=$(gh api repos/exelearning/exelearning/releases/latest --jq '.tag_name' 2>/dev/null || echo "")
           if [ -z "$LATEST" ]; then
             echo "No release found"
-            echo "found=false" >> $GITHUB_OUTPUT
+            echo "found=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           echo "Latest editor release: $LATEST"
-          echo "tag=$LATEST" >> $GITHUB_OUTPUT
+          echo "tag=$LATEST" >> "$GITHUB_OUTPUT"
 
           CURRENT=""
           if [ -f .editor-version ]; then
@@ -47,23 +43,52 @@ jobs:
 
           if [ "$LATEST" = "$CURRENT" ]; then
             echo "Already up to date"
-            echo "found=false" >> $GITHUB_OUTPUT
+            echo "found=false" >> "$GITHUB_OUTPUT"
           else
             echo "New version available"
-            echo "found=true" >> $GITHUB_OUTPUT
+            echo "found=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Open editor-pin sync pull request
+      - name: Open release preparation pull request
         if: steps.check.outputs.found == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
+
           TAG="${{ steps.check.outputs.tag }}"
-          BRANCH="sync/editor-${TAG}"
+          RELEASE="${TAG#v}"
+          BRANCH="release/editor-${TAG}"
 
           if gh pr list --head "$BRANCH" --state open --json number --jq 'length' | grep -qv '^0$'; then
-            echo "A sync PR for $TAG is already open; nothing to do."
+            echo "A release preparation PR for $TAG is already open; nothing to do."
             exit 0
+          fi
+
+          CURRENT_VERSION=$(python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          content = Path("version.php").read_text()
+          match = re.search(r"^\$plugin->version\s*=\s*(\d+);", content, re.MULTILINE)
+          if not match:
+              raise SystemExit("Could not read $plugin->version from version.php")
+          print(match.group(1))
+          PY
+          )
+          TODAY_PREFIX=$(date -u +%Y%m%d)
+          CURRENT_PREFIX=${CURRENT_VERSION%??}
+          CURRENT_SEQUENCE=${CURRENT_VERSION#????????}
+
+          if [ "$TODAY_PREFIX" -gt "$CURRENT_PREFIX" ]; then
+            NEXT_VERSION="${TODAY_PREFIX}00"
+          else
+            NEXT_SEQUENCE=$((10#$CURRENT_SEQUENCE + 1))
+            if [ "$NEXT_SEQUENCE" -gt 99 ]; then
+              echo "Cannot allocate another Moodle version for date prefix $CURRENT_PREFIX" >&2
+              exit 1
+            fi
+            NEXT_VERSION=$(printf '%s%02d' "$CURRENT_PREFIX" "$NEXT_SEQUENCE")
           fi
 
           git config user.name "github-actions[bot]"
@@ -71,24 +96,61 @@ jobs:
           git checkout -b "$BRANCH"
 
           echo "$TAG" > .editor-version
-          # Keep the playground blueprint's editor URL in sync with .editor-version,
-          # otherwise the preview stays pinned to the previous version.
           sed -i -E \
             -e "s#(release=)v[0-9][0-9A-Za-z.-]*#\1$TAG#g" \
             -e "s#(releases/download/)v[0-9][0-9A-Za-z.-]*#\1$TAG#g" \
             -e "s#(exelearning-static-)v[0-9][0-9A-Za-z.-]*(\.zip)#\1$TAG\2#g" \
             blueprint.json
 
-          git add .editor-version blueprint.json
-          git commit -m "Sync editor pin to $TAG"
-          git push origin "$BRANCH"
+          NEXT_VERSION="$NEXT_VERSION" RELEASE="$RELEASE" python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
 
-          BODY=$(printf '%s\n\n%s\n' \
-            "The editor published [$TAG](https://github.com/exelearning/exelearning/releases/tag/$TAG). This updates \`.editor-version\` and the playground blueprint pin." \
-            'To ship a plugin release bundling this editor, follow the release-preparation flow (DEVELOPMENT.md, "Versioning and releases"): commit the final `version.php`, merge, tag that commit, and publish the release — release.yml builds the ZIP from the tag.')
+          path = Path("version.php")
+          content = path.read_text()
+          content, version_count = re.subn(
+              r"^\$plugin->version\s*=.*$",
+              f"$plugin->version   = {os.environ['NEXT_VERSION']};",
+              content,
+              count=1,
+              flags=re.MULTILINE,
+          )
+          content, release_count = re.subn(
+              r"^\$plugin->release\s*=.*$",
+              f"$plugin->release   = '{os.environ['RELEASE']}';",
+              content,
+              count=1,
+              flags=re.MULTILINE,
+          )
+          if version_count != 1 or release_count != 1:
+              raise SystemExit("Could not update release metadata in version.php")
+          path.write_text(content)
+          PY
+
+          bash scripts/check-version.sh --release "$RELEASE"
+
+          git add .editor-version blueprint.json version.php
+          git commit -m "Prepare plugin release $TAG"
+          git push --force origin "$BRANCH"
+
+          BODY=$(cat <<EOF
+          ## Summary
+
+          - Pin the embedded editor and Moodle Playground preview to [$TAG](https://github.com/exelearning/exelearning/releases/tag/$TAG).
+          - Set \`\$plugin->version\` to \`$NEXT_VERSION\`.
+          - Set \`\$plugin->release\` to \`$RELEASE\`.
+
+          ## Release flow
+
+          Merging this pull request publishes the plugin release automatically. The release workflow tags the exact merged commit as \`$TAG\`, builds the editor from the matching editor tag, creates the reproducible ZIP and uploads it to the GitHub release.
+
+          The workflow deliberately waits for review and merge: it never publishes directly from the scheduled watcher branch.
+          EOF
+          )
 
           gh pr create \
             --base main \
             --head "$BRANCH" \
-            --title "Sync editor pin to $TAG" \
+            --title "Prepare plugin release $TAG" \
             --body "$BODY"

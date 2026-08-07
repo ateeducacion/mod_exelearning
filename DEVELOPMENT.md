@@ -134,7 +134,7 @@ service mounts the plugin at `/var/www/html/mod/exelearning`.
 # Start the stack.
 docker compose up -d
 
-# Open a shell in the Moodle container.
+# Open a shell inside the Moodle container.
 docker compose exec moodle bash
 
 # Then, from inside the container (cwd /var/www/html):
@@ -198,7 +198,8 @@ files, internal docs) is not — the README links to the docs on GitHub instead.
 
 Policy: [DEC-111-01](./research/decisiones/adr/DEC-111-01-version-real-monotona-en-main.md)
 (supersedes DEC-13-08). `main` always carries a **real, monotonic Moodle
-version** and `$plugin->release = 'dev'`:
+version**. During normal development `$plugin->release = 'dev'`; the tagged
+release commit carries the final semantic release.
 
 - **No sentinels, in either direction.** `9999999999` bricks any site installed
   from a checkout (every real release becomes a downgrade Moodle refuses, with
@@ -213,19 +214,27 @@ version** and `$plugin->release = 'dev'`:
   than the latest published version and every savepoint / `$oldversion <` guard
   in `db/upgrade.php`. `scripts/check-version.sh` (run by CI and by
   `make check-version`) enforces the bounds.
-- **Release flow** (in this exact order):
-  1. Open a release-preparation PR committing the final version and semantic
-     release in `version.php` (e.g. `$plugin->version = 2026072500;`
-     `$plugin->release = '4.0.3';`).
-  2. Merge it.
-  3. Create the git tag (`vX.Y.Z`) **on that exact commit**. Never modify
-     `version.php` after the tag exists — rebuilding a tag must never change it.
-  4. Publish the GitHub release; `.github/workflows/release.yml` verifies the
-     checked-out commit is the tagged one, validates the metadata
-     (`check-version.sh --release`), builds the editor and packages the ZIP
-     without touching `version.php`. Workflows never commit or push.
-  5. Open a follow-up PR switching `$plugin->release` back to `'dev'` and
-     bumping `$plugin->version` to the next valid development value.
+- **Automated release flow**:
+  1. The daily editor watcher detects a new `exelearning/exelearning` release and
+     opens one reviewed release-preparation PR. That PR updates `.editor-version`,
+     the Moodle Playground pin and the final `version.php` metadata together.
+  2. Merge the preparation PR. Because `.editor-version` changed on `main`,
+     `.github/workflows/release.yml` runs; unrelated PRs do not create skipped
+     Release workflow runs.
+  3. The workflow validates the committed release metadata, creates `vX.Y.Z` on
+     that exact merged commit, builds the matching editor tag, packages the
+     reproducible ZIP and publishes the GitHub release.
+  4. Only after publication succeeds, the same workflow checks out current
+     `main`, advances `$plugin->version` to the next valid real value, changes
+     `$plugin->release` back to `'dev'`, validates the development state and
+     pushes a single `Start development after vX.Y.Z` commit to `main`.
+
+The post-release commit changes only `version.php`, not `.editor-version`, so it
+does not trigger another release run. The release tag remains on the immutable
+release commit; rebuilding that tag therefore reproduces the same `version.php`.
+If branch protection prevents the workflow from pushing the post-release commit,
+the release itself remains valid and the failed step must be resolved before
+further development.
 
 `make check-version` validates the committed state at any time;
 `make check-release-version RELEASE=X.Y.Z` validates release metadata.
