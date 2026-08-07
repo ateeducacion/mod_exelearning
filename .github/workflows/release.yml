@@ -6,7 +6,9 @@ name: Release
 # triggered by the .editor-version change landing on main, so unrelated pull
 # requests do not create skipped Release workflow runs. Release metadata is
 # always committed before the plugin tag exists and version.php ships
-# byte-identical to the reviewed commit.
+# byte-identical to the reviewed release commit. After an automated release is
+# published, the same workflow advances main to the next real Moodle version and
+# switches $plugin->release back to dev; the published tag remains immutable.
 
 on:
   push:
@@ -139,3 +141,46 @@ jobs:
           files: mod_exelearning-${{ env.RELEASE_TAG }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Return main to development
+        if: github.event_name == 'push' && env.PUBLISH_RELEASE == 'true'
+        run: |
+          set -euo pipefail
+
+          RELEASE_COMMIT=$(git rev-parse "v${RELEASE_TAG}^{commit}")
+          git fetch origin main
+          git checkout -B post-release-dev origin/main
+
+          if ! git merge-base --is-ancestor "$RELEASE_COMMIT" HEAD; then
+            echo "Release commit $RELEASE_COMMIT is not an ancestor of current main; refusing to update version.php." >&2
+            exit 1
+          fi
+
+          CURRENT_VERSION=$(sed -n "s/^\$plugin->version[[:space:]]*=[[:space:]]*\([0-9][0-9]*\);.*/\1/p" version.php | head -n1)
+          CURRENT_PREFIX=${CURRENT_VERSION%??}
+          CURRENT_SEQUENCE=${CURRENT_VERSION#????????}
+          TODAY_PREFIX=$(date -u +%Y%m%d)
+
+          if [ "$TODAY_PREFIX" -gt "$CURRENT_PREFIX" ]; then
+            NEXT_VERSION="${TODAY_PREFIX}00"
+          else
+            NEXT_SEQUENCE=$((10#$CURRENT_SEQUENCE + 1))
+            if [ "$NEXT_SEQUENCE" -gt 99 ]; then
+              echo "Cannot allocate another Moodle version for date prefix $CURRENT_PREFIX" >&2
+              exit 1
+            fi
+            NEXT_VERSION=$(printf '%s%02d' "$CURRENT_PREFIX" "$NEXT_SEQUENCE")
+          fi
+
+          sed -i -E \
+            -e "s/^\$plugin->version[[:space:]]*=.*/\$plugin->version   = $NEXT_VERSION;/" \
+            -e "s/^\$plugin->release[[:space:]]*=.*/\$plugin->release   = 'dev';/" \
+            version.php
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add version.php
+          git commit -m "Start development after v${RELEASE_TAG}"
+
+          bash scripts/check-version.sh
+          git push origin HEAD:main
