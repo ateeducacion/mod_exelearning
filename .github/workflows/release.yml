@@ -156,7 +156,17 @@ jobs:
             exit 1
           fi
 
-          CURRENT_VERSION=$(sed -n "s/^\$plugin->version[[:space:]]*=[[:space:]]*\([0-9][0-9]*\);.*/\1/p" version.php | head -n1)
+          CURRENT_VERSION=$(python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          content = Path("version.php").read_text()
+          match = re.search(r"^\$plugin->version\s*=\s*(\d+);", content, re.MULTILINE)
+          if not match:
+              raise SystemExit("Could not read $plugin->version from version.php")
+          print(match.group(1))
+          PY
+          )
           CURRENT_PREFIX=${CURRENT_VERSION%??}
           CURRENT_SEQUENCE=${CURRENT_VERSION#????????}
           TODAY_PREFIX=$(date -u +%Y%m%d)
@@ -172,10 +182,31 @@ jobs:
             NEXT_VERSION=$(printf '%s%02d' "$CURRENT_PREFIX" "$NEXT_SEQUENCE")
           fi
 
-          sed -i -E \
-            -e "s/^\$plugin->version[[:space:]]*=.*/\$plugin->version   = $NEXT_VERSION;/" \
-            -e "s/^\$plugin->release[[:space:]]*=.*/\$plugin->release   = 'dev';/" \
-            version.php
+          NEXT_VERSION="$NEXT_VERSION" python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          path = Path("version.php")
+          content = path.read_text()
+          content, version_count = re.subn(
+              r"^\$plugin->version\s*=.*$",
+              f"$plugin->version   = {os.environ['NEXT_VERSION']};",
+              content,
+              count=1,
+              flags=re.MULTILINE,
+          )
+          content, release_count = re.subn(
+              r"^\$plugin->release\s*=.*$",
+              "$plugin->release   = 'dev';",
+              content,
+              count=1,
+              flags=re.MULTILINE,
+          )
+          if version_count != 1 or release_count != 1:
+              raise SystemExit("Could not update development metadata in version.php")
+          path.write_text(content)
+          PY
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
