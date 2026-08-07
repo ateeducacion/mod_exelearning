@@ -34,8 +34,8 @@ defined('MOODLE_INTERNAL') || die();
 // in $plugin->release ('dev'); a release-preparation PR commits the final
 // version + semver release BEFORE the tag is created (see DEVELOPMENT.md,
 // "Versioning and releases").
-$plugin->version   = 2026080700;
-$plugin->release   = '4.0.3';
+$plugin->version   = 2026080701;
+$plugin->release   = 'dev';
 $plugin->requires  = 2024100700;       // Moodle 4.5 LTS+.
 $plugin->supported = [405, 502];       // Moodle 4.5 LTS through Moodle 5.2.
 $plugin->component = 'mod_exelearning';
