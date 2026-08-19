@@ -126,8 +126,8 @@ class ingestor {
         if (!empty($norm['lifecycle'])) {
             self::record_event($exe->id, $userid, $norm, $registration);
             $republished = null;
-            if ($censuschanged && !empty($exe->gradeenabled)) {
-                $republished = self::republish_after_census($exe, $course, $cm, $userid, $registration);
+            if (!empty($exe->gradeenabled)) {
+                $republished = self::republish_after_census($exe, $course, $cm, $userid, $registration, $censuschanged);
             }
             $result = ['ok' => true, 'lifecycle' => true, 'verb' => $norm['verb']];
             if ($republished !== null) {
@@ -214,6 +214,12 @@ class ingestor {
                 $result['objectid'] = $norm['objectid'];
                 $result['peritem'] = $peritem;
 
+                // Announce the attempt BEFORE any publication below can complete it: a
+                // single-gradable-iDevice package finishes on its first answered
+                // statement, and emitting attempt_completed before attempt_started
+                // hands observers an inverted lifecycle.
+                self::maybe_emit_started($exe, $course, $cm, $userid, $attempt, $attemptexisted);
+
                 // New-contract statements carry both fields together, and
                 // apply_item_scores() has just persisted them alongside the score on the
                 // upserted per-item row, so navigating to another iframe document does not
@@ -233,10 +239,6 @@ class ingestor {
                         $result['status'] = $published['status'];
                     }
                 }
-                // Package lifecycle statements still determine terminal status. The
-                // answered event only creates the attempt and, for new packages, makes
-                // the independently reconstructed grade durable immediately.
-                self::maybe_emit_started($exe, $course, $cm, $userid, $attempt, $attemptexisted);
             } else {
                 // Package verbs remain the lifecycle/status signal. For a new-contract
                 // attempt, preserve the independently reconstructed numeric result; only
@@ -486,6 +488,12 @@ class ingestor {
      * answered per-item rows is replayed: a censused package with no answers has
      * nothing to grade.
      *
+     * The replay also fires when this statement's census changed NOTHING but the
+     * attempt has answered rows and still no overall: the census may have been
+     * completed by ANOTHER learner while this one was away, and this page visit is
+     * the first signal this learner has sent since. Without that arm, everyone
+     * except the census carrier stays stuck until they answer something again.
+     *
      * @param \stdClass $exe The exelearning instance record.
      * @param \stdClass $course The course record (for completion).
      * @param \stdClass $cm The course_module record (for completion).
@@ -499,7 +507,8 @@ class ingestor {
         \stdClass $course,
         \stdClass $cm,
         int $userid,
-        string $registration
+        string $registration,
+        bool $censuschanged
     ): ?array {
         global $DB;
 
@@ -515,6 +524,20 @@ class ingestor {
             );
             if (!$hasanswers) {
                 return null;
+            }
+            // An unchanged census replays only for an attempt that is still missing
+            // its overall row: that is the cross-learner catch-up case. When an
+            // overall already exists and nothing changed, leave the row untouched.
+            if (!$censuschanged) {
+                $hasoverall = $DB->record_exists('exelearning_attempt', [
+                    'exelearningid' => $exe->id,
+                    'userid'        => $userid,
+                    'attempt'       => $attempt,
+                    'itemnumber'    => 0,
+                ]);
+                if ($hasoverall) {
+                    return null;
+                }
             }
             $prioroverallstatus = $DB->get_field('exelearning_attempt', 'status', [
                 'exelearningid' => $exe->id,

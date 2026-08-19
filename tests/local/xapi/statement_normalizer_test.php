@@ -79,7 +79,7 @@ final class statement_normalizer_test extends \advanced_testcase {
 
     public function test_answered_exposes_weighted_scoring_metadata(): void {
         $statement = $this->answered('ide-1', 0.7);
-        $statement['context']['extensions'][statement_normalizer::EXT_WEIGHT] = 25;
+        $statement['context']['extensions'][statement_normalizer::EXT_IDEVICE_WEIGHT] = 25;
         $statement['context']['extensions'][statement_normalizer::EXT_IDEVICE_ORDER] = 3;
 
         $out = statement_normalizer::normalize($statement);
@@ -188,7 +188,7 @@ final class statement_normalizer_test extends \advanced_testcase {
         int $expectedorder
     ): void {
         $statement = $this->answered('ide-1', 0.5);
-        $statement['context']['extensions'][statement_normalizer::EXT_WEIGHT] = $weight;
+        $statement['context']['extensions'][statement_normalizer::EXT_IDEVICE_WEIGHT] = $weight;
         $statement['context']['extensions'][statement_normalizer::EXT_IDEVICE_ORDER] = $order;
 
         $out = statement_normalizer::normalize($statement);
@@ -220,7 +220,7 @@ final class statement_normalizer_test extends \advanced_testcase {
      */
     public function test_null_weighted_metadata_degrades_to_the_legacy_path(): void {
         $statement = $this->answered('ide-1', 0.5);
-        $statement['context']['extensions'][statement_normalizer::EXT_WEIGHT] = null;
+        $statement['context']['extensions'][statement_normalizer::EXT_IDEVICE_WEIGHT] = null;
         $statement['context']['extensions'][statement_normalizer::EXT_IDEVICE_ORDER] = null;
 
         $out = statement_normalizer::normalize($statement);

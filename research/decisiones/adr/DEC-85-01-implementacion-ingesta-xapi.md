@@ -5,7 +5,7 @@ status: Superseded
 date: 2026-06-18
 tracking_issue: 85
 legacy_id: DEC-0064
-superseded_by: DEC-121-01
+superseded_by: DEC-121-01  # solo en la autoridad del OVERALL numérico; xAPI-primary, validación, auditoría e idempotencia siguen vigentes (DEC-121-01 §Alcance)
 deciders:
   - erseco
   - claude-code

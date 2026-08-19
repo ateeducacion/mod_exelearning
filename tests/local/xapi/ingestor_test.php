@@ -767,6 +767,126 @@ final class ingestor_test extends \advanced_testcase {
         ]));
     }
 
+    /**
+     * A learner stuck without an overall is caught up by their NEXT page visit, even
+     * when someone else completed the census in the meantime.
+     *
+     * Learner A answers page 1 while the census is incomplete (no overall possible).
+     * Learner B's visit completes the census — which changes nothing for A. A then
+     * merely revisits a page: that lifecycle statement carries a census that changes
+     * nothing, but A has answered rows and still no overall row, so the replay fires
+     * for A. Without this arm, everyone except the census carrier stays stuck until
+     * they answer something again.
+     */
+    public function test_unchanged_census_catches_up_a_learner_stuck_without_an_overall(): void {
+        global $DB;
+        [$instance, $first, $course, $cm] = $this->create_activity(['grademodel' => 0]);
+        $items = $this->items($instance);
+        $second = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($second->id, $course->id, 'student');
+
+        // Learner A: page-1 census only, then a perfect answer. Census incomplete ->
+        // nothing reconstructible for A yet.
+        ingestor::ingest(
+            $instance,
+            $course,
+            $cm,
+            $first->id,
+            $this->initialized([[$items[0]->objectid, 25, 1]]),
+            'stuck-a',
+            false
+        );
+        $answered = ingestor::ingest(
+            $instance,
+            $course,
+            $cm,
+            $first->id,
+            $this->answered($items[0]->objectid, 1.0, null, 25, 1),
+            'stuck-a',
+            false
+        );
+        $this->assertArrayNotHasKey('rawscore', $answered);
+
+        // Learner B completes the package census from their own visit.
+        ingestor::ingest(
+            $instance,
+            $course,
+            $cm,
+            $second->id,
+            $this->initialized([[$items[1]->objectid, 75, 2]]),
+            'other-b',
+            false
+        );
+
+        // A revisits page 1: the census in this statement changes NOTHING, but A has
+        // answered rows and no overall row — the replay publishes the exact 25.
+        $revisit = ingestor::ingest(
+            $instance,
+            $course,
+            $cm,
+            $first->id,
+            $this->initialized([[$items[0]->objectid, 25, 1]]),
+            'stuck-a',
+            false
+        );
+
+        $this->assertEqualsWithDelta(25.0, (float) $revisit['rawscore'], 0.0001);
+        $overall = $DB->get_record('exelearning_attempt', [
+            'exelearningid' => $instance->id, 'userid' => $first->id, 'itemnumber' => 0,
+        ], '*', MUST_EXIST);
+        $this->assertEqualsWithDelta(25.0, (float) $overall->rawscore, 0.0001);
+        $this->assertSame('incomplete', $overall->status);
+    }
+
+    /**
+     * attempt_started always precedes attempt_completed, even when the FIRST answered
+     * statement finishes the whole attempt (a single-gradable-iDevice package).
+     */
+    public function test_attempt_started_precedes_attempt_completed_on_a_single_idevice_package(): void {
+        global $DB;
+        [$instance, $student, $course, $cm] = $this->create_activity(['grademodel' => 0]);
+        $items = $this->items($instance);
+        // Leave exactly one gradable iDevice: the first answer is then terminal.
+        $DB->set_field('exelearning_grade_item', 'deleted', 1, [
+            'exelearningid' => $instance->id, 'itemnumber' => $items[1]->itemnumber,
+        ]);
+
+        ingestor::ingest(
+            $instance,
+            $course,
+            $cm,
+            $student->id,
+            $this->initialized([[$items[0]->objectid, 100, 1]]),
+            'one-shot',
+            false
+        );
+        $sink = $this->redirectEvents();
+        $result = ingestor::ingest(
+            $instance,
+            $course,
+            $cm,
+            $student->id,
+            $this->answered($items[0]->objectid, 1.0, null, 100, 1),
+            'one-shot',
+            false
+        );
+        $events = array_values(array_filter(
+            $sink->get_events(),
+            fn($event) => strpos(get_class($event), 'mod_exelearning') === 0
+        ));
+        $sink->close();
+
+        // Terminal on the very first statement...
+        $this->assertContains($result['status'], ['passed', 'completed']);
+        // ...and the lifecycle still reads forwards: started, then completed.
+        $names = array_map(fn($event) => $event->eventname, $events);
+        $started = array_search('\\mod_exelearning\\event\\attempt_started', $names, true);
+        $completed = array_search('\\mod_exelearning\\event\\attempt_completed', $names, true);
+        $this->assertNotFalse($started, 'attempt_started was not emitted');
+        $this->assertNotFalse($completed, 'attempt_completed was not emitted');
+        $this->assertLessThan($completed, $started, 'attempt_started must precede attempt_completed');
+    }
+
     public function test_census_is_package_metadata_reused_by_every_learner(): void {
         global $DB;
         [$instance, $first, $course, $cm] = $this->create_activity(['grademodel' => 0]);

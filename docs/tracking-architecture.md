@@ -82,9 +82,9 @@ to the SCORM endpoint today):
   dropped. Both values are needed together, so either one missing or unreadable grades the iDevice on
   its own column and leaves it out of the overall — which is also what the emitter does with an
   iDevice whose package-global position it cannot resolve. A weight outside 1..100 is clamped exactly
-  as `effectiveWeight()`/`getFinalScore()` clamp it. The shipped key is `.../extensions/idevice-weight`;
-  the pre-release `.../extensions/weight` spelling is still accepted, because an unrecognised key
-  degrades to the legacy path with no error at all.
+  as `effectiveWeight()`/`getFinalScore()` clamp it. The shipped key is `.../extensions/idevice-weight` — the only
+  spelling that ever existed in a release, so no alias is accepted; the fixture-driven test against
+  the real emitter is what guards against a silent respelling.
 - `postMessage`: the host injects `parentOrigin = <Moodle origin>` and the listener checks
   `event.origin` against the iframe `pluginfile.php` origin; `'*'`/mismatch is rejected
   (RIE-013).

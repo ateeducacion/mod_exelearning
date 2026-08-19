@@ -38,7 +38,7 @@ actual. Por tanto, un statement de paquete sigue siendo útil como evento de cic
 es una fuente numérica suficiente para un agregado que atraviese páginas.
 
 El nuevo contrato upstream añade a cada `answered` evaluable dos extensiones xAPI numéricas en
-`context.extensions`: `weight`, el peso relativo efectivo de 1 a 100, e `idevice-order`, el orden
+`context.extensions`: `idevice-weight`, el peso relativo efectivo de 1 a 100, e `idevice-order`, el orden
 global determinista dentro de la publicación. El `idevice-id` estable ya existente identifica el
 estado que debe reemplazarse al volver a contestar.
 
@@ -105,10 +105,10 @@ exportados antes del nuevo contrato?
    se **acota** igual que `effectiveWeight()`/`getFinalScore()`. Un valor presente pero ilegible
    emite `debugging()` para que un emisor roto se vea en desarrollo sin coste para el alumno.
 2. Aceptar la IRI `https://exelearning.net/xapi/extensions/idevice-weight` — nombre definitivo
-   upstream, alineado con `idevice-id`/`idevice-type`/`idevice-order` — y mantener la grafía previa
-   `.../extensions/weight` como alias. Una clave no reconocida degrada al camino legacy **sin
-   error visible**, así que tolerar ambas cuesta un lookup y elimina un fallo invisible en
-   producción.
+   upstream, alineado con `idevice-id`/`idevice-type`/`idevice-order` — y **solo** esa. La grafía
+   previa `.../extensions/weight` nunca llegó a ninguna release (upstream la renombró antes de
+   publicar), así que un alias sería código muerto ejercitado por los tests en lugar del contrato
+   real; la deriva de grafías la vigila el test de fixtures capturados del emisor de verdad.
 3. Añadir `xapiweight` y `xapiorder` como columnas nullable de `exelearning_attempt`. Las filas
    SCORM, las filas OVERALL y los paquetes xAPI anteriores quedan a `NULL`.
 4. Usar la fila actual por `itemnumber` como mapa de último estado. Recontestar un iDevice reemplaza
@@ -186,6 +186,15 @@ exportados antes del nuevo contrato?
   extraerlo obligaría a meter conocimiento por tipo de iDevice en el exportador. Verificado con el
   agente que implementa upstream #2302; de ahí que el censo se emita desde `registerActivity`, que ya
   corre por cada evaluable al cargar la página y tiene el peso ya resuelto.
+- **Superficie de confianza del censo.** `record_census()` acepta reescrituras de peso y orden
+  desde el statement de **cualquier** alumno matriculado (autenticado por sesskey), y esos valores
+  remodelan la reconstrucción de todos los demás. Es deliberado — «gana el último» es lo que permite
+  que una re-exportación legítima con pesos nuevos se aprenda sola — pero significa que un alumno
+  malicioso con conocimientos técnicos podría alterar los pesos del paquete para todos. Se acepta
+  como riesgo: el mismo alumno ya puede falsear sus propios `answered` (el actor no se lee y la nota
+  se atribuye a la sesión), el impacto se limita a la actividad, y cualquier arreglo (primera
+  escritura gana) rompería el caso legítimo de re-exportación. El test
+  `test_census_is_package_metadata_reused_by_every_learner` fija el comportamiento vigente.
 - **Residuos aceptados.** (a) Un evaluable que se registre después del flush del `initialized` de esa
   carga queda fuera de esa copia del censo, pero la copia del `terminated` de la misma visita lo
   recoge (sale en `pagehide`, tras todo registro); la «siguiente visita» sólo es el remedio si ese
@@ -227,7 +236,7 @@ exportados antes del nuevo contrato?
 - Test de integración para un intento que alcanza estado terminal **sin ningún statement de paquete**
   (el caso multipágina): estado derivado por `gradepass` y `attempt_completed` emitido exactamente
   una vez.
-- Test unitario de la clave `idevice-weight` definitiva y de su alias previo.
+- Test unitario de la clave `idevice-weight` definitiva.
 - Tests del censo: parseo y saneado de entradas (peso acotado, entrada sin orden descartada, entrada
   malformada descartada), intento parcial reconstruido exacto (25 y no 100) con estado todavía
   `incomplete`, censo reutilizado por un segundo alumno que nunca emitió censo propio, y intento

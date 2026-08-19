@@ -45,17 +45,13 @@ class statement_normalizer {
     /**
      * @var string Effective 1..100 relative weight introduced by upstream PR 2302.
      *
-     * The upstream contract renamed this key to the `idevice-*` namespace shared by its
-     * siblings, because it describes the iDevice and not the package. Nothing has shipped
-     * under the earlier `.../extensions/weight` spelling, but it is still accepted: a key
-     * this class does not recognise degrades to the legacy path *silently* (no weight, no
-     * error), so tolerating both names costs one lookup and removes a failure mode that
-     * would be invisible in production.
+     * Only the `idevice-weight` spelling exists: upstream renamed the key into the
+     * `idevice-*` namespace BEFORE anything ever shipped, so there is no producer of
+     * the pre-release `.../extensions/weight` spelling and no alias is accepted. A
+     * fixture-driven test pins this parser against statements captured from the real
+     * emitter, which is the guard against a silent respelling on either side.
      */
     public const EXT_IDEVICE_WEIGHT = 'https://exelearning.net/xapi/extensions/idevice-weight';
-
-    /** @var string Pre-release spelling of {@see self::EXT_IDEVICE_WEIGHT}, still accepted. */
-    public const EXT_WEIGHT = 'https://exelearning.net/xapi/extensions/weight';
 
     /** @var string Deterministic 1-based package-global iDevice render order. */
     public const EXT_IDEVICE_ORDER = 'https://exelearning.net/xapi/extensions/idevice-order';
@@ -310,10 +306,7 @@ class statement_normalizer {
             // No usable extensions map at all: no metadata, not a broken contract.
             return $none;
         }
-        // Accept the shipped `idevice-weight` key and the earlier `weight` spelling.
-        $weightvalue = $extensions[self::EXT_IDEVICE_WEIGHT]
-            ?? $extensions[self::EXT_WEIGHT]
-            ?? null;
+        $weightvalue = $extensions[self::EXT_IDEVICE_WEIGHT] ?? null;
         $ordervalue = $extensions[self::EXT_IDEVICE_ORDER] ?? null;
 
         $weight = self::effective_weight($weightvalue);

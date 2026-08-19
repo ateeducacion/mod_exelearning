@@ -135,7 +135,7 @@ The endpoint must:
 | `verb=initialized`/`terminated` | attempt open/close (via `registration` ↔ `sessiontoken`) |
 | `object.id = …/idevice/{ideviceId}` | `objectid → itemnumber` (DEC-5-01); unknown → reject |
 | `result.score.scaled` | `scorepct = scaled*100` |
-| `context.extensions[weight]` | effective relative weight in 1..100; persisted with the current iDevice attempt row |
+| `context.extensions[idevice-weight]` | effective relative weight in 1..100; persisted with the current iDevice attempt row |
 | `context.extensions[idevice-order]` | deterministic largest-remainder tie-break order |
 | `result.success` / `result.completion` | `status` / `completion` |
 | `context.extensions[package-id]` | instance ownership check |
