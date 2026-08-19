@@ -564,6 +564,87 @@ final class ingestor_test extends \advanced_testcase {
         $this->assertSame('incomplete', $this->attempt($instance, $student->id, 0)->status);
     }
 
+    /**
+     * The wire shape is verified against statements captured from the SHIPPED emitter,
+     * not against statements this test builds itself.
+     *
+     * Every other census test here constructs its own payload, so both sides of the
+     * contract are written by the same hand and agree by construction. This one reads
+     * `tests/fixtures/exelearning_emitter_statements.json`, produced by running
+     * `public/app/common/xapi/exe_xapi.js` from the eXeLearning repository, so a change
+     * to the emitted keys fails here instead of silently emptying the census in
+     * production. The emitter first shipped these entries keyed by full extension IRIs,
+     * which this parser skips entry by entry — the feature would have been dead on
+     * arrival with no error anywhere. See ADR-2302-01 upstream.
+     */
+    public function test_real_emitter_statements_drive_the_reconstruction(): void {
+        global $DB;
+        [$instance, $student, $course, $cm] = $this->create_activity(['grademodel' => 0]);
+        $items = $this->items($instance);
+
+        $captured = json_decode(
+            file_get_contents(__DIR__ . '/../../fixtures/exelearning_emitter_statements.json'),
+            true
+        );
+        $this->assertIsArray($captured);
+        $this->assertCount(3, $captured);
+
+        // Re-point the captured iDevice identifiers at this activity's grade items,
+        // keeping every other byte the emitter produced untouched.
+        $ext = 'https://exelearning.net/xapi/extensions/';
+        $map = ['idevice-a' => $items[0]->objectid, 'idevice-b' => $items[1]->objectid];
+        [$initialized, $answered, $terminated] = $captured;
+        foreach ([&$initialized, &$terminated] as &$lifecycle) {
+            foreach ($lifecycle['context']['extensions'][$ext . 'idevice-census'] as $i => $entry) {
+                if (isset($map[$entry['idevice-id']])) {
+                    $lifecycle['context']['extensions'][$ext . 'idevice-census'][$i]['idevice-id']
+                        = $map[$entry['idevice-id']];
+                }
+            }
+        }
+        unset($lifecycle);
+        $answered['context']['extensions'][$ext . 'idevice-id']
+            = $map[$answered['context']['extensions'][$ext . 'idevice-id']];
+
+        // The captured lifecycle statements really do carry the gradable iDevices,
+        // including the one the learner never answers. That is the point of the census.
+        $this->assertSame('http://adlnet.gov/expapi/verbs/initialized', $initialized['verb']['id']);
+        $this->assertSame('http://adlnet.gov/expapi/verbs/terminated', $terminated['verb']['id']);
+        $this->assertCount(2, $initialized['context']['extensions'][$ext . 'idevice-census']);
+        // The page-unload copy is the complete one: it also holds an iDevice that
+        // registered after the deferred flush had already gone out.
+        $this->assertCount(3, $terminated['context']['extensions'][$ext . 'idevice-census']);
+
+        ingestor::ingest($instance, $course, $cm, $student->id, $initialized, 'real-reg', false);
+
+        // The census reached the grade items with the emitter's own weights and order.
+        foreach ([[0, 25.0, 1], [1, 75.0, 2]] as [$index, $weight, $order]) {
+            $stored = $DB->get_record('exelearning_grade_item', [
+                'exelearningid' => $instance->id,
+                'itemnumber'    => $items[$index]->itemnumber,
+            ]);
+            $this->assertEqualsWithDelta($weight, (float) $stored->xapiweight, 0.0001);
+            $this->assertSame($order, (int) $stored->xapiorder);
+        }
+
+        $result = ingestor::ingest($instance, $course, $cm, $student->id, $answered, 'real-reg', false);
+
+        // Perfect on the weight-25 iDevice with the weight-75 one untouched: 25, and
+        // the multipage package emitted no verdict of its own for us to fall back on.
+        $this->assertEqualsWithDelta(25.0, $result['rawscore'], 0.0001);
+        $this->assertSame('incomplete', $this->attempt($instance, $student->id, 0)->status);
+
+        // The page-unload census is ingested too, and re-learning the same package
+        // metadata is idempotent rather than a second, conflicting truth.
+        ingestor::ingest($instance, $course, $cm, $student->id, $terminated, 'real-reg', false);
+        $stored = $DB->get_record('exelearning_grade_item', [
+            'exelearningid' => $instance->id,
+            'itemnumber'    => $items[0]->itemnumber,
+        ]);
+        $this->assertEqualsWithDelta(25.0, (float) $stored->xapiweight, 0.0001);
+        $this->assertSame(1, (int) $stored->xapiorder);
+    }
+
     public function test_census_is_package_metadata_reused_by_every_learner(): void {
         global $DB;
         [$instance, $first, $course, $cm] = $this->create_activity(['grademodel' => 0]);

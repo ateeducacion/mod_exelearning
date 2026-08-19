@@ -1,0 +1,160 @@
+[
+    {
+        "id": "2becfbac-57c5-44f9-a285-311e02e2137d",
+        "actor": {
+            "objectType": "Agent",
+            "account": {
+                "homePage": "https://exelearning.net/xapi/PKG1",
+                "name": "anonymous"
+            }
+        },
+        "verb": {
+            "id": "http://adlnet.gov/expapi/verbs/initialized",
+            "display": {
+                "en-US": "initialized"
+            }
+        },
+        "object": {
+            "id": "https://exelearning.net/xapi/PKG1",
+            "objectType": "Activity",
+            "definition": {
+                "type": "http://adlnet.gov/expapi/activities/assessment",
+                "name": {
+                    "en": "Weighted demo"
+                }
+            }
+        },
+        "timestamp": "2026-08-19T15:14:04.280Z",
+        "context": {
+            "extensions": {
+                "https://exelearning.net/xapi/extensions/package-id": "PKG1",
+                "https://exelearning.net/xapi/extensions/page-id": "page-one",
+                "https://exelearning.net/xapi/extensions/page-title": "Page one",
+                "https://exelearning.net/xapi/extensions/page-count": 2,
+                "https://exelearning.net/xapi/extensions/idevice-census": [
+                    {
+                        "idevice-id": "idevice-a",
+                        "idevice-weight": 25,
+                        "idevice-order": 1
+                    },
+                    {
+                        "idevice-id": "idevice-b",
+                        "idevice-weight": 75,
+                        "idevice-order": 2
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "id": "1c3794a0-3cc2-4b8d-998d-e5c379fd7adb",
+        "actor": {
+            "objectType": "Agent",
+            "account": {
+                "homePage": "https://exelearning.net/xapi/PKG1",
+                "name": "anonymous"
+            }
+        },
+        "verb": {
+            "id": "http://adlnet.gov/expapi/verbs/answered",
+            "display": {
+                "en-US": "answered"
+            }
+        },
+        "object": {
+            "id": "https://exelearning.net/xapi/PKG1/idevice/idevice-a",
+            "objectType": "Activity",
+            "definition": {
+                "type": "http://adlnet.gov/expapi/activities/cmi.interaction",
+                "name": {
+                    "en": "A"
+                },
+                "extensions": {
+                    "https://exelearning.net/xapi/extensions/idevice-type": "trueorfalse"
+                }
+            }
+        },
+        "timestamp": "2026-08-19T15:14:04.280Z",
+        "result": {
+            "score": {
+                "scaled": 1,
+                "raw": 10,
+                "min": 0,
+                "max": 10
+            },
+            "success": true,
+            "completion": true
+        },
+        "context": {
+            "contextActivities": {
+                "parent": [
+                    {
+                        "id": "https://exelearning.net/xapi/PKG1"
+                    }
+                ]
+            },
+            "extensions": {
+                "https://exelearning.net/xapi/extensions/package-id": "PKG1",
+                "https://exelearning.net/xapi/extensions/page-id": "page-one",
+                "https://exelearning.net/xapi/extensions/page-title": "Page one",
+                "https://exelearning.net/xapi/extensions/page-count": 2,
+                "https://exelearning.net/xapi/extensions/idevice-id": "idevice-a",
+                "https://exelearning.net/xapi/extensions/idevice-type": "trueorfalse",
+                "https://exelearning.net/xapi/extensions/idevice-order": 1,
+                "https://exelearning.net/xapi/extensions/idevice-weight": 25
+            }
+        }
+    },
+    {
+        "id": "f45452c1-7bc4-4a32-a167-72c12fd502b9",
+        "actor": {
+            "objectType": "Agent",
+            "account": {
+                "homePage": "https://exelearning.net/xapi/PKG1",
+                "name": "anonymous"
+            }
+        },
+        "verb": {
+            "id": "http://adlnet.gov/expapi/verbs/terminated",
+            "display": {
+                "en-US": "terminated"
+            }
+        },
+        "object": {
+            "id": "https://exelearning.net/xapi/PKG1",
+            "objectType": "Activity",
+            "definition": {
+                "type": "http://adlnet.gov/expapi/activities/assessment",
+                "name": {
+                    "en": "Weighted demo"
+                }
+            }
+        },
+        "timestamp": "2026-08-19T15:14:04.280Z",
+        "context": {
+            "extensions": {
+                "https://exelearning.net/xapi/extensions/package-id": "PKG1",
+                "https://exelearning.net/xapi/extensions/page-id": "page-one",
+                "https://exelearning.net/xapi/extensions/page-title": "Page one",
+                "https://exelearning.net/xapi/extensions/page-count": 2,
+                "https://exelearning.net/xapi/extensions/idevice-census": [
+                    {
+                        "idevice-id": "idevice-a",
+                        "idevice-weight": 25,
+                        "idevice-order": 1
+                    },
+                    {
+                        "idevice-id": "idevice-b",
+                        "idevice-weight": 75,
+                        "idevice-order": 2
+                    },
+                    {
+                        "idevice-id": "idevice-late",
+                        "idevice-weight": 50,
+                        "idevice-order": 3
+                    }
+                ]
+            }
+        }
+    }
+]

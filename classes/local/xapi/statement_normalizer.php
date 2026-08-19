@@ -345,6 +345,10 @@ class statement_normalizer {
      * @return array<string, array{weight: float, ideviceorder: int}> Possibly empty.
      */
     private static function census(array $statement): array {
+        // Entry keys are SHORT names, not the full extension IRIs: xAPI constrains only
+        // the keys of the extensions map, and the emitter nests short names inside the
+        // value. The shape is fixed by ADR-2302-01 upstream; a drift back to IRI keys
+        // would silently empty the census, so a normalizer test pins it.
         $extensions = $statement['context']['extensions'] ?? [];
         if (!is_array($extensions)) {
             return [];

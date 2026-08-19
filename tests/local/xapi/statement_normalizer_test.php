@@ -279,6 +279,35 @@ final class statement_normalizer_test extends \advanced_testcase {
     }
 
     /**
+     * Census entries use SHORT keys, and a full-IRI-keyed entry is not silently
+     * accepted.
+     *
+     * This is a contract drift guard, not a feature. The emitter first shipped the
+     * census with the full extension IRIs as the keys INSIDE each entry, which this
+     * parser skips: every entry would hit the `continue`, `census()` would return an
+     * empty array, `record_census()` would never fire, and the whole feature would be
+     * dead with the plugin reporting no error at all. The shape is fixed by
+     * ADR-2302-01 in the eXeLearning repository; if it ever moves again, this test
+     * fails instead of the feature going quiet.
+     */
+    public function test_census_entries_with_iri_keys_are_ignored(): void {
+        $iri = 'https://exelearning.net/xapi/extensions/';
+        $statement = [
+            'id'   => self::UUID,
+            'verb' => ['id' => 'http://adlnet.gov/expapi/verbs/initialized'],
+            'object' => ['id' => 'https://exelearning.net/xapi/abc'],
+            'context' => ['extensions' => [statement_normalizer::EXT_IDEVICE_CENSUS => [
+                [$iri . 'idevice-id' => 'ide-1', $iri . 'idevice-weight' => 25, $iri . 'idevice-order' => 1],
+            ]]],
+        ];
+
+        $out = statement_normalizer::normalize($statement);
+
+        $this->assertTrue($out['ok']);
+        $this->assertSame([], $out['census']);
+    }
+
+    /**
      * A statement with no census yields an empty one, never a failure.
      */
     public function test_absent_census_is_empty(): void {
