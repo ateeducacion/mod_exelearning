@@ -42,6 +42,107 @@ The "common internal model" the dual layer needs **already exists** and is reuse
 xAPI therefore does **not** add a new neutral layer or header+detail tables. At most it adds
 **one** optional audit/dedup table (`exelearning_tracking_events`, `statementid` UNIQUE).
 
+## Architecture at a glance
+
+Current state — the channel is **exclusive per package** (`libs/xapi/exe_xapi.js` present → xAPI,
+otherwise SCORM; the SCORM runtime is kept inert when xAPI is primary), and today's real
+convergence point is `track::apply_item_scores()` / `attempts::record_item()`. The OVERALL is
+deliberately **not** a single box yet: the two channels compute it differently (see the follow-up
+in PR #105).
+
+```text
+                    eXeLearning package
+                  content.xml / extracted ELPX
+                            │
+                            ▼
+                    mod_exelearning
+                            │
+                  tracking channel selection
+                            │
+          libs/xapi/exe_xapi.js present?
+                    /               \
+                  yes                no
+                   │                  │
+                   ▼                  ▼
+                 xAPI               SCORM
+          xapi_listener.js       scorm_tracker.js
+                   │                  │
+                   ▼                  ▼
+            xapi_track.php       track::ingest()
+                   │
+                   ▼
+       xapi\ingestor::ingest()
+       ├─ statement_normalizer
+       ├─ census / package state
+       └─ xAPI overall reconstruction
+                   │                  │
+                   └────────┬─────────┘
+                            ▼
+               track::apply_item_scores()
+                            │
+                            ▼
+                attempts::record_item()
+                            │
+                            ▼
+                shared attempt model
+                            │
+               ┌────────────┴────────────┐
+               │                         │
+            PERITEM                   OVERALL
+               │                         │
+               │              ┌──────────┴──────────┐
+               │              │                     │
+               │           SCORM                  xAPI
+               │      continuous weighted     census +
+               │          average          largest-remainder
+               │
+               └──────────────┬─────────────────────┘
+                              ▼
+                         grade_update()
+                              │
+                              ▼
+                      Moodle gradebook
+```
+
+Target after the PR #105 follow-up (SCORM learns per-iDevice weights onto the same grade-item
+columns the census uses), when a single normalized per-item state becomes literal:
+
+```text
+SCORM ─────┐
+           │
+           ▼
+   normalized per-item state
+           │
+xAPI ──────┘
+           │
+           ▼
+    shared scoring service
+      ├─ PERITEM
+      └─ OVERALL
+           │
+           ▼
+      grade_update()
+```
+
+### Why `core_xapi` is not part of this architecture
+
+`core_xapi` was evaluated as an alternative transport layer but is intentionally not used by
+`mod_exelearning`. It provides statement routing and validation but does not replace the
+module-specific attempt, grading, package-census, normalization, or postMessage relay
+responsibilities (`mod_h5pactivity`, its reference consumer, implements all of those itself too).
+Adopting it would also require changing the current session-attributed anonymous-emitter security
+model. It would therefore add an integration layer without materially removing the module-specific
+tracking implementation. This is a **scope decision**, recorded in [[DEC-85-01]]; a `core_xapi`
+events/analytics handler remains a possible follow-up on top of — not instead of — this pipeline.
+
+One property of that decision is load-bearing and deserves stating on its own:
+
+> **The learner's identity belongs to the Moodle session, never to the statement the content
+> sends.** The statement's actor is ignored by design and grading is attributed to the
+> authenticated `$USER`. This is not an accidental incompatibility with `core_xapi`'s
+> actor-validation model — it is the security property that makes an anonymous, world-readable
+> emitter safe to ship inside every exported package.
+
 ## Flow
 
 ```mermaid
