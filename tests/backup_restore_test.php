@@ -114,6 +114,7 @@ final class backup_restore_test extends advanced_testcase {
 
         \mod_exelearning\local\attempts::record_item($instance->id, $student->id, 1, 0, 70.0, 100.0, 'completed', 'sx');
         \mod_exelearning\local\attempts::record_item($instance->id, $student->id, 1, 1, 80.0, 100.0, 'completed', 'sx');
+        \mod_exelearning\local\attempts::record_xapi_state($instance->id, $student->id, 1, 1, 25.0, 3);
 
         // Stamp a known contenthash on a source grade item: it backs the
         // stale-grades warning (DEC-12-01) and must round-trip through backup.
@@ -154,6 +155,13 @@ final class backup_restore_test extends advanced_testcase {
             'exelearningid' => $restoredinstance->id, 'userid' => $student->id,
         ]);
         $this->assertCount(2, $attempts);
+        $restoreditemattempt = $DB->get_record('exelearning_attempt', [
+            'exelearningid' => $restoredinstance->id,
+            'userid' => $student->id,
+            'itemnumber' => 1,
+        ], '*', MUST_EXIST);
+        $this->assertEqualsWithDelta(25.0, (float) $restoreditemattempt->xapiweight, 0.0001);
+        $this->assertSame(3, (int) $restoreditemattempt->xapiorder);
     }
 
     /**

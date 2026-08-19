@@ -54,6 +54,8 @@ class provider implements
             'maxscore'     => 'privacy:metadata:exelearning_attempt:maxscore',
             'scaledscore'  => 'privacy:metadata:exelearning_attempt:scaledscore',
             'status'       => 'privacy:metadata:exelearning_attempt:status',
+            'xapiweight'   => 'privacy:metadata:exelearning_attempt:xapiweight',
+            'xapiorder'    => 'privacy:metadata:exelearning_attempt:xapiorder',
             'timecreated'  => 'privacy:metadata:exelearning_attempt:timecreated',
             'timemodified' => 'privacy:metadata:exelearning_attempt:timemodified',
         ], 'privacy:metadata:exelearning_attempt');
@@ -269,6 +271,8 @@ class provider implements
                     'maxscore'     => $a->maxscore,
                     'scaledscore'  => $a->scaledscore,
                     'status'       => $a->status,
+                    'xapiweight'   => $a->xapiweight,
+                    'xapiorder'    => $a->xapiorder,
                     'timecreated'  => \core_privacy\local\request\transform::datetime($a->timecreated),
                     'timemodified' => \core_privacy\local\request\transform::datetime($a->timemodified),
                 ];

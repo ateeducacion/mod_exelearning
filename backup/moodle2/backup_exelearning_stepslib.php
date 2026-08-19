@@ -71,7 +71,8 @@ class backup_exelearning_activity_structure_step extends backup_activity_structu
 
         $attempt = new backup_nested_element('attempt', ['id'], [
             'userid', 'attempt', 'itemnumber', 'rawscore', 'maxscore',
-            'scaledscore', 'status', 'sessiontoken', 'timecreated', 'timemodified',
+            'scaledscore', 'status', 'sessiontoken', 'xapiweight', 'xapiorder',
+            'timecreated', 'timemodified',
         ]);
 
         // Build the tree.

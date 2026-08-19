@@ -25,8 +25,8 @@ namespace mod_exelearning\local\xapi;
  * scoring pipeline can ingest it unchanged (DEC-17-01). It performs the canonical,
  * citable validation fixed in DEC-0-18 *before* any grading happens, and it never
  * trusts the client: the actor, authority, stored and timestamp are ignored by the
- * caller; this class only reads `verb`, `object.id`, `result.score` and the stable
- * `idevice-id` extension.
+ * caller; this class only reads `verb`, `object.id`, `result.score`, and the documented
+ * eXeLearning context extensions.
  *
  * It is intentionally side-effect free (no DB, no globals) so it can be unit-tested in
  * isolation; ownership/objectid resolution and persistence live in {@see ingestor}.
@@ -41,6 +41,12 @@ class statement_normalizer {
 
     /** @var string The eXeLearning extension IRI carrying the stable raw iDevice id. */
     public const EXT_IDEVICE_ID = 'https://exelearning.net/xapi/extensions/idevice-id';
+
+    /** @var string Effective 1..100 relative weight introduced by upstream PR #2302. */
+    public const EXT_WEIGHT = 'https://exelearning.net/xapi/extensions/weight';
+
+    /** @var string Deterministic 1-based package-global iDevice render order. */
+    public const EXT_IDEVICE_ORDER = 'https://exelearning.net/xapi/extensions/idevice-order';
 
     /** @var string[] Verbs that carry a per-iDevice or package grade and are processed. */
     private const GRADING_VERBS = ['answered', 'completed', 'passed', 'failed'];
@@ -68,7 +74,8 @@ class statement_normalizer {
      * @return array {
      *     ok: bool, ignored?: bool, lifecycle?: bool, error?: string,
      *     verb?: string, statementid?: string, registration?: string,
-     *     objectid?: string, scaled?: float, itemscores?: array,
+     *     objectid?: string, scaled?: float, weight?: float|null,
+     *     ideviceorder?: int|null, itemscores?: array,
      *     overallpct?: float, status?: string, success?: bool
      * }
      */
@@ -131,28 +138,34 @@ class statement_normalizer {
             if ($objectid === null) {
                 return ['ok' => false, 'error' => 'objectidmissing'];
             }
+            $weightedmetadata = self::weighted_metadata($statement);
+            if ($weightedmetadata === false) {
+                return ['ok' => false, 'error' => 'invalidxapimetadata'];
+            }
             return $base + [
                 'objectid'   => $objectid,
                 'scaled'     => $scaled,
+                'weight'     => $weightedmetadata['weight'],
+                'ideviceorder' => $weightedmetadata['ideviceorder'],
                 'itemscores' => [
                     $objectid => [
                         // The scaled value is already normalised to [0,1] by the
                         // emitter (s/10 per iDevice), so scaled*100 is the percentage.
                         'scorepct' => $scaled * 100.0,
-                        // The per-iDevice weight is not carried by an answered
-                        // statement (it lives only in the package finalScore); the
-                        // per-item grade does not need it.
-                        'weighted' => 0.0,
+                        // Legacy packages omit weight/order and keep the old package-score
+                        // fallback. New packages expose the effective weight so Moodle can
+                        // reconstruct the overall independently (upstream PR #2302).
+                        'weighted' => $weightedmetadata['weight'] ?? 0.0,
                         'title'    => self::definition_name($statement),
                     ],
                 ],
             ];
         }
 
-        // Package verb: completed|passed|failed. The score is the producer's weighted
-        // finalScore (f/100); it is the authoritative overall (answered statements
-        // carry no weight to recompute it from — DEC-85-01). The caller still clamps it
-        // to the grade range server-side.
+        // Package verb: completed|passed|failed. New-contract attempts use this as a
+        // lifecycle/status signal and reconstruct the numeric overall from answered
+        // statements. Its score remains the compatibility fallback for packages that
+        // predate exelearning/exelearning#2302 (DEC-85-01).
         $status = ($verb === 'completed') ? 'completed' : $verb;
         // The `success` flag lives at result.success in xAPI (NOT result.score.success);
         // read it there, falling back to the verb (passed => true). It is an
@@ -234,6 +247,46 @@ class statement_normalizer {
             return $m[1];
         }
         return null;
+    }
+
+    /**
+     * Validate the additive weighted-score reconstruction contract.
+     *
+     * Both extensions are optional together for compatibility with packages exported
+     * before exelearning/exelearning#2302. If either one is present, both must be JSON
+     * numbers with the upstream effective domains: weight in 1..100 and a positive,
+     * integral package-global order.
+     *
+     * @param array $statement
+     * @return array{weight: float|null, ideviceorder: int|null}|false
+     */
+    private static function weighted_metadata(array $statement) {
+        $extensions = $statement['context']['extensions'] ?? [];
+        if (!is_array($extensions)) {
+            return false;
+        }
+        $hasweight = array_key_exists(self::EXT_WEIGHT, $extensions);
+        $hasorder = array_key_exists(self::EXT_IDEVICE_ORDER, $extensions);
+        if (!$hasweight && !$hasorder) {
+            return ['weight' => null, 'ideviceorder' => null];
+        }
+        if (!$hasweight || !$hasorder) {
+            return false;
+        }
+
+        $weightvalue = $extensions[self::EXT_WEIGHT];
+        $ordervalue = $extensions[self::EXT_IDEVICE_ORDER];
+        if (
+            (!is_int($weightvalue) && !is_float($weightvalue))
+            || !is_finite((float) $weightvalue)
+            || (float) $weightvalue < 1.0
+            || (float) $weightvalue > 100.0
+            || !is_int($ordervalue)
+            || $ordervalue < 1
+        ) {
+            return false;
+        }
+        return ['weight' => (float) $weightvalue, 'ideviceorder' => $ordervalue];
     }
 
     /**

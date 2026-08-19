@@ -284,6 +284,43 @@ class attempts {
     }
 
     /**
+     * Attach reconstructible xAPI scoring metadata to a current per-iDevice row.
+     *
+     * The score row is created first by the shared SCORM/xAPI grade pipeline. This
+     * second update is intentionally xAPI-specific and keeps the shared record_item()
+     * signature unchanged for every legacy caller. The surrounding ingestor lock makes
+     * the score and metadata updates one serialized operation for this user/activity.
+     *
+     * @param int $exelearningid Activity instance id.
+     * @param int $userid Attempt owner.
+     * @param int $attempt Attempt number.
+     * @param int $itemnumber Per-iDevice grade item number.
+     * @param float $weight Effective relative weight in 1..100.
+     * @param int $ideviceorder Deterministic 1-based package-global order.
+     * @return void
+     */
+    public static function record_xapi_state(
+        int $exelearningid,
+        int $userid,
+        int $attempt,
+        int $itemnumber,
+        float $weight,
+        int $ideviceorder
+    ): void {
+        global $DB;
+
+        $row = $DB->get_record('exelearning_attempt', [
+            'exelearningid' => $exelearningid,
+            'userid'        => $userid,
+            'attempt'       => $attempt,
+            'itemnumber'    => $itemnumber,
+        ], 'id', MUST_EXIST);
+        $row->xapiweight = $weight;
+        $row->xapiorder = $ideviceorder;
+        $DB->update_record('exelearning_attempt', $row);
+    }
+
+    /**
      * Aggregate a user's attempts for one item into a single scaled score.
      *
      * @param int $exelearningid

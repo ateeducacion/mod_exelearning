@@ -16,9 +16,11 @@
 >   not a `core_external` service. **Listener = an inline IIFE** `js/xapi_listener.js` (the
 >   `js/scorm_tracker.js` / DEC-74-01 pattern, Vitest-tested), not an `amd/src` module. Both delegate to
 >   `\mod_exelearning\local\xapi\statement_normalizer` + `\mod_exelearning\local\xapi\ingestor`.
-> - **Overall comes from the package statement** (`passed`/`failed`/`completed` `finalScore`), validated
->   server-side — per-iDevice `answered` statements carry no weight to recompute a weighted overall from
->   (refines §5 below and DEC-0-18 §2; honours DEC-6-01 by validating, not blind-trusting).
+> - **Weighted overall reconstruction depends on upstream
+>   [eXeLearning #2302](https://github.com/exelearning/exelearning/pull/2302).** New `answered`
+>   statements carry effective `weight` and deterministic `idevice-order` extensions. Moodle persists the
+>   latest state per stable `idevice-id` and reproduces eXeLearning's largest-remainder normalization across
+>   pages. Packages exported before #2302 keep the package-statement `finalScore` fallback.
 
 ## 1. Upstream contract (eXeLearning `exe_xapi.js`, PR #1867)
 
@@ -39,7 +41,8 @@ Verified by reading the source at commit `59b9b9b` (not a summary). The PR is **
   - per-iDevice `answered`: `object.id = {baseIri}/idevice/{ideviceId}`, `definition.type =
     .../cmi.interaction`, `result.score = { scaled: s/10, raw: s, min:0, max:10 }`,
     `success = s>=5`, `completion = true`, `contextActivities.parent = [{id: activityId}]`,
-    `context.extensions` (package-id, idevice-id, idevice-type, page-id, page-title).
+    `context.extensions` (package-id, idevice-id, idevice-type, page-id, page-title, and — after upstream
+    PR #2302 — numeric effective `weight` plus 1-based package-global `idevice-order`).
   - package `completed` + (`passed` if `finalScore>=50` else `failed`): `object` = package
     Activity (`definition.type = .../assessment`), `result.score = { scaled: f/100, raw: f,
     min:0, max:100 }`.
@@ -48,7 +51,8 @@ Verified by reading the source at commit `59b9b9b` (not a summary). The PR is **
 - **Actor**: `config.actor || launch.actor ||` anonymous
   `{ account: { homePage: baseIri, name: 'anonymous' } }`. The emitter never invents PII;
   the host is authoritative.
-- **De-dup**: in-page by `(key, verb, raw score)`; `statement.id` is a fresh UUID per emit.
+- **De-dup**: in-page by `(key, verb, raw score, effective weight, iDevice order)` after #2302;
+  `statement.id` is a fresh UUID per emit.
 
 cmi5 is explicitly **excluded** upstream.
 
@@ -112,8 +116,8 @@ The endpoint must:
 5. Resolve `object.id` → `ideviceId` → `exelearning_grade_item.objectid` → `itemnumber`
    for this instance; **reject** unknown ids.
 6. Normalize the statement to the existing `itemscores` shape and call
-   `track::apply_item_scores()`; take the package `passed`/`failed` as the overall (the
-   producer already weights it), re-validating server-side.
+   `track::apply_item_scores()`. When `weight` + `idevice-order` are present, persist the latest state and
+   reconstruct the exact overall server-side; otherwise retain the legacy package-score fallback.
 7. Idempotency: optionally persist by `statement.id` (`exelearning_tracking_events`).
 8. Bound every accepted field server-side (the body is attacker-controllable): sanitise +
    cap `registration` to `char(40)`/`PARAM_ALPHANUMEXT`, require a real RFC UUID for
@@ -131,6 +135,8 @@ The endpoint must:
 | `verb=initialized`/`terminated` | attempt open/close (via `registration` ↔ `sessiontoken`) |
 | `object.id = …/idevice/{ideviceId}` | `objectid → itemnumber` (DEC-5-01); unknown → reject |
 | `result.score.scaled` | `scorepct = scaled*100` |
+| `context.extensions[weight]` | effective relative weight in 1..100; persisted with the current iDevice attempt row |
+| `context.extensions[idevice-order]` | deterministic largest-remainder tie-break order |
 | `result.success` / `result.completion` | `status` / `completion` |
 | `context.extensions[package-id]` | instance ownership check |
 | `context.registration` | attempt grouping key |
@@ -138,7 +144,8 @@ The endpoint must:
 
 ## 6. Persistence, grading, completion
 
-- Reuse `exelearning_attempt` (flat, DEC-0-07). **No** header+detail tables.
+- Reuse `exelearning_attempt` (flat, DEC-0-07). Nullable `xapiweight` / `xapiorder` fields preserve the
+  new contract on current per-item rows. **No** header+detail tables.
 - Grading and completion are **unchanged**: the normalizer feeds the same
   `apply_item_scores` / `record_item` / `grade_update` / `completion_info::update_state`
   path the SCORM endpoint uses. No second grade-calculation path.
@@ -154,3 +161,6 @@ The endpoint must:
   ingestor + `config_injector` + `exelearning_tracking_events` + the `disableTracking` inert SCORM
   stub + PHPUnit/Vitest tests. SCORM 1.2 stays as the compatibility path for legacy packages
   (DEC-0-03); xAPI-primary for packages that emit it (DEC-85-01).
+- **Weighted follow-up (this change):** depends on upstream
+  [eXeLearning #2302](https://github.com/exelearning/exelearning/pull/2302) being merged first. The
+  Moodle listener needs no change because it already forwards complete statements.

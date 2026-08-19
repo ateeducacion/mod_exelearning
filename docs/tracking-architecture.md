@@ -10,8 +10,10 @@
 > SCORM. So a given package uses exactly one grade channel — no double-counting. The listener is the
 > inline IIFE `js/xapi_listener.js` and the endpoint is the plain script `xapi_track.php`
 > (sesskey, mirroring `track.php`), delegating to `\mod_exelearning\local\xapi\{statement_normalizer,
-> ingestor}`. The overall (`itemnumber=0`) is taken from the package statement and validated
-> server-side, because per-iDevice `answered` statements carry no weight.
+> ingestor}`. With the additive contract from upstream
+> [eXeLearning #2302](https://github.com/exelearning/exelearning/pull/2302), the overall
+> (`itemnumber=0`) is reconstructed from the latest per-iDevice score + weight + deterministic order.
+> Older packages retain the validated package-statement fallback.
 >
 > **Kill switch:** the site-admin setting *Use xAPI grading when the package supports it*
 > (`exelearning/xapiprimaryenabled`, default on; helper `exelearning_xapi_primary_enabled()`) turns the
@@ -54,7 +56,7 @@ flowchart TD
   LIS -->|"validate event.origin; POST sesskey + cmid + registration"| EP["xapi_track.php (plain AJAX, like track.php)"]
   EP -->|"statement_normalizer (validate, DEC-0-18) → ingestor; ignore actor → \$USER"| ITEMS
 
-  ITEMS["itemscores { objectid: { scorepct, weighted, title } }"] --> TR["track::apply_item_scores (+ overall from package statement)"]
+  ITEMS["itemscores { objectid: { scorepct, weighted, title } }"] --> TR["track::apply_item_scores + weighted_score_calculator"]
   TR --> AT["attempts::record_item / aggregate_scaled  (exelearning_attempt, flat)"]
   AT --> GB["grade_update() → Moodle gradebook"]
   AT --> CO["completion_info::update_state()"]
@@ -74,6 +76,8 @@ to the SCORM endpoint today):
 - Respect `gradeenabled` (DEC-13-07): when grading is off there are no grade items, so
   statements route nowhere (a no-op, consistent with rejecting unknown objectids).
 - Re-validate the overall on the server (spirit of DEC-6-01).
+- Validate `weight` as a JSON number in 1..100 and `idevice-order` as a positive JSON integer; accept
+  neither field alone. Their joint absence selects the backward-compatible package-score path.
 - `postMessage`: the host injects `parentOrigin = <Moodle origin>` and the listener checks
   `event.origin` against the iframe `pluginfile.php` origin; `'*'`/mismatch is rejected
   (RIE-013).
@@ -108,16 +112,10 @@ bounded server-side:
   tracker's dirty-resend; the server is idempotent by `statement.id`, so a resend never
   double-grades. Without it a single transient `500` would lose that statement's grade,
   whereas the SCORM path self-heals.
-- **Answered-only attempts have no overall row.** The authoritative overall (`itemnumber=0`)
-  is taken from the package `passed`/`failed`/`completed` statement, emitted right after the
-  per-iDevice `answered` ones. If that terminal statement never arrives (e.g. the learner
-  closes the tab in the gap, now also covered by the resend above for transient failures),
-  the attempt has per-iDevice rows but **no** `itemnumber=0` row, so the front-page
-  participation summary, `completionstatusrequired`/passgrade completion, and the
-  `aggregate_scaled(itemnumber=0)` overall reflect only package-bearing attempts. This is the
-  documented cost of taking the weighted overall from the package statement (the per-iDevice
-  `answered` statements carry no weight to recompute it from); the SCORM path instead writes
-  an overall on every commit. Pinned by `ingestor_test::test_answered_only_attempt_has_no_overall_row`.
+- **Answered-only compatibility differs by contract version.** A #2302 `answered` statement updates an
+  `incomplete` overall immediately, so a lost package lifecycle statement does not lose the grade. A legacy
+  xAPI `answered` statement has no weight/order and therefore still creates no overall row until its package
+  statement arrives. Package verbs remain authoritative for terminal status in both paths.
 - **Concurrent same-attempt writes.** `attempts::record_item` is a check-then-insert guarded
   by a per-`(instance,user)` lock; on a 5 s lock-timeout it proceeds unlocked (the documented
   SCORM degraded mode it is shared with). A genuine `UNIQUE(exelearningid,userid,attempt,

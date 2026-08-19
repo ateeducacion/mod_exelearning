@@ -36,10 +36,10 @@ use mod_exelearning\local\track;
  * recomputes/clamps the overall server-side, and is idempotent by `statement.id`
  * (`exelearning_tracking_events`).
  *
- * The overall (`itemnumber=0`) is taken from the package `passed/failed/completed`
- * statement — the producer's *weighted* finalScore — because per-iDevice `answered`
- * statements carry no weight (DEC-85-01); it is validated and clamped server-side
- * rather than blindly trusted (spirit of DEC-6-01).
+ * For packages implementing the additive contract from exelearning/exelearning#2302,
+ * the overall (`itemnumber=0`) is reconstructed from the latest per-iDevice score,
+ * effective weight, and deterministic order. Older packages omit those extensions and
+ * retain the DEC-85-01 package-statement finalScore fallback.
  *
  * @package    mod_exelearning
  * @copyright  2026 ATE (Área de Tecnología Educativa)
@@ -166,41 +166,59 @@ class ingestor {
                 $peritem = track::apply_item_scores($exe, $userid, $attempt, $norm['itemscores'], $registration);
                 $result['objectid'] = $norm['objectid'];
                 $result['peritem'] = $peritem;
-                // The package statement (emitted right after each answered) carries the
-                // authoritative overall, so attempt_started is the only lifecycle event
-                // to fire here (on the commit that creates the attempt).
+
+                // New-contract statements carry both fields together. Persist them on
+                // the upserted per-item row so navigation to another iframe document does
+                // not lose prior page contributions. Re-answering updates this same row.
+                if ($norm['weight'] !== null && $norm['ideviceorder'] !== null && $peritem !== []) {
+                    $itemnumber = (int) array_key_first($peritem);
+                    attempts::record_xapi_state(
+                        $exe->id,
+                        $userid,
+                        $attempt,
+                        $itemnumber,
+                        (float) $norm['weight'],
+                        (int) $norm['ideviceorder']
+                    );
+                    $reconstructed = self::reconstruct_overall_pct($exe->id, $userid, $attempt);
+                    if ($reconstructed !== null) {
+                        $overall = ($reconstructed / 100.0) * $grademax;
+                        $result['rawscore'] = self::record_overall(
+                            $exe,
+                            $userid,
+                            $attempt,
+                            $overall,
+                            'incomplete',
+                            $registration,
+                            $grademax,
+                            $grademethod,
+                            $grademodel
+                        );
+                    }
+                }
+                // Package lifecycle statements still determine terminal status. The
+                // answered event only creates the attempt and, for new packages, makes
+                // the independently reconstructed grade durable immediately.
                 self::maybe_emit_started($exe, $course, $cm, $userid, $attempt, $attemptexisted);
             } else {
-                // Package verb: the overall (itemnumber=0). Take the producer's weighted
-                // finalScore, validate-and-clamp to the grade range (DEC-85-01/DEC-6-01).
-                $overall = max($grademin, min($grademax, ((float) $norm['overallpct'] / 100.0) * $grademax));
+                // Package verbs remain the lifecycle/status signal. For a new-contract
+                // attempt, preserve the independently reconstructed numeric result; only
+                // legacy attempts still use the package's page-local finalScore.
+                $reconstructed = self::reconstruct_overall_pct($exe->id, $userid, $attempt);
+                $overallpct = $reconstructed ?? (float) $norm['overallpct'];
+                $overall = max($grademin, min($grademax, ($overallpct / 100.0) * $grademax));
                 $status = (string) $norm['status'];
-                attempts::record_item($exe->id, $userid, $attempt, 0, $overall, $grademax, $status, $registration);
-                $scaledoverall = attempts::aggregate_scaled($exe->id, $userid, 0, $grademethod);
-                $finaloverall = ($scaledoverall === null) ? $overall : ($scaledoverall * $grademax);
-
-                // Publish the aggregated overall ONLY in OVERALL mode (DEC-25-01); in
-                // PERITEM the per-iDevice columns carry the gradebook and the overall
-                // item exists only for completionpassgrade.
-                if ($grademodel === EXELEARNING_GRADEMODEL_OVERALL) {
-                    grade_update(
-                        'mod/exelearning',
-                        $exe->course,
-                        'mod',
-                        'exelearning',
-                        $exe->id,
-                        0,
-                        (object) ['userid' => $userid, 'rawgrade' => $finaloverall, 'feedback' => null],
-                        [
-                            'gradetype' => GRADE_TYPE_VALUE,
-                            'grademax'  => $exe->grademax ?? 100,
-                            'grademin'  => $exe->grademin ?? 0,
-                            'display'   => (int) ($exe->gradedisplaytype ?? GRADE_DISPLAY_TYPE_DEFAULT),
-                            'itemname'  => clean_param($exe->name, PARAM_NOTAGS),
-                            'hidden'    => 0,
-                        ]
-                    );
-                }
+                $finaloverall = self::record_overall(
+                    $exe,
+                    $userid,
+                    $attempt,
+                    $overall,
+                    $status,
+                    $registration,
+                    $grademax,
+                    $grademethod,
+                    $grademodel
+                );
                 $result['rawscore'] = $finaloverall;
                 $result['status'] = $status;
 
@@ -230,6 +248,93 @@ class ingestor {
                 $lock->release();
             }
         }
+    }
+
+    /**
+     * Reconstruct the exact current package score from persisted new-contract rows.
+     *
+     * The attempt table is already the latest-state map: its unique key contains one
+     * row per itemnumber, and a repeated answer overwrites that row. Nullable xAPI
+     * metadata excludes legacy SCORM and pre-#2302 xAPI rows from this path.
+     *
+     * @param int $exelearningid Activity instance id.
+     * @param int $userid Attempt owner.
+     * @param int $attempt Attempt number.
+     * @return float|null Percentage in 0..100, or null for a legacy/no-state attempt.
+     */
+    private static function reconstruct_overall_pct(int $exelearningid, int $userid, int $attempt): ?float {
+        global $DB;
+
+        $rows = $DB->get_records_select(
+            'exelearning_attempt',
+            'exelearningid = ? AND userid = ? AND attempt = ? AND itemnumber > 0'
+                . ' AND xapiweight IS NOT NULL AND xapiorder IS NOT NULL',
+            [$exelearningid, $userid, $attempt],
+            'xapiorder ASC, itemnumber ASC',
+            'itemnumber, scaledscore, xapiweight, xapiorder'
+        );
+        $items = [];
+        foreach ($rows as $row) {
+            $items[] = [
+                'scorepct' => (float) $row->scaledscore * 100.0,
+                'weight' => (float) $row->xapiweight,
+                'ideviceorder' => (int) $row->xapiorder,
+            ];
+        }
+        return weighted_score_calculator::calculate($items);
+    }
+
+    /**
+     * Persist and, in OVERALL mode, publish one overall result.
+     *
+     * @param \stdClass $exe Activity instance.
+     * @param int $userid Attempt owner.
+     * @param int $attempt Attempt number.
+     * @param float $overall Raw overall in the activity grade range.
+     * @param string $status completed|passed|failed|incomplete.
+     * @param string $registration Attempt-grouping token.
+     * @param float $grademax Activity maximum grade.
+     * @param int $grademethod Cross-attempt aggregation method.
+     * @param int $grademodel OVERALL or PERITEM.
+     * @return float Aggregated overall grade.
+     */
+    private static function record_overall(
+        \stdClass $exe,
+        int $userid,
+        int $attempt,
+        float $overall,
+        string $status,
+        string $registration,
+        float $grademax,
+        int $grademethod,
+        int $grademodel
+    ): float {
+        attempts::record_item($exe->id, $userid, $attempt, 0, $overall, $grademax, $status, $registration);
+        $scaledoverall = attempts::aggregate_scaled($exe->id, $userid, 0, $grademethod);
+        $finaloverall = ($scaledoverall === null) ? $overall : ($scaledoverall * $grademax);
+
+        // Publish the aggregated overall ONLY in OVERALL mode (DEC-25-01); in
+        // PERITEM the per-iDevice columns carry the gradebook.
+        if ($grademodel === EXELEARNING_GRADEMODEL_OVERALL) {
+            grade_update(
+                'mod/exelearning',
+                $exe->course,
+                'mod',
+                'exelearning',
+                $exe->id,
+                0,
+                (object) ['userid' => $userid, 'rawgrade' => $finaloverall, 'feedback' => null],
+                [
+                    'gradetype' => GRADE_TYPE_VALUE,
+                    'grademax'  => $exe->grademax ?? 100,
+                    'grademin'  => $exe->grademin ?? 0,
+                    'display'   => (int) ($exe->gradedisplaytype ?? GRADE_DISPLAY_TYPE_DEFAULT),
+                    'itemname'  => clean_param($exe->name, PARAM_NOTAGS),
+                    'hidden'    => 0,
+                ]
+            );
+        }
+        return $finaloverall;
     }
 
     /**

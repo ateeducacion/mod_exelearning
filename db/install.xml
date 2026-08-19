@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="mod/exelearning/db" VERSION="20260617" COMMENT="XMLDB file for mod_exelearning"
+<XMLDB PATH="mod/exelearning/db" VERSION="20260819" COMMENT="XMLDB file for mod_exelearning"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -79,6 +79,8 @@
         <FIELD NAME="scaledscore"    TYPE="number" LENGTH="10" DECIMALS="5" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="rawscore/maxscore in 0..1."/>
         <FIELD NAME="status"         TYPE="char" LENGTH="20"  NOTNULL="true" DEFAULT="completed" SEQUENCE="false" COMMENT="completed|passed|failed|incomplete."/>
         <FIELD NAME="sessiontoken"   TYPE="char" LENGTH="40"  NOTNULL="false" SEQUENCE="false" COMMENT="Per page-load token so multiple auto-commits map to the same attempt."/>
+        <FIELD NAME="xapiweight"     TYPE="number" LENGTH="10" DECIMALS="5" NOTNULL="false" SEQUENCE="false" COMMENT="Effective relative iDevice weight from the xAPI answered statement; NULL for legacy/overall rows."/>
+        <FIELD NAME="xapiorder"      TYPE="int"  LENGTH="10"  NOTNULL="false" SEQUENCE="false" COMMENT="Deterministic 1-based package-global iDevice order from xAPI; NULL for legacy/overall rows."/>
         <FIELD NAME="timecreated"    TYPE="int"  LENGTH="10"  NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="timemodified"   TYPE="int"  LENGTH="10"  NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
       </FIELDS>

@@ -9,9 +9,10 @@
 
 - A site with `mod_exelearning` installed; *Site administration ▸ Plugins ▸ Activity modules ▸
   eXeLearning* shows **Use xAPI grading when the package supports it** (default **on**).
-- Two `.elpx` packages:
+- Three `.elpx` packages:
   - **LEGACY** — exported before the xAPI emitter (no `libs/xapi/exe_xapi.js`).
-  - **XAPI** — current export bundling `libs/xapi/exe_xapi.js`, with **several gradable iDevices on
+  - **XAPI-LEGACY** — export with the emitter but before eXeLearning #2302 (no weight/order extensions).
+  - **XAPI-WEIGHTED** — export from eXeLearning #2302 or later, with **several gradable iDevices on
     more than one page** (e.g. true/false, multiple-choice, drag-drop) so per-iDevice routing and the
     weighted overall are both exercised.
 - A teacher and at least one student account.
@@ -32,8 +33,8 @@
 |---|---|---|---|
 | 1 | **Legacy SCORM package still grades** | Add LEGACY activity, student answers iDevices | Grades land via `track.php`; **no** `xapi_track.php` calls; no `exelearning_tracking_events` rows. Unchanged from before this PR. |
 | 2 | **xAPI package, several iDevices (PERITEM)** | `grademodel` = per-iDevice (default). Student answers each iDevice | Each per-iDevice column is graded by `objectid` (correct column even across pages); POSTs go to `xapi_track.php`; `exelearning_tracking_events` has `answered` + a terminal `passed`/`completed`; overall row (`itemnumber=0`) present. |
-| 3 | **xAPI package, OVERALL mode** | `grademodel` = overall only | Single overall column = the package `finalScore`, clamped to the grade range; per-iDevice columns not published; completion/passgrade use the overall. |
-| 4 | **Tab close before the terminal statement** | Answer some iDevices, then **close the tab** before the package `passed/completed` posts | Per-iDevice rows exist but **no `itemnumber=0` overall row**; participation summary/passgrade reflect only package-bearing attempts. Confirm the monitoring query in `tracking-architecture.md` surfaces this `registration`. (Documented, intentional edge.) |
+| 3 | **Weighted xAPI package, OVERALL mode** | `grademodel` = overall only; answer 100 at weight 25 on page 1 and 40 at weight 75 on page 2 | Single overall column = **55**, reconstructed from latest per-iDevice state even though page 2's package-local `finalScore` is 40. Per-iDevice columns are not published. |
+| 4 | **Tab close before the package statement** | In XAPI-WEIGHTED, answer an iDevice and close before `passed/completed`; repeat with XAPI-LEGACY | Weighted package keeps an `incomplete` overall grade from `answered`; legacy xAPI keeps its prior behavior (no overall until a package statement). |
 | 5 | **Transient failure is retried (no lost grade)** | In devtools, throttle/block one `xapi_track.php` request (or return 500), then restore | The listener resends with backoff; the grade lands once the request succeeds. Compare to a permanent block: after the bounded retries it stops (no infinite loop). |
 | 6 | **Max attempts** | Set `maxattempt` = 1. Student completes attempt 1, then reloads for a fresh page-load (new `registration`) and answers | The second registration is rejected with HTTP **409** (`maxattemptsreached`); attempt count does not exceed the cap; the 409 is **not** retried by the listener. |
 | 7 | **Preview (teacher)** | Teacher opens the activity (preview/manage capability) and interacts | Statements are acknowledged but **not graded**; no `exelearning_attempt` / `exelearning_tracking_events` rows; a student who tampers `?mode=preview` still grades normally (server re-derives preview from capability). |

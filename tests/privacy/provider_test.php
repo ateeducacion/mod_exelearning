@@ -114,6 +114,8 @@ final class provider_test extends provider_testcase {
         $data = $writer->get_data([]);
         $this->assertNotEmpty($data->attempts);
         $this->assertCount(2, $data->attempts);
+        $this->assertArrayHasKey('xapiweight', $data->attempts[0]);
+        $this->assertArrayHasKey('xapiorder', $data->attempts[0]);
     }
 
     /**

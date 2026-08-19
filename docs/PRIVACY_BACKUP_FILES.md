@@ -31,7 +31,9 @@ scores into the Moodle gradebook via `grade_update()`
 | `maxscore` | Max score | `:79` |
 | `scaledscore` | `rawscore/maxscore` in 0..1 | `:80` |
 | `status` | `completed|passed|failed|incomplete` | `:81` |
-| `timecreated` / `timemodified` | Timestamps | `:83-84` |
+| `xapiweight` | Effective relative iDevice weight for reconstructing a weighted xAPI overall | `:82` |
+| `xapiorder` | Deterministic package-global iDevice order used for weight tie-breaking | `:83` |
+| `timecreated` / `timemodified` | Timestamps | `:84-85` |
 
 (`sessiontoken` exists in the table but is not exported — it is a per-page-load
 correlation token, not user-identifying.)
@@ -70,7 +72,7 @@ Reverse lookups for the privacy registry: `get_contexts_for_userid()`
 |---------|-----------|-------------|-----------------|
 | `exelearning` instance (all settings incl. `gradeenabled`, `grademodel`, `grademethod`, `gradepass`, `gradecat`, `maxattempt`, `reviewmode`, `teachermodevisible`) | Yes | always | `process_exelearning()` (`restore_…stepslib.php:60-96`) |
 | `exelearning_grade_item` | Yes | **always** (structural package metadata, not user data) | `process_exelearning_gradeitem()` (`:103-116`) |
-| `exelearning_attempt` | Yes | **only when `userinfo` is set** | `process_exelearning_attempt()` (`:123-137`) |
+| `exelearning_attempt` | Yes, including `xapiweight` / `xapiorder` | **only when `userinfo` is set** | `process_exelearning_attempt()` (`:123-137`) |
 | `intro` files | Yes | `annotate_files('mod_exelearning','intro')` | `add_related_files(...,'intro')` |
 | `package` files (ELPX source) | Yes | `annotate_files(...,'package')` | `add_related_files(...,'package')` |
 | `content` files (extracted site) | Yes | `annotate_files(...,'content')` | `add_related_files(...,'content')` |

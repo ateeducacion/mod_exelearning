@@ -79,17 +79,44 @@ final class ingestor_test extends \advanced_testcase {
      * @param string $objectid
      * @param float $scaled
      * @param string|null $id Statement id (auto-generated UUID when null).
+     * @param float|null $weight Effective relative weight for the new upstream contract.
+     * @param int|null $ideviceorder Deterministic package-global order.
      * @return array
      */
-    private function answered(string $objectid, float $scaled, ?string $id = null): array {
+    private function answered(
+        string $objectid,
+        float $scaled,
+        ?string $id = null,
+        ?float $weight = null,
+        ?int $ideviceorder = null
+    ): array {
+        $extensions = [statement_normalizer::EXT_IDEVICE_ID => $objectid];
+        if ($weight !== null && $ideviceorder !== null) {
+            $extensions[statement_normalizer::EXT_WEIGHT] = $weight;
+            $extensions[statement_normalizer::EXT_IDEVICE_ORDER] = $ideviceorder;
+        }
         return [
             'id'   => $id ?? \core\uuid::generate(),
             'actor' => ['account' => ['homePage' => 'https://x', 'name' => 'anonymous']],
             'verb' => ['id' => 'http://adlnet.gov/expapi/verbs/answered'],
             'object' => ['id' => 'https://exelearning.net/xapi/abc/idevice/' . $objectid],
             'result' => ['score' => ['scaled' => $scaled, 'raw' => $scaled * 10, 'min' => 0, 'max' => 10]],
-            'context' => ['extensions' => [statement_normalizer::EXT_IDEVICE_ID => $objectid]],
+            'context' => ['extensions' => $extensions],
         ];
+    }
+
+    /**
+     * All registered gradable items in stable itemnumber order.
+     *
+     * @param \stdClass $instance
+     * @return array<int, \stdClass>
+     */
+    private function items(\stdClass $instance): array {
+        global $DB;
+        return array_values($DB->get_records('exelearning_grade_item', [
+            'exelearningid' => $instance->id,
+            'deleted'       => 0,
+        ], 'itemnumber ASC', 'itemnumber, objectid'));
     }
 
     /**
@@ -162,6 +189,95 @@ final class ingestor_test extends \advanced_testcase {
         // In OVERALL mode the aggregated overall is published to the gradebook.
         $grades = grade_get_grades($instance->course, 'mod', 'exelearning', $instance->id, $student->id);
         $this->assertEqualsWithDelta(90.0, (float) $grades->items[0]->grades[$student->id]->grade, 0.0001);
+    }
+
+    public function test_multipage_answered_state_reconstructs_overall_instead_of_package_score(): void {
+        [$instance, $student, $course, $cm] = $this->create_activity(['grademodel' => 0]);
+        $items = $this->items($instance);
+
+        // Page 1: A=100 at weight 25. The new contract makes an incomplete overall
+        // durable immediately, even before its package lifecycle statement arrives.
+        $first = ingestor::ingest(
+            $instance,
+            $course,
+            $cm,
+            $student->id,
+            $this->answered($items[0]->objectid, 1.0, null, 25, 1),
+            'multipage-reg',
+            false
+        );
+        $this->assertEqualsWithDelta(100.0, $first['rawscore'], 0.0001);
+        $this->assertSame('incomplete', $this->attempt($instance, $student->id, 0)->status);
+
+        // Page 2 starts with a fresh emitter state and reports package finalScore=40.
+        // Moodle must retain A and reconstruct (100*25 + 40*75)/100 = 55.
+        ingestor::ingest(
+            $instance,
+            $course,
+            $cm,
+            $student->id,
+            $this->answered($items[1]->objectid, 0.4, null, 75, 2),
+            'multipage-reg',
+            false
+        );
+        $package = ingestor::ingest(
+            $instance,
+            $course,
+            $cm,
+            $student->id,
+            $this->package('passed', 0.4),
+            'multipage-reg',
+            false
+        );
+
+        $this->assertEqualsWithDelta(55.0, $package['rawscore'], 0.0001);
+        $this->assertEqualsWithDelta(55.0, (float) $this->attempt($instance, $student->id, 0)->rawscore, 0.0001);
+        $grades = grade_get_grades($instance->course, 'mod', 'exelearning', $instance->id, $student->id);
+        $this->assertEqualsWithDelta(55.0, (float) $grades->items[0]->grades[$student->id]->grade, 0.0001);
+    }
+
+    public function test_reanswer_replaces_the_current_idevice_contribution(): void {
+        global $DB;
+        [$instance, $student, $course, $cm] = $this->create_activity(['grademodel' => 0]);
+        $items = $this->items($instance);
+
+        ingestor::ingest(
+            $instance,
+            $course,
+            $cm,
+            $student->id,
+            $this->answered($items[0]->objectid, 0.4, null, 20, 1),
+            'reanswer-reg',
+            false
+        );
+        ingestor::ingest(
+            $instance,
+            $course,
+            $cm,
+            $student->id,
+            $this->answered($items[1]->objectid, 0.8, null, 80, 2),
+            'reanswer-reg',
+            false
+        );
+        $latest = ingestor::ingest(
+            $instance,
+            $course,
+            $cm,
+            $student->id,
+            $this->answered($items[0]->objectid, 1.0, null, 20, 1),
+            'reanswer-reg',
+            false
+        );
+
+        $this->assertEqualsWithDelta(84.0, $latest['rawscore'], 0.0001);
+        $this->assertSame(2, $DB->count_records_select(
+            'exelearning_attempt',
+            'exelearningid = ? AND userid = ? AND itemnumber > 0',
+            [$instance->id, $student->id]
+        ));
+        $firstrow = $this->attempt($instance, $student->id, (int) $items[0]->itemnumber);
+        $this->assertEqualsWithDelta(20.0, (float) $firstrow->xapiweight, 0.0001);
+        $this->assertSame(1, (int) $firstrow->xapiorder);
     }
 
     public function test_duplicate_statement_id_is_not_reapplied(): void {

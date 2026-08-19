@@ -73,6 +73,61 @@ final class statement_normalizer_test extends \advanced_testcase {
         $this->assertSame('ide-1', $out['objectid']);
         $this->assertEqualsWithDelta(0.7, $out['scaled'], 0.0001);
         $this->assertEqualsWithDelta(70.0, $out['itemscores']['ide-1']['scorepct'], 0.0001);
+        $this->assertNull($out['weight']);
+        $this->assertNull($out['ideviceorder']);
+    }
+
+    public function test_answered_exposes_weighted_scoring_metadata(): void {
+        $statement = $this->answered('ide-1', 0.7);
+        $statement['context']['extensions'][statement_normalizer::EXT_WEIGHT] = 25;
+        $statement['context']['extensions'][statement_normalizer::EXT_IDEVICE_ORDER] = 3;
+
+        $out = statement_normalizer::normalize($statement);
+
+        $this->assertTrue($out['ok']);
+        $this->assertSame(25.0, $out['weight']);
+        $this->assertSame(3, $out['ideviceorder']);
+        $this->assertSame(25.0, $out['itemscores']['ide-1']['weighted']);
+    }
+
+    /**
+     * Invalid weighted-contract extension combinations are rejected.
+     *
+     * @dataProvider invalid_weighted_metadata_provider
+     * @param mixed $weight
+     * @param mixed $order
+     */
+    public function test_invalid_weighted_metadata_is_rejected($weight, $order): void {
+        $statement = $this->answered('ide-1', 0.5);
+        if ($weight !== null) {
+            $statement['context']['extensions'][statement_normalizer::EXT_WEIGHT] = $weight;
+        }
+        if ($order !== null) {
+            $statement['context']['extensions'][statement_normalizer::EXT_IDEVICE_ORDER] = $order;
+        }
+
+        $out = statement_normalizer::normalize($statement);
+
+        $this->assertFalse($out['ok']);
+        $this->assertSame('invalidxapimetadata', $out['error']);
+    }
+
+    /**
+     * Invalid weighted-contract values for {@see test_invalid_weighted_metadata_is_rejected}.
+     *
+     * @return array<string, array{mixed, mixed}>
+     */
+    public static function invalid_weighted_metadata_provider(): array {
+        return [
+            'weight without order' => [25, null],
+            'order without weight' => [null, 1],
+            'zero weight' => [0, 1],
+            'weight above maximum' => [101, 1],
+            'numeric string weight' => ['25', 1],
+            'zero order' => [25, 0],
+            'fractional order' => [25, 1.5],
+            'numeric string order' => [25, '1'],
+        ];
     }
 
     public function test_objectid_falls_back_to_object_id_suffix(): void {

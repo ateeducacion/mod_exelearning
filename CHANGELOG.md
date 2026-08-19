@@ -11,6 +11,7 @@ User-visible changes per release. Each version matches a [GitHub release](https:
 ### Fixed
 
 - Deleting a student attempt asks for confirmation, so a stray click or a link prefetch can no longer discard grades
+- Overall xAPI grades can be reconstructed from the latest weighted iDevice results across multiple package pages
 - Uploading a style package no longer reports internal server details when it fails
 
 ## v4.0.2 – 2026-07-07

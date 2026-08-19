@@ -577,5 +577,21 @@ function xmldb_exelearning_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026072400, 'exelearning');
     }
 
+    // Stage 21 (2026081900): persist the additive xAPI weight/order contract from
+    // exelearning/exelearning#2302 on each current per-iDevice attempt row. Nullable
+    // fields preserve every legacy SCORM and pre-#2302 xAPI attempt unchanged.
+    if ($oldversion < 2026081900) {
+        $table = new xmldb_table('exelearning_attempt');
+        $weight = new xmldb_field('xapiweight', XMLDB_TYPE_NUMBER, '10, 5', null, null, null, null, 'sessiontoken');
+        if (!$dbman->field_exists($table, $weight)) {
+            $dbman->add_field($table, $weight);
+        }
+        $order = new xmldb_field('xapiorder', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'xapiweight');
+        if (!$dbman->field_exists($table, $order)) {
+            $dbman->add_field($table, $order);
+        }
+        upgrade_mod_savepoint(true, 2026081900, 'exelearning');
+    }
+
     return true;
 }
