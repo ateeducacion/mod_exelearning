@@ -319,7 +319,7 @@ class ingestor {
      * {@see track::apply_item_scores()}.
      *
      * @param int $exelearningid Activity instance id.
-     * @param array<string, array{weight: float, ideviceorder: int}> $census Keyed by objectid.
+     * @param array $census Keyed by objectid; each entry is ['weight' => float, 'ideviceorder' => int].
      * @return void
      */
     private static function record_census(int $exelearningid, array $census): void {
