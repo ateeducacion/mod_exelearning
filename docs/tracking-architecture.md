@@ -126,14 +126,17 @@ bounded server-side:
   terminal status itself from the activity's `gradepass` (`completed` when no pass grade is set). Without
   that, every multipage attempt would stay `incomplete` for ever: no `completionstatusrequired`, no
   `attempt_completed`. A package statement still wins when one does arrive.
-- **`initialized` / `terminated` are audit-only, and repeat.** Both are emitted once per page load and
-  once per `pagehide`, carry a null `result`, and in a multipage attempt arrive N times. Reading
-  `terminated` as end-of-attempt would close the attempt on the first page turn.
+- **`initialized` / `terminated` carry no grade of their own, and repeat.** Both are emitted once per
+  page load and once per `pagehide`, carry a null `result`, and in a multipage attempt arrive N times.
+  Reading `terminated` as end-of-attempt would close the attempt on the first page turn. They do carry
+  the page census, and a census change replays the ingesting learner's reconstruction — the case where
+  the census completes only after their last answer (answer page 1, then merely visit page 2).
 - **The package census is what makes partial attempts gradable.** The emitter only ever tracks what the
   learner answered (`common.js#sendScoreNew` tracks under `gameStarted || gameOver`), so renormalising over
   that subset would report 100 for a learner who only answered the lightest question. The
-  `idevice-census` extension on each page's `initialized` statement lists every evaluable iDevice of that
-  page, answered or not; Moodle learns it onto `exelearning_grade_item` (package metadata, shared by every
+  `idevice-census` extension on each page's `initialized` and `terminated` statements (the terminated
+  copy is the complete one — it is emitted after every registration, while the initialized copy is
+  flushed just after DOM-ready) lists every evaluable iDevice of that page, answered or not; Moodle learns it onto `exelearning_grade_item` (package metadata, shared by every
   learner and attempt) and from then on scores an unanswered iDevice as the 0 eXeLearning counts for it.
   One learner visiting all the pages is enough to make the package exactly gradable for everybody.
 - **Without a census, the overall waits for a fully answered attempt**, because only that carries the whole

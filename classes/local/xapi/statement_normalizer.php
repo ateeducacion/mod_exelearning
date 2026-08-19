@@ -63,7 +63,8 @@ class statement_normalizer {
     /**
      * @var string Roster of the evaluable iDevices rendered on the current page.
      *
-     * Rides on the per-page `initialized` statement and lists every evaluable iDevice of
+     * Rides on the per-page `initialized` and `terminated` statements (the terminated
+     * copy is the complete one) and lists every evaluable iDevice of
      * that page — answered or not — as `{idevice-id, idevice-weight, idevice-order}`. It
      * is the only way a consumer can learn the package's full weight vector: the emitter
      * only ever tracks what the learner answered, so without this an unanswered iDevice

@@ -34,10 +34,13 @@ use mod_exelearning\local\track;
  * `cmi.suspend_data` map on every commit — every registered iDevice, answered or not —
  * so {@see track::recompute_overall_pct()} can take a continuous weighted mean of it.
  * xAPI only ever sees the iDevices that emitted an `answered`, so the reconstruction
- * below waits until the package is fully reported and then replays eXeLearning's own
- * integer largest-remainder allocation ({@see weighted_score_calculator}). The two can
- * therefore differ by up to one allocated point on equal weights (33.33 vs 34 for three
- * equal thirds); that is the producer's own rounding, not a divergence introduced here.
+ * below has two paths: with a learned package census, unanswered iDevices enter at 0
+ * and a single answer already reconstructs an exact partial overall; without one, it
+ * waits until the package is fully reported. Both replay eXeLearning's own integer
+ * largest-remainder allocation ({@see weighted_score_calculator}). The result can
+ * therefore differ from a continuous mean by up to one allocated point on equal
+ * weights (33.33 vs 34 for three equal thirds); that is the producer's own rounding,
+ * not a divergence introduced here.
  *
  * Trust model (DEC-0-18): the caller has already authenticated the Moodle session and
  * resolved the instance; this class ignores the statement's actor/authority/stored
@@ -107,19 +110,31 @@ class ingestor {
             return ['ok' => true, 'duplicate' => true, 'verb' => $norm['verb']];
         }
 
-        // The package census (upstream PR 2302) rides on the per-page `initialized`
-        // statement and lists every evaluable iDevice of that page, answered or not. It
-        // is package metadata — identical for every user — so it is learned once onto
-        // exelearning_grade_item and from then on lets ANY learner's partial attempt be
-        // reconstructed exactly, including the iDevices they never opened.
-        if ($norm['census'] !== []) {
-            self::record_census($exe->id, $norm['census']);
-        }
+        // The package census (upstream PR 2302) rides on the per-page `initialized` and
+        // `terminated` statements (the terminated copy is the complete one) and lists
+        // every evaluable iDevice of that page, answered or not. It is package metadata
+        // — identical for every user — so it is learned once onto exelearning_grade_item
+        // and from then on lets ANY learner's partial attempt be reconstructed exactly,
+        // including the iDevices they never opened.
+        $censuschanged = ($norm['census'] !== []) && self::record_census($exe->id, $norm['census']);
 
-        // Lifecycle verbs carry no grade: record them for audit only.
+        // Lifecycle verbs carry no grade of their own: record them for audit. But the
+        // census they carry may have just completed the package for a learner whose LAST
+        // answer predates it — answer page 1, then merely visit page 2 — and no further
+        // `answered` statement will ever arrive to trigger the reconstruction. When the
+        // census actually changed, replay it for this learner's current attempt.
         if (!empty($norm['lifecycle'])) {
             self::record_event($exe->id, $userid, $norm, $registration);
-            return ['ok' => true, 'lifecycle' => true, 'verb' => $norm['verb']];
+            $republished = null;
+            if ($censuschanged && !empty($exe->gradeenabled)) {
+                $republished = self::republish_after_census($exe, $course, $cm, $userid, $registration);
+            }
+            $result = ['ok' => true, 'lifecycle' => true, 'verb' => $norm['verb']];
+            if ($republished !== null) {
+                $result['rawscore'] = $republished['rawscore'];
+                $result['status'] = $republished['status'];
+            }
+            return $result;
         }
 
         // Master grading switch (DEC-13-07): with grading off there are no grade items,
@@ -187,8 +202,10 @@ class ingestor {
                 if (!empty($norm['metadatawarning'])) {
                     debugging(
                         'mod_exelearning: ' . $norm['metadatawarning'] . ' on statement '
-                            . $norm['statementid'] . '; the iDevice score was graded but is '
-                            . 'excluded from the reconstructed overall.',
+                            . $norm['statementid'] . '; the iDevice score was graded but this '
+                            . 'statement does not trigger a reconstruction (once the package '
+                            . 'census is learned, the score still enters the overall through '
+                            . 'its censused weight).',
                         DEBUG_DEVELOPER
                     );
                 }
@@ -202,57 +219,18 @@ class ingestor {
                 // upserted per-item row, so navigating to another iframe document does not
                 // lose prior page contributions. Re-answering updates that same row.
                 if ($norm['weight'] !== null && $norm['ideviceorder'] !== null && $peritem !== []) {
-                    $reconstructed = self::reconstruct_overall_pct($exe->id, $userid, $attempt);
-                    if ($reconstructed !== null) {
-                        // Being able to compute a number is NOT the same as the attempt
-                        // being finished: with the package census a single answer already
-                        // yields an exact grade. The attempt ends when every gradable
-                        // iDevice has been answered, and that is also the only end signal
-                        // a multipage package will ever send — upstream emits NO
-                        // package-level verdict when pageCount > 1 (ADR-2302-01), so
-                        // without deriving it here every multipage attempt would stay
-                        // 'incomplete' for ever: no completionstatusrequired, no
-                        // attempt_completed. A package statement still overrides it when
-                        // one does arrive. Short of that, never downgrade a status a
-                        // package statement already set (DEC-68-01).
-                        $overall = ($reconstructed / 100.0) * $grademax;
-                        $status = self::attempt_is_complete($exe->id, $userid, $attempt)
-                            ? self::derive_terminal_status($exe, $overall, $grademin, $grademax)
-                            : ((is_string($prioroverallstatus) && $prioroverallstatus !== '')
-                                ? $prioroverallstatus
-                                : 'incomplete');
-                        $result['rawscore'] = self::record_overall(
-                            $exe,
-                            $userid,
-                            $attempt,
-                            $overall,
-                            $status,
-                            $registration,
-                            $grademax,
-                            $grademin,
-                            $grademethod,
-                            $grademodel
-                        );
-                        $result['status'] = $status;
-
-                        // A published grade must recompute completion here too: the
-                        // reconstructed overall may have just crossed gradepass
-                        // (completionpassgrade / DEC-69-01) and the learner can close the
-                        // tab before any package statement arrives.
-                        $completion = new \completion_info($course);
-                        if ($completion->is_enabled($cm)) {
-                            $completion->update_state($cm, COMPLETION_UNKNOWN, $userid);
-                        }
-                        self::maybe_emit_completed(
-                            $exe,
-                            $course,
-                            $cm,
-                            $userid,
-                            $attempt,
-                            (float) $result['rawscore'],
-                            $status,
-                            $prioroverallstatus
-                        );
+                    $published = self::publish_reconstructed_overall(
+                        $exe,
+                        $course,
+                        $cm,
+                        $userid,
+                        $attempt,
+                        $registration,
+                        $prioroverallstatus
+                    );
+                    if ($published !== null) {
+                        $result['rawscore'] = $published['rawscore'];
+                        $result['status'] = $published['status'];
                     }
                 }
                 // Package lifecycle statements still determine terminal status. The
@@ -320,9 +298,9 @@ class ingestor {
      *
      * @param int $exelearningid Activity instance id.
      * @param array $census Keyed by objectid; each entry is ['weight' => float, 'ideviceorder' => int].
-     * @return void
+     * @return bool Whether any grade-item row actually changed.
      */
-    private static function record_census(int $exelearningid, array $census): void {
+    private static function record_census(int $exelearningid, array $census): bool {
         global $DB;
 
         $rows = $DB->get_records(
@@ -337,6 +315,7 @@ class ingestor {
         }
 
         $now = time();
+        $changed = false;
         foreach ($census as $objectid => $meta) {
             if (!isset($byobjectid[(string) $objectid])) {
                 continue;
@@ -355,7 +334,9 @@ class ingestor {
                 'xapiorder'    => $meta['ideviceorder'],
                 'timemodified' => $now,
             ]);
+            $changed = true;
         }
+        return $changed;
     }
 
     /**
@@ -421,6 +402,143 @@ class ingestor {
     }
 
     /**
+     * Reconstruct the attempt's overall from the census and per-item rows, publish it,
+     * and update completion.
+     *
+     * The single publication path shared by the `answered` branch and the census-driven
+     * replay. Being able to compute a number is NOT the same as the attempt being
+     * finished: with the package census a single answer already yields an exact grade.
+     * The attempt ends when every gradable iDevice has been answered, and that is also
+     * the only end signal a multipage package will ever send — upstream emits NO
+     * package-level verdict when pageCount > 1 (ADR-2302-01), so without deriving it
+     * here every multipage attempt would stay 'incomplete' for ever: no
+     * completionstatusrequired, no attempt_completed. A package statement still
+     * overrides it when one does arrive; short of that, never downgrade a status a
+     * package statement already set (DEC-68-01). Completion recomputes on every
+     * publication because the overall may have just crossed gradepass
+     * (completionpassgrade / DEC-69-01) and the learner can close the tab before any
+     * further statement arrives.
+     *
+     * @param \stdClass $exe The exelearning instance record.
+     * @param \stdClass $course The course record (for completion).
+     * @param \stdClass $cm The course_module record (for completion).
+     * @param int $userid Attempt owner.
+     * @param int $attempt Attempt number.
+     * @param string $registration Attempt-grouping token.
+     * @param string|false $prioroverallstatus The attempt's overall status before this
+     *        statement, or false when the attempt row did not exist.
+     * @return array|null ['rawscore' => float, 'status' => string], or null when the
+     *         attempt is not reconstructible.
+     */
+    private static function publish_reconstructed_overall(
+        \stdClass $exe,
+        \stdClass $course,
+        \stdClass $cm,
+        int $userid,
+        int $attempt,
+        string $registration,
+        $prioroverallstatus
+    ): ?array {
+        $reconstructed = self::reconstruct_overall_pct($exe->id, $userid, $attempt);
+        if ($reconstructed === null) {
+            return null;
+        }
+        $grademax = (float) ($exe->grademax ?? 100);
+        $grademin = (float) ($exe->grademin ?? 0);
+        $grademethod = (int) ($exe->grademethod ?? attempts::GRADE_HIGHEST);
+        $grademodel = (int) ($exe->grademodel ?? EXELEARNING_GRADEMODEL_PERITEM);
+
+        $overall = ($reconstructed / 100.0) * $grademax;
+        $status = self::attempt_is_complete($exe->id, $userid, $attempt)
+            ? self::derive_terminal_status($exe, $overall, $grademin, $grademax)
+            : ((is_string($prioroverallstatus) && $prioroverallstatus !== '')
+                ? $prioroverallstatus
+                : 'incomplete');
+        $rawscore = self::record_overall(
+            $exe,
+            $userid,
+            $attempt,
+            $overall,
+            $status,
+            $registration,
+            $grademax,
+            $grademin,
+            $grademethod,
+            $grademodel
+        );
+
+        $completion = new \completion_info($course);
+        if ($completion->is_enabled($cm)) {
+            $completion->update_state($cm, COMPLETION_UNKNOWN, $userid);
+        }
+        self::maybe_emit_completed($exe, $course, $cm, $userid, $attempt, (float) $rawscore, $status, $prioroverallstatus);
+
+        return ['rawscore' => $rawscore, 'status' => $status];
+    }
+
+    /**
+     * Replay the reconstruction for the ingesting learner after a census change.
+     *
+     * A lifecycle statement can complete the package census AFTER the learner's last
+     * answer — answer everything on page 1, then merely open page 2 — and since
+     * reconstruction is otherwise only triggered by `answered` statements, that
+     * learner's overall would never be computed. Only an attempt that already has
+     * answered per-item rows is replayed: a censused package with no answers has
+     * nothing to grade.
+     *
+     * @param \stdClass $exe The exelearning instance record.
+     * @param \stdClass $course The course record (for completion).
+     * @param \stdClass $cm The course_module record (for completion).
+     * @param int $userid The ingesting learner.
+     * @param string $registration Attempt-grouping token.
+     * @return array|null ['rawscore' => float, 'status' => string], or null when there
+     *         was nothing to replay.
+     */
+    private static function republish_after_census(
+        \stdClass $exe,
+        \stdClass $course,
+        \stdClass $cm,
+        int $userid,
+        string $registration
+    ): ?array {
+        global $DB;
+
+        // Same lock as the grading paths: the replay writes the same attempt rows.
+        $lockfactory = \core\lock\lock_config::get_lock_factory('mod_exelearning');
+        $lock = $lockfactory->get_lock('ingest_' . $exe->id . '_' . $userid, 5);
+        try {
+            $attempt = attempts::resolve_attempt_number($exe->id, $userid, $registration);
+            $hasanswers = $DB->record_exists_select(
+                'exelearning_attempt',
+                'exelearningid = ? AND userid = ? AND attempt = ? AND itemnumber > 0',
+                [$exe->id, $userid, $attempt]
+            );
+            if (!$hasanswers) {
+                return null;
+            }
+            $prioroverallstatus = $DB->get_field('exelearning_attempt', 'status', [
+                'exelearningid' => $exe->id,
+                'userid'        => $userid,
+                'attempt'       => $attempt,
+                'itemnumber'    => 0,
+            ]);
+            return self::publish_reconstructed_overall(
+                $exe,
+                $course,
+                $cm,
+                $userid,
+                $attempt,
+                $registration,
+                $prioroverallstatus
+            );
+        } finally {
+            if ($lock) {
+                $lock->release();
+            }
+        }
+    }
+
+    /**
      * Reconstruct the exact current package score from persisted new-contract rows.
      *
      * The attempt table is already the latest-state map: its unique key contains one
@@ -434,7 +552,7 @@ class ingestor {
      * inflate a partial attempt — reporting 100 for a learner who only answered the
      * lightest question. Two ways to get the full weight vector, in order of preference:
      *
-     * 1. The package census learned from the `initialized` statements. Once every
+     * 1. The package census learned from the lifecycle statements. Once every
      *    gradable iDevice of the instance carries its weight and order, an unanswered one
      *    is scored as the 0 eXeLearning counts for it and even a one-answer attempt is
      *    exact. Because the census is package metadata this holds for every learner as

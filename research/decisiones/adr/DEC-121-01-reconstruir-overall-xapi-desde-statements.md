@@ -120,7 +120,9 @@ exportados antes del nuevo contrato?
 5. Calcular el OVERALL con la misma normalización de pesos, reparto largest remainder, desempate por
    `idevice-order` y redondeo de eXeLearning. El orden de llegada de statements no participa.
 6. Aprender el **censo de evaluables del paquete** desde la extensión `idevice-census` que upstream
-   emite en el `initialized` de cada página, y persistirlo en dos columnas nullable de
+   emite en el `initialized` y el `terminated` de cada página (la copia del `terminated` es la
+   completa: sale tras todo registro, mientras que la del `initialized` se vacía justo después de
+   DOM-ready), y persistirlo en dos columnas nullable de
    `exelearning_grade_item`. Es metadato de paquete, idéntico para todos los usuarios: en cuanto
    alguien ha visitado todas las páginas, el paquete queda censado y **cualquier** intento parcial de
    **cualquier** alumno se reconstruye exacto desde su primera respuesta, marcando a 0 los evaluables
@@ -144,10 +146,12 @@ exportados antes del nuevo contrato?
    sigue mandando sobre el estado. Nunca se degrada a `incomplete`: eso revocaría la finalización y
    rearmaría `attempt_completed` ([[DEC-68-01]]). Publicar nota recalcula finalización en ambos
    caminos ([[DEC-69-01]]) y el valor se acota a `grademin..grademax` en un único punto.
-10. Tratar `initialized` y `terminated` como ciclo de vida: auditoría, más el censo que viaja en el
-    primero. En multipágina llegan **N veces por intento** (uno por carga de página y uno por
+10. Tratar `initialized` y `terminated` como ciclo de vida: auditoría, más el censo que viaja en
+    ambos. En multipágina llegan **N veces por intento** (uno por carga de página y uno por
     `pagehide`), con `result` nulo. Leer `terminated` como fin de intento cerraría el intento al pasar
-    de la primera página. El censo no se aprende en previsualización: [[DEC-0-06]] dice que una
+    de la primera página. Un cambio de censo re-ejecuta la reconstrucción del alumno que lo trae: sin
+    eso, quien contesta la página 1 y sólo visita la 2 completaría el censo sin que nada volviera a
+    calcular su OVERALL, porque la reconstrucción sólo se dispara desde `answered`. El censo no se aprende en previsualización: [[DEC-0-06]] dice que una
     previsualización no escribe, y la excepción no compensa la ambigüedad.
 11. Si un intento no contiene filas con el nuevo contrato, o no hay censo y su estado aún es parcial,
     conservar el score del statement de paquete como fallback compatible de [[DEC-85-01]]. No se
@@ -183,8 +187,9 @@ exportados antes del nuevo contrato?
   agente que implementa upstream #2302; de ahí que el censo se emita desde `registerActivity`, que ya
   corre por cada evaluable al cargar la página y tiene el peso ya resuelto.
 - **Residuos aceptados.** (a) Un evaluable que se registre después del flush del `initialized` de esa
-  carga queda fuera del censo de esa página; como Moodle lo persiste a nivel de paquete, la siguiente
-  visita lo completa. (b) Mientras el paquete no esté censado por completo se mantiene la regla
+  carga queda fuera de esa copia del censo, pero la copia del `terminated` de la misma visita lo
+  recoge (sale en `pagehide`, tras todo registro); la «siguiente visita» sólo es el remedio si ese
+  statement de descarga se pierde. (b) Mientras el paquete no esté censado por completo se mantiene la regla
   anterior —sólo un intento contestado entero se reconstruye—, y en multipágina, donde no hay
   statement de paquete, un intento parcial no censado se queda sin fila OVERALL. (c) La
   previsualización del profesor no siembra el censo, porque no escribe ([[DEC-0-06]]).
@@ -233,8 +238,5 @@ exportados antes del nuevo contrato?
 ## Seguimiento
 
 - Mantener el PR 121 en borrador y bloqueado hasta la fusión de upstream #2302.
-- Evaluar aprender `weight`/`idevice-order` en `exelearning_grade_item` (una vez por paquete) para
-  reconstruir también intentos parciales, en lugar de esperar a que el intento reporte el paquete
-  entero.
 - Una vez disponible el contrato en una release de eXeLearning, validar un paquete real multipágina
   de extremo a extremo en Moodle y retirar el bloqueo de merge.

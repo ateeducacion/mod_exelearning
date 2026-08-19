@@ -135,6 +135,14 @@ final class backup_restore_test extends advanced_testcase {
             ['exelearningid' => $instance->id, 'itemnumber' => 1]
         );
 
+        // Stamp the learned package census on the same grade item: it is package
+        // metadata learned once per package, so losing it in a restore would send
+        // every learner of the restored course back to the no-census fallback.
+        $DB->set_field('exelearning_grade_item', 'xapiweight', 25.0,
+            ['exelearningid' => $instance->id, 'itemnumber' => 1]);
+        $DB->set_field('exelearning_grade_item', 'xapiorder', 3,
+            ['exelearningid' => $instance->id, 'itemnumber' => 1]);
+
         // Roundtrip.
         $newcourseid = $this->backup_and_restore($course);
 
@@ -159,6 +167,11 @@ final class backup_restore_test extends advanced_testcase {
             'exelearningid' => $restoredinstance->id, 'itemnumber' => 1,
         ], '*', MUST_EXIST);
         $this->assertSame(sha1('plan003-fixture'), $restoredrow->contenthash);
+
+        // The learned census columns round-tripped too (backup includes them; this
+        // pins that the restore step maps them instead of silently dropping them).
+        $this->assertEqualsWithDelta(25.0, (float) $restoredrow->xapiweight, 0.0001);
+        $this->assertSame(3, (int) $restoredrow->xapiorder);
 
         // The student's attempts came across with user data.
         $attempts = $DB->get_records('exelearning_attempt', [

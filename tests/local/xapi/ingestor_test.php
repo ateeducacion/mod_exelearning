@@ -645,6 +645,128 @@ final class ingestor_test extends \advanced_testcase {
         $this->assertSame(1, (int) $stored->xapiorder);
     }
 
+    /**
+     * A census arriving AFTER the learner's last answer still produces their overall.
+     *
+     * Reconstruction is normally triggered by `answered` statements. A learner who
+     * answers everything on page 1 and then merely opens page 2 completes the census
+     * with page 2's lifecycle statement — and no further `answered` will ever arrive.
+     * Without the census-driven replay their attempt would keep no OVERALL row at all.
+     */
+    public function test_census_completing_after_the_last_answer_replays_the_overall(): void {
+        [$instance, $student, $course, $cm] = $this->create_activity(['grademodel' => 0]);
+        $items = $this->items($instance);
+
+        // Page 1: its census, then a perfect answer on its only iDevice (weight 25).
+        ingestor::ingest(
+            $instance,
+            $course,
+            $cm,
+            $student->id,
+            $this->initialized([[$items[0]->objectid, 25, 1]]),
+            'late-census',
+            false
+        );
+        $answered = ingestor::ingest(
+            $instance,
+            $course,
+            $cm,
+            $student->id,
+            $this->answered($items[0]->objectid, 1.0, null, 25, 1),
+            'late-census',
+            false
+        );
+        // Census still partial: nothing reconstructible yet.
+        $this->assertArrayNotHasKey('rawscore', $answered);
+
+        // Page 2 is only VISITED: its lifecycle statement completes the census.
+        $lifecycle = ingestor::ingest(
+            $instance,
+            $course,
+            $cm,
+            $student->id,
+            $this->initialized([[$items[1]->objectid, 75, 2]]),
+            'late-census',
+            false
+        );
+
+        // The replay published the exact partial overall: 100 x 25 / 100 = 25.
+        $this->assertTrue($lifecycle['ok']);
+        $this->assertEqualsWithDelta(25.0, (float) $lifecycle['rawscore'], 0.0001);
+        $overall = $this->attempt($instance, $student->id, 0);
+        $this->assertEqualsWithDelta(25.0, (float) $overall->rawscore, 0.0001);
+        // Gradable is still not finished: one iDevice remains unanswered.
+        $this->assertSame('incomplete', $overall->status);
+        $grades = grade_get_grades($instance->course, 'mod', 'exelearning', $instance->id, $student->id);
+        $this->assertEqualsWithDelta(25.0, (float) $grades->items[0]->grades[$student->id]->grade, 0.0001);
+    }
+
+    /**
+     * A lifecycle statement whose census changes nothing does not touch the attempt.
+     */
+    public function test_unchanged_census_does_not_republish(): void {
+        global $DB;
+        [$instance, $student, $course, $cm] = $this->create_activity(['grademodel' => 0]);
+        $items = $this->items($instance);
+
+        // Learn the full census, answer once: the overall is published.
+        ingestor::ingest($instance, $course, $cm, $student->id, $this->initialized([
+            [$items[0]->objectid, 25, 1],
+            [$items[1]->objectid, 75, 2],
+        ]), 'idem-census', false);
+        ingestor::ingest(
+            $instance,
+            $course,
+            $cm,
+            $student->id,
+            $this->answered($items[0]->objectid, 1.0, null, 25, 1),
+            'idem-census',
+            false
+        );
+        $before = $DB->get_record('exelearning_attempt', [
+            'exelearningid' => $instance->id, 'userid' => $student->id, 'itemnumber' => 0,
+        ], '*', MUST_EXIST);
+
+        // The same census arrives again (another page load): no row changed, so the
+        // lifecycle result carries no score and the attempt row is untouched.
+        $again = ingestor::ingest($instance, $course, $cm, $student->id, $this->initialized([
+            [$items[0]->objectid, 25, 1],
+            [$items[1]->objectid, 75, 2],
+        ]), 'idem-census', false);
+
+        $this->assertArrayNotHasKey('rawscore', $again);
+        $after = $DB->get_record('exelearning_attempt', [
+            'exelearningid' => $instance->id, 'userid' => $student->id, 'itemnumber' => 0,
+        ], '*', MUST_EXIST);
+        $this->assertEquals($before->timemodified, $after->timemodified);
+        $this->assertEqualsWithDelta((float) $before->rawscore, (float) $after->rawscore, 0.0001);
+    }
+
+    /**
+     * A census change with no answered rows replays nothing: there is nothing to grade.
+     */
+    public function test_census_change_without_answers_publishes_nothing(): void {
+        global $DB;
+        [$instance, $student, $course, $cm] = $this->create_activity(['grademodel' => 0]);
+        $items = $this->items($instance);
+
+        $result = ingestor::ingest(
+            $instance,
+            $course,
+            $cm,
+            $student->id,
+            $this->initialized([[$items[0]->objectid, 25, 1], [$items[1]->objectid, 75, 2]]),
+            'no-answers',
+            false
+        );
+
+        $this->assertTrue($result['ok']);
+        $this->assertArrayNotHasKey('rawscore', $result);
+        $this->assertFalse($DB->record_exists('exelearning_attempt', [
+            'exelearningid' => $instance->id, 'userid' => $student->id, 'itemnumber' => 0,
+        ]));
+    }
+
     public function test_census_is_package_metadata_reused_by_every_learner(): void {
         global $DB;
         [$instance, $first, $course, $cm] = $this->create_activity(['grademodel' => 0]);
