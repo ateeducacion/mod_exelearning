@@ -26,8 +26,18 @@ use mod_exelearning\local\track;
  * NOT add a parallel model: it normalises the statement to the same `itemscores`
  * shape and reuses the very same building blocks — {@see track::apply_item_scores()},
  * {@see attempts::record_item()}, {@see attempts::aggregate_scaled()},
- * `grade_update()` and `completion_info` — so xAPI and SCORM grades cannot diverge.
- * `track::ingest()` itself is left untouched (the SCORM productive path).
+ * `grade_update()` and `completion_info` — so the per-iDevice grades, the attempt
+ * axis and the gradebook writes are identical. `track::ingest()` itself is left
+ * untouched (the SCORM productive path).
+ *
+ * The one deliberate difference is the OVERALL aggregation. SCORM receives the whole
+ * `cmi.suspend_data` map on every commit — every registered iDevice, answered or not —
+ * so {@see track::recompute_overall_pct()} can take a continuous weighted mean of it.
+ * xAPI only ever sees the iDevices that emitted an `answered`, so the reconstruction
+ * below waits until the package is fully reported and then replays eXeLearning's own
+ * integer largest-remainder allocation ({@see weighted_score_calculator}). The two can
+ * therefore differ by up to one allocated point on equal weights (33.33 vs 34 for three
+ * equal thirds); that is the producer's own rounding, not a divergence introduced here.
  *
  * Trust model (DEC-0-18): the caller has already authenticated the Moodle session and
  * resolved the instance; this class ignores the statement's actor/authority/stored
@@ -167,33 +177,44 @@ class ingestor {
                 $result['objectid'] = $norm['objectid'];
                 $result['peritem'] = $peritem;
 
-                // New-contract statements carry both fields together. Persist them on
-                // the upserted per-item row so navigation to another iframe document does
-                // not lose prior page contributions. Re-answering updates this same row.
+                // New-contract statements carry both fields together, and
+                // apply_item_scores() has just persisted them alongside the score on the
+                // upserted per-item row, so navigating to another iframe document does not
+                // lose prior page contributions. Re-answering updates that same row.
                 if ($norm['weight'] !== null && $norm['ideviceorder'] !== null && $peritem !== []) {
-                    $itemnumber = (int) array_key_first($peritem);
-                    attempts::record_xapi_state(
-                        $exe->id,
-                        $userid,
-                        $attempt,
-                        $itemnumber,
-                        (float) $norm['weight'],
-                        (int) $norm['ideviceorder']
-                    );
                     $reconstructed = self::reconstruct_overall_pct($exe->id, $userid, $attempt);
                     if ($reconstructed !== null) {
-                        $overall = ($reconstructed / 100.0) * $grademax;
+                        // An answered statement is a score update, never a lifecycle
+                        // transition: keep whatever status the package statements already
+                        // established. Downgrading a finished attempt to 'incomplete' would
+                        // revoke custom completion (completionstatusrequired) and make
+                        // attempt_completed fire again on the next package statement
+                        // (DEC-68-01).
+                        $status = (is_string($prioroverallstatus) && $prioroverallstatus !== '')
+                            ? $prioroverallstatus
+                            : 'incomplete';
                         $result['rawscore'] = self::record_overall(
                             $exe,
                             $userid,
                             $attempt,
-                            $overall,
-                            'incomplete',
+                            ($reconstructed / 100.0) * $grademax,
+                            $status,
                             $registration,
                             $grademax,
+                            $grademin,
                             $grademethod,
                             $grademodel
                         );
+                        $result['status'] = $status;
+
+                        // A published grade must recompute completion here too: the
+                        // reconstructed overall may have just crossed gradepass
+                        // (completionpassgrade / DEC-69-01) and the learner can close the
+                        // tab before any package statement arrives.
+                        $completion = new \completion_info($course);
+                        if ($completion->is_enabled($cm)) {
+                            $completion->update_state($cm, COMPLETION_UNKNOWN, $userid);
+                        }
                     }
                 }
                 // Package lifecycle statements still determine terminal status. The
@@ -206,16 +227,16 @@ class ingestor {
                 // legacy attempts still use the package's page-local finalScore.
                 $reconstructed = self::reconstruct_overall_pct($exe->id, $userid, $attempt);
                 $overallpct = $reconstructed ?? (float) $norm['overallpct'];
-                $overall = max($grademin, min($grademax, ($overallpct / 100.0) * $grademax));
                 $status = (string) $norm['status'];
                 $finaloverall = self::record_overall(
                     $exe,
                     $userid,
                     $attempt,
-                    $overall,
+                    ($overallpct / 100.0) * $grademax,
                     $status,
                     $registration,
                     $grademax,
+                    $grademin,
                     $grademethod,
                     $grademodel
                 );
@@ -255,24 +276,48 @@ class ingestor {
      *
      * The attempt table is already the latest-state map: its unique key contains one
      * row per itemnumber, and a repeated answer overwrites that row. Nullable xAPI
-     * metadata excludes legacy SCORM and pre-#2302 xAPI rows from this path.
+     * metadata excludes legacy SCORM and pre-#2302 xAPI rows from this path, and the
+     * join drops rows whose iDevice disappeared in a re-upload (`deleted = 1`), which
+     * must no longer weigh on the result.
+     *
+     * The denominator is the whole publication, never the answered subset. eXeLearning
+     * registers every evaluable iDevice in its `lmsData` at page load (score 0, its own
+     * weight) and normalises over that full set, so renormalising over the iDevices that
+     * happen to have answered so far would inflate a partial attempt — reporting 100 for
+     * a learner who only answered the lightest question. Until every registered iDevice
+     * has reported its weight the package total is simply unknown, so the attempt keeps
+     * the DEC-85-01 package-score fallback instead of publishing a guess.
      *
      * @param int $exelearningid Activity instance id.
      * @param int $userid Attempt owner.
      * @param int $attempt Attempt number.
-     * @return float|null Percentage in 0..100, or null for a legacy/no-state attempt.
+     * @return float|null Percentage in 0..100, or null for a legacy/incomplete-state attempt.
      */
     private static function reconstruct_overall_pct(int $exelearningid, int $userid, int $attempt): ?float {
         global $DB;
 
-        $rows = $DB->get_records_select(
-            'exelearning_attempt',
-            'exelearningid = ? AND userid = ? AND attempt = ? AND itemnumber > 0'
-                . ' AND xapiweight IS NOT NULL AND xapiorder IS NOT NULL',
-            [$exelearningid, $userid, $attempt],
-            'xapiorder ASC, itemnumber ASC',
-            'itemnumber, scaledscore, xapiweight, xapiorder'
+        $expected = $DB->count_records('exelearning_grade_item', [
+            'exelearningid' => $exelearningid,
+            'deleted'       => 0,
+        ]);
+        if ($expected === 0) {
+            return null;
+        }
+
+        $rows = $DB->get_records_sql(
+            'SELECT a.itemnumber, a.scaledscore, a.xapiweight, a.xapiorder
+               FROM {exelearning_attempt} a
+               JOIN {exelearning_grade_item} gi ON gi.exelearningid = a.exelearningid
+                    AND gi.itemnumber = a.itemnumber AND gi.deleted = 0
+              WHERE a.exelearningid = ? AND a.userid = ? AND a.attempt = ? AND a.itemnumber > 0
+                    AND a.xapiweight IS NOT NULL AND a.xapiorder IS NOT NULL
+           ORDER BY a.xapiorder ASC, a.itemnumber ASC',
+            [$exelearningid, $userid, $attempt]
         );
+        if (count($rows) < $expected) {
+            return null;
+        }
+
         $items = [];
         foreach ($rows as $row) {
             $items[] = [
@@ -290,10 +335,11 @@ class ingestor {
      * @param \stdClass $exe Activity instance.
      * @param int $userid Attempt owner.
      * @param int $attempt Attempt number.
-     * @param float $overall Raw overall in the activity grade range.
+     * @param float $overall Raw overall, clamped here to the activity grade range.
      * @param string $status completed|passed|failed|incomplete.
      * @param string $registration Attempt-grouping token.
      * @param float $grademax Activity maximum grade.
+     * @param float $grademin Activity minimum grade.
      * @param int $grademethod Cross-attempt aggregation method.
      * @param int $grademodel OVERALL or PERITEM.
      * @return float Aggregated overall grade.
@@ -306,9 +352,13 @@ class ingestor {
         string $status,
         string $registration,
         float $grademax,
+        float $grademin,
         int $grademethod,
         int $grademodel
     ): float {
+        // Clamp here rather than at each call site so the reconstructed and the
+        // package-score paths can never disagree on the instance grade range.
+        $overall = max($grademin, min($grademax, $overall));
         attempts::record_item($exe->id, $userid, $attempt, 0, $overall, $grademax, $status, $registration);
         $scaledoverall = attempts::aggregate_scaled($exe->id, $userid, 0, $grademethod);
         $finaloverall = ($scaledoverall === null) ? $overall : ($scaledoverall * $grademax);

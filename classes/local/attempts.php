@@ -235,6 +235,8 @@ class attempts {
      * @param float $maxscore
      * @param string $status completed|passed|failed|incomplete
      * @param string $sessiontoken
+     * @param float|null $xapiweight Effective relative iDevice weight in 1..100 (xAPI only).
+     * @param int|null $xapiorder Deterministic 1-based package-global order (xAPI only).
      */
     public static function record_item(
         int $exelearningid,
@@ -244,7 +246,9 @@ class attempts {
         float $rawscore,
         float $maxscore,
         string $status,
-        string $sessiontoken
+        string $sessiontoken,
+        ?float $xapiweight = null,
+        ?int $xapiorder = null
     ): void {
         global $DB;
 
@@ -265,6 +269,14 @@ class attempts {
             $existing->status       = $status;
             $existing->sessiontoken = $sessiontoken;
             $existing->timemodified = $now;
+            // Only an xAPI caller supplies these; a SCORM commit on the same row must
+            // leave any previously reconstructed metadata untouched.
+            if ($xapiweight !== null) {
+                $existing->xapiweight = $xapiweight;
+            }
+            if ($xapiorder !== null) {
+                $existing->xapiorder = $xapiorder;
+            }
             $DB->update_record('exelearning_attempt', $existing);
         } else {
             $DB->insert_record('exelearning_attempt', (object) [
@@ -277,47 +289,12 @@ class attempts {
                 'scaledscore'   => $scaled,
                 'status'        => $status,
                 'sessiontoken'  => $sessiontoken,
+                'xapiweight'    => $xapiweight,
+                'xapiorder'     => $xapiorder,
                 'timecreated'   => $now,
                 'timemodified'  => $now,
             ]);
         }
-    }
-
-    /**
-     * Attach reconstructible xAPI scoring metadata to a current per-iDevice row.
-     *
-     * The score row is created first by the shared SCORM/xAPI grade pipeline. This
-     * second update is intentionally xAPI-specific and keeps the shared record_item()
-     * signature unchanged for every legacy caller. The surrounding ingestor lock makes
-     * the score and metadata updates one serialized operation for this user/activity.
-     *
-     * @param int $exelearningid Activity instance id.
-     * @param int $userid Attempt owner.
-     * @param int $attempt Attempt number.
-     * @param int $itemnumber Per-iDevice grade item number.
-     * @param float $weight Effective relative weight in 1..100.
-     * @param int $ideviceorder Deterministic 1-based package-global order.
-     * @return void
-     */
-    public static function record_xapi_state(
-        int $exelearningid,
-        int $userid,
-        int $attempt,
-        int $itemnumber,
-        float $weight,
-        int $ideviceorder
-    ): void {
-        global $DB;
-
-        $row = $DB->get_record('exelearning_attempt', [
-            'exelearningid' => $exelearningid,
-            'userid'        => $userid,
-            'attempt'       => $attempt,
-            'itemnumber'    => $itemnumber,
-        ], 'id', MUST_EXIST);
-        $row->xapiweight = $weight;
-        $row->xapiorder = $ideviceorder;
-        $DB->update_record('exelearning_attempt', $row);
     }
 
     /**

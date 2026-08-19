@@ -152,11 +152,15 @@ class statement_normalizer {
                         // The scaled value is already normalised to [0,1] by the
                         // emitter (s/10 per iDevice), so scaled*100 is the percentage.
                         'scorepct' => $scaled * 100.0,
-                        // Legacy packages omit weight/order and keep the old package-score
-                        // fallback. New packages expose the effective weight so Moodle can
-                        // reconstruct the overall independently (upstream PR #2302).
-                        'weighted' => $weightedmetadata['weight'] ?? 0.0,
-                        'title'    => self::definition_name($statement),
+                        // An answered statement carries no weighted *contribution*, which
+                        // is what this shared key means for track::recompute_overall_pct().
+                        // The new contract's relative weight is a different quantity: it
+                        // rides in its own keys so the shared upsert can persist it with
+                        // the score, in one write (upstream PR #2302).
+                        'weighted'   => 0.0,
+                        'xapiweight' => $weightedmetadata['weight'],
+                        'xapiorder'  => $weightedmetadata['ideviceorder'],
+                        'title'      => self::definition_name($statement),
                     ],
                 ],
             ];
@@ -253,9 +257,20 @@ class statement_normalizer {
      * Validate the additive weighted-score reconstruction contract.
      *
      * Both extensions are optional together for compatibility with packages exported
-     * before exelearning/exelearning#2302. If either one is present, both must be JSON
-     * numbers with the upstream effective domains: weight in 1..100 and a positive,
-     * integral package-global order.
+     * before exelearning/exelearning#2302. Rejecting is expensive here: `xapi_track.php`
+     * answers an invalid statement with HTTP 200 + `ok:false`, and `js/xapi_listener.js`
+     * treats every 2xx as final, so a rejected `answered` loses the learner's per-iDevice
+     * score for good. Only a genuinely contradictory contract is rejected:
+     *
+     * - Neither extension present (or both null, which an extensions map may legally
+     *   carry per DEC-0-18 §5): legacy statement, graded through the package-score path.
+     * - Exactly one of the two present: an emitter bug whose missing half cannot be
+     *   guessed without producing a wrong overall — rejected.
+     * - Both present but not numeric, or an order that is not a positive integer the
+     *   `xapiorder` column can hold: rejected.
+     * - Both present and numeric: accepted, with the weight clamped to eXeLearning's own
+     *   1..100 domain (`common.js#getFinalScore` clamps rather than discards), so an
+     *   out-of-range weight costs precision instead of the whole grade.
      *
      * @param array $statement
      * @return array{weight: float|null, ideviceorder: int|null}|false
@@ -263,30 +278,32 @@ class statement_normalizer {
     private static function weighted_metadata(array $statement) {
         $extensions = $statement['context']['extensions'] ?? [];
         if (!is_array($extensions)) {
-            return false;
-        }
-        $hasweight = array_key_exists(self::EXT_WEIGHT, $extensions);
-        $hasorder = array_key_exists(self::EXT_IDEVICE_ORDER, $extensions);
-        if (!$hasweight && !$hasorder) {
+            // No usable extensions map at all: no metadata, not a broken contract.
             return ['weight' => null, 'ideviceorder' => null];
         }
-        if (!$hasweight || !$hasorder) {
+        $weightvalue = $extensions[self::EXT_WEIGHT] ?? null;
+        $ordervalue = $extensions[self::EXT_IDEVICE_ORDER] ?? null;
+        if ($weightvalue === null && $ordervalue === null) {
+            return ['weight' => null, 'ideviceorder' => null];
+        }
+        if ($weightvalue === null || $ordervalue === null) {
+            return false;
+        }
+        if (!is_numeric($weightvalue) || !is_numeric($ordervalue)) {
             return false;
         }
 
-        $weightvalue = $extensions[self::EXT_WEIGHT];
-        $ordervalue = $extensions[self::EXT_IDEVICE_ORDER];
+        $weight = (float) $weightvalue;
+        $order = (float) $ordervalue;
+        // The upper bound keeps a crafted order out of the `xapiorder` integer column,
+        // where it would fail the write rather than the validation.
         if (
-            (!is_int($weightvalue) && !is_float($weightvalue))
-            || !is_finite((float) $weightvalue)
-            || (float) $weightvalue < 1.0
-            || (float) $weightvalue > 100.0
-            || !is_int($ordervalue)
-            || $ordervalue < 1
+            !is_finite($weight) || !is_finite($order)
+            || $order < 1.0 || $order > 2147483647.0 || floor($order) !== $order
         ) {
             return false;
         }
-        return ['weight' => (float) $weightvalue, 'ideviceorder' => $ordervalue];
+        return ['weight' => max(1.0, min(100.0, $weight)), 'ideviceorder' => (int) $order];
     }
 
     /**

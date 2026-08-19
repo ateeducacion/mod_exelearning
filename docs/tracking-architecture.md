@@ -76,8 +76,11 @@ to the SCORM endpoint today):
 - Respect `gradeenabled` (DEC-13-07): when grading is off there are no grade items, so
   statements route nowhere (a no-op, consistent with rejecting unknown objectids).
 - Re-validate the overall on the server (spirit of DEC-6-01).
-- Validate `weight` as a JSON number in 1..100 and `idevice-order` as a positive JSON integer; accept
-  neither field alone. Their joint absence selects the backward-compatible package-score path.
+- Validate `weight` and `idevice-order` as one contract: neither field alone. Their joint absence (or
+  joint `null`, legal inside an extensions map) selects the backward-compatible package-score path; a
+  weight outside eXeLearning's own 1..100 domain is clamped exactly as `getFinalScore()` clamps it,
+  never rejected — `xapi_track.php` answers an invalid statement with HTTP 200 + `ok:false` and the
+  listener treats every 2xx as final, so rejecting would silently discard the learner's score.
 - `postMessage`: the host injects `parentOrigin = <Moodle origin>` and the listener checks
   `event.origin` against the iframe `pluginfile.php` origin; `'*'`/mismatch is rejected
   (RIE-013).
@@ -112,10 +115,15 @@ bounded server-side:
   tracker's dirty-resend; the server is idempotent by `statement.id`, so a resend never
   double-grades. Without it a single transient `500` would lose that statement's grade,
   whereas the SCORM path self-heals.
-- **Answered-only compatibility differs by contract version.** A #2302 `answered` statement updates an
-  `incomplete` overall immediately, so a lost package lifecycle statement does not lose the grade. A legacy
-  xAPI `answered` statement has no weight/order and therefore still creates no overall row until its package
-  statement arrives. Package verbs remain authoritative for terminal status in both paths.
+- **Answered-only compatibility differs by contract version.** Once every registered gradable iDevice of
+  the package has reported its weight, a #2302 `answered` statement updates the overall immediately, so a
+  lost package lifecycle statement does not lose the grade. Until then — and for legacy xAPI `answered`
+  statements, which carry no weight/order at all — no overall row is written and the package statement
+  remains the source of the number. The full set is required because eXeLearning normalises the weights
+  over every registered iDevice (unanswered ones count as a 0, `common.js#registerActivity`): renormalising
+  over the answered subset alone would report 100 for a learner who only answered the lightest question.
+  Package verbs remain authoritative for terminal status in both paths, and an `answered` statement never
+  downgrades a terminal status back to `incomplete`.
 - **Concurrent same-attempt writes.** `attempts::record_item` is a check-then-insert guarded
   by a per-`(instance,user)` lock; on a 5 s lock-timeout it proceeds unlocked (the documented
   SCORM degraded mode it is shared with). A genuine `UNIQUE(exelearningid,userid,attempt,

@@ -87,7 +87,11 @@ final class statement_normalizer_test extends \advanced_testcase {
         $this->assertTrue($out['ok']);
         $this->assertSame(25.0, $out['weight']);
         $this->assertSame(3, $out['ideviceorder']);
-        $this->assertSame(25.0, $out['itemscores']['ide-1']['weighted']);
+        // The shared 'weighted' key keeps its SCORM meaning (weighted contribution);
+        // the relative weight travels in its own keys for the attempt upsert.
+        $this->assertSame(0.0, $out['itemscores']['ide-1']['weighted']);
+        $this->assertSame(25.0, $out['itemscores']['ide-1']['xapiweight']);
+        $this->assertSame(3, $out['itemscores']['ide-1']['xapiorder']);
     }
 
     /**
@@ -115,19 +119,103 @@ final class statement_normalizer_test extends \advanced_testcase {
     /**
      * Invalid weighted-contract values for {@see test_invalid_weighted_metadata_is_rejected}.
      *
+     * Only a genuinely contradictory contract is rejected: half of it present, or a
+     * value that cannot be read as the number the contract requires.
+     *
      * @return array<string, array{mixed, mixed}>
      */
     public static function invalid_weighted_metadata_provider(): array {
         return [
             'weight without order' => [25, null],
             'order without weight' => [null, 1],
-            'zero weight' => [0, 1],
-            'weight above maximum' => [101, 1],
-            'numeric string weight' => ['25', 1],
             'zero order' => [25, 0],
+            'negative order' => [25, -1],
             'fractional order' => [25, 1.5],
-            'numeric string order' => [25, '1'],
+            'non-numeric weight' => ['heavy', 1],
+            'non-numeric order' => [25, 'first'],
+            'boolean weight' => [true, 1],
+            'array order' => [25, [1]],
+            'order beyond the column range' => [25, 2147483648],
         ];
+    }
+
+    /**
+     * A weight outside the emitter's own domain costs precision, never the grade.
+     *
+     * Rejecting the statement would drop the per-iDevice score for good: xapi_track.php
+     * answers with HTTP 200 + ok:false and js/xapi_listener.js treats any 2xx as final.
+     * eXeLearning's own getFinalScore() clamps the weight to 1..100; mirror that.
+     *
+     * @dataProvider tolerated_weighted_metadata_provider
+     * @param mixed $weight
+     * @param mixed $order
+     * @param float $expectedweight
+     * @param int $expectedorder
+     */
+    public function test_out_of_domain_weighted_metadata_is_clamped_not_rejected(
+        $weight,
+        $order,
+        float $expectedweight,
+        int $expectedorder
+    ): void {
+        $statement = $this->answered('ide-1', 0.5);
+        $statement['context']['extensions'][statement_normalizer::EXT_WEIGHT] = $weight;
+        $statement['context']['extensions'][statement_normalizer::EXT_IDEVICE_ORDER] = $order;
+
+        $out = statement_normalizer::normalize($statement);
+
+        $this->assertTrue($out['ok']);
+        $this->assertSame($expectedweight, $out['weight']);
+        $this->assertSame($expectedorder, $out['ideviceorder']);
+        $this->assertEqualsWithDelta(50.0, $out['itemscores']['ide-1']['scorepct'], 0.0001);
+    }
+
+    /**
+     * Values for {@see test_out_of_domain_weighted_metadata_is_clamped_not_rejected}.
+     *
+     * @return array<string, array{mixed, mixed, float, int}>
+     */
+    public static function tolerated_weighted_metadata_provider(): array {
+        return [
+            'zero weight' => [0, 1, 1.0, 1],
+            'weight above maximum' => [101, 1, 100.0, 1],
+            'numeric string weight' => ['25', 1, 25.0, 1],
+            'numeric string order' => [25, '3', 25.0, 3],
+            'integral float order' => [25, 3.0, 25.0, 3],
+        ];
+    }
+
+    /**
+     * A null extension value is legal inside an extensions map (DEC-0-18 §5) and means
+     * "unset": the statement degrades to the legacy path instead of losing its score.
+     */
+    public function test_null_weighted_metadata_degrades_to_the_legacy_path(): void {
+        $statement = $this->answered('ide-1', 0.5);
+        $statement['context']['extensions'][statement_normalizer::EXT_WEIGHT] = null;
+        $statement['context']['extensions'][statement_normalizer::EXT_IDEVICE_ORDER] = null;
+
+        $out = statement_normalizer::normalize($statement);
+
+        $this->assertTrue($out['ok']);
+        $this->assertNull($out['weight']);
+        $this->assertNull($out['ideviceorder']);
+        $this->assertEqualsWithDelta(50.0, $out['itemscores']['ide-1']['scorepct'], 0.0001);
+    }
+
+    /**
+     * A malformed extensions map carries no metadata; the objectid still resolves from
+     * object.id, so the score is graded through the legacy path rather than discarded.
+     */
+    public function test_non_array_extensions_degrades_to_the_legacy_path(): void {
+        $statement = $this->answered('ide-1', 0.5);
+        $statement['context']['extensions'] = 'none';
+
+        $out = statement_normalizer::normalize($statement);
+
+        $this->assertTrue($out['ok']);
+        $this->assertSame('ide-1', $out['objectid']);
+        $this->assertNull($out['weight']);
+        $this->assertNull($out['ideviceorder']);
     }
 
     public function test_objectid_falls_back_to_object_id_suffix(): void {

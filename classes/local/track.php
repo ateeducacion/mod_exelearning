@@ -463,7 +463,9 @@ class track {
      * @param \stdClass $exe          The exelearning instance record.
      * @param int       $userid       The grading user.
      * @param int       $attempt      Attempt number from attempts::resolve_attempt_number().
-     * @param array     $itemscores   Map objectid => ['scorepct' => float, ...].
+     * @param array     $itemscores   Map objectid => ['scorepct' => float, ...]. An xAPI
+     *                                caller may add 'xapiweight'/'xapiorder' so the
+     *                                reconstruction metadata is written by the same upsert.
      * @param string    $sessiontoken Page-load session token.
      * @return array<int, float> Map of itemnumber => final published grade.
      */
@@ -513,7 +515,9 @@ class track {
                 $itemnumber,
                 $scorepct,
                 (string) $row->name,
-                $sessiontoken
+                $sessiontoken,
+                isset($info['xapiweight']) ? (float) $info['xapiweight'] : null,
+                isset($info['xapiorder']) ? (int) $info['xapiorder'] : null
             );
         }
         return $persaved;
@@ -624,6 +628,8 @@ class track {
      * @param float     $scorepct     Score as a 0..100 percentage.
      * @param string    $name         Gradebook column name.
      * @param string    $sessiontoken Page-load session token.
+     * @param float|null $xapiweight   Effective relative iDevice weight (xAPI contract only).
+     * @param int|null   $xapiorder    Package-global iDevice order (xAPI contract only).
      * @return float The final published (aggregated) grade for the item.
      */
     private static function apply_one(
@@ -634,7 +640,9 @@ class track {
         int $itemnumber,
         float $scorepct,
         string $name,
-        string $sessiontoken
+        string $sessiontoken,
+        ?float $xapiweight = null,
+        ?int $xapiorder = null
     ): float {
         global $CFG;
         require_once($CFG->libdir . '/gradelib.php');
@@ -650,7 +658,9 @@ class track {
             $rawitem,
             $grademax,
             'completed',
-            $sessiontoken
+            $sessiontoken,
+            $xapiweight,
+            $xapiorder
         );
         // Gradebook grade = aggregation of attempts according to grademethod.
         $scaled = attempts::aggregate_scaled($exe->id, $userid, $itemnumber, $ctx['grademethod']);

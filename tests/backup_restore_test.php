@@ -113,8 +113,18 @@ final class backup_restore_test extends advanced_testcase {
         sort($srcobjectids);
 
         \mod_exelearning\local\attempts::record_item($instance->id, $student->id, 1, 0, 70.0, 100.0, 'completed', 'sx');
-        \mod_exelearning\local\attempts::record_item($instance->id, $student->id, 1, 1, 80.0, 100.0, 'completed', 'sx');
-        \mod_exelearning\local\attempts::record_xapi_state($instance->id, $student->id, 1, 1, 25.0, 3);
+        \mod_exelearning\local\attempts::record_item(
+            $instance->id,
+            $student->id,
+            1,
+            1,
+            80.0,
+            100.0,
+            'completed',
+            'sx',
+            25.0,
+            3
+        );
 
         // Stamp a known contenthash on a source grade item: it backs the
         // stale-grades warning (DEC-12-01) and must round-trip through backup.
