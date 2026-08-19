@@ -499,6 +499,7 @@ class ingestor {
      * @param \stdClass $cm The course_module record (for completion).
      * @param int $userid The ingesting learner.
      * @param string $registration Attempt-grouping token.
+     * @param bool $censuschanged Whether this statement's census changed any grade item.
      * @return array|null ['rawscore' => float, 'status' => string], or null when there
      *         was nothing to replay.
      */

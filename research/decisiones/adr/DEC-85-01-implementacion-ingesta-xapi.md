@@ -5,7 +5,7 @@ status: Superseded
 date: 2026-06-18
 tracking_issue: 85
 legacy_id: DEC-0064
-superseded_by: DEC-121-01  # solo en la autoridad del OVERALL numérico; xAPI-primary, validación, auditoría e idempotencia siguen vigentes (DEC-121-01 §Alcance)
+superseded_by: DEC-121-01
 deciders:
   - erseco
   - claude-code
@@ -22,6 +22,12 @@ ai_assistance:
   tool: claude-code
   model: claude-opus-4-8
 ---
+
+> **Alcance de la sustitución:** [[DEC-121-01]] sustituye a esta decisión **únicamente en la
+> autoridad del valor numérico OVERALL** (que pasa del statement de paquete a la reconstrucción
+> por statements). El resto — xAPI-primary con SCORM inerte, la validación de statements, la
+> auditoría y la idempotencia por `statement.id` — sigue vigente tal y como se decidió aquí.
+
 
 # DEC-85-01: Implementación de la ingesta xAPI (TAREA-015): xAPI-primary para paquetes nuevos, SCORM inerte, overall desde el statement de paquete, siempre activo
 
