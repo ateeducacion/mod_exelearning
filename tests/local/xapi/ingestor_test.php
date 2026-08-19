@@ -92,7 +92,7 @@ final class ingestor_test extends \advanced_testcase {
     ): array {
         $extensions = [statement_normalizer::EXT_IDEVICE_ID => $objectid];
         if ($weight !== null && $ideviceorder !== null) {
-            $extensions[statement_normalizer::EXT_WEIGHT] = $weight;
+            $extensions[statement_normalizer::EXT_IDEVICE_WEIGHT] = $weight;
             $extensions[statement_normalizer::EXT_IDEVICE_ORDER] = $ideviceorder;
         }
         return [
@@ -117,6 +117,29 @@ final class ingestor_test extends \advanced_testcase {
             'exelearningid' => $instance->id,
             'deleted'       => 0,
         ], 'itemnumber ASC', 'itemnumber, objectid'));
+    }
+
+    /**
+     * Builds an `initialized` statement carrying the page's evaluable-iDevice census.
+     *
+     * @param array $census List of [objectid, weight, order] triples.
+     * @return array
+     */
+    private function initialized(array $census): array {
+        $entries = [];
+        foreach ($census as [$objectid, $weight, $order]) {
+            $entries[] = [
+                'idevice-id'     => $objectid,
+                'idevice-weight' => $weight,
+                'idevice-order'  => $order,
+            ];
+        }
+        return [
+            'id'   => \core\uuid::generate(),
+            'verb' => ['id' => 'http://adlnet.gov/expapi/verbs/initialized'],
+            'object' => ['id' => 'https://exelearning.net/xapi/abc'],
+            'context' => ['extensions' => [statement_normalizer::EXT_IDEVICE_CENSUS => $entries]],
+        ];
     }
 
     /**
@@ -222,9 +245,10 @@ final class ingestor_test extends \advanced_testcase {
             false
         );
         // With the whole package reported the overall becomes durable immediately,
-        // before its lifecycle statement arrives.
+        // before any lifecycle statement arrives, and the attempt is already terminal:
+        // a multipage package never emits a package verdict at all (ADR-2302-01).
         $this->assertEqualsWithDelta(55.0, $second['rawscore'], 0.0001);
-        $this->assertSame('incomplete', $this->attempt($instance, $student->id, 0)->status);
+        $this->assertSame('completed', $this->attempt($instance, $student->id, 0)->status);
 
         $package = ingestor::ingest(
             $instance,
@@ -324,10 +348,57 @@ final class ingestor_test extends \advanced_testcase {
         $this->assertEqualsWithDelta(25.0, (float) $grades->items[0]->grades[$student->id]->grade, 0.0001);
     }
 
-    public function test_answered_after_a_terminal_package_statement_keeps_the_status(): void {
-        [$instance, $student, $course, $cm] = $this->create_activity(['grademodel' => 0]);
+    public function test_fully_reported_attempt_becomes_terminal_without_a_package_statement(): void {
+        // A multipage package emits NO package-level verdict (upstream ADR-2302-01), so a
+        // complete reconstruction is the only signal Moodle gets that the attempt ended.
+        // Without deriving the status here every multipage attempt would stay 'incomplete'
+        // for ever: no completionstatusrequired, no attempt_completed.
+        [$instance, $student, $course, $cm] = $this->create_activity([
+            'grademodel' => 0,
+            'gradepass'  => 50,
+        ]);
         $items = $this->items($instance);
 
+        $sink = $this->redirectEvents();
+        $first = ingestor::ingest(
+            $instance,
+            $course,
+            $cm,
+            $student->id,
+            $this->answered($items[0]->objectid, 1.0, null, 25, 1),
+            'noverdict-reg',
+            false
+        );
+        $this->assertArrayNotHasKey('status', $first);
+
+        $second = ingestor::ingest(
+            $instance,
+            $course,
+            $cm,
+            $student->id,
+            $this->answered($items[1]->objectid, 1.0, null, 75, 2),
+            'noverdict-reg',
+            false
+        );
+        $completed = array_filter(
+            $sink->get_events(),
+            fn($e) => $e instanceof \mod_exelearning\event\attempt_completed
+        );
+        $sink->close();
+
+        $this->assertSame('passed', $second['status']);
+        $this->assertSame('passed', $this->attempt($instance, $student->id, 0)->status);
+        $this->assertCount(1, $completed);
+    }
+
+    public function test_answered_after_a_terminal_package_statement_keeps_the_status(): void {
+        [$instance, $student, $course, $cm] = $this->create_activity([
+            'grademodel' => 0,
+            'gradepass'  => 50,
+        ]);
+        $items = $this->items($instance);
+
+        $sink = $this->redirectEvents();
         ingestor::ingest(
             $instance,
             $course,
@@ -359,8 +430,8 @@ final class ingestor_test extends \advanced_testcase {
 
         // A late re-answer is a score update, not a lifecycle transition. Downgrading the
         // overall row to 'incomplete' would revoke completionstatusrequired completion and
-        // re-arm attempt_completed on the next package statement (DEC-68-01).
-        $sink = $this->redirectEvents();
+        // re-arm attempt_completed (DEC-68-01): the status stays terminal and the event
+        // fires exactly once across the whole attempt.
         $reanswer = ingestor::ingest(
             $instance,
             $course,
@@ -378,7 +449,7 @@ final class ingestor_test extends \advanced_testcase {
 
         $this->assertEqualsWithDelta(75.0, $reanswer['rawscore'], 0.0001);
         $this->assertSame('passed', $this->attempt($instance, $student->id, 0)->status);
-        $this->assertCount(0, $events);
+        $this->assertCount(1, $events);
     }
 
     public function test_deleted_idevice_stops_weighing_on_the_reconstructed_overall(): void {
@@ -453,6 +524,126 @@ final class ingestor_test extends \advanced_testcase {
         // to the instance grade range, so they cannot disagree on the same activity.
         $this->assertEqualsWithDelta(40.0, $last['rawscore'], 0.0001);
         $this->assertEqualsWithDelta(40.0, (float) $this->attempt($instance, $student->id, 0)->rawscore, 0.0001);
+    }
+
+    public function test_page_census_makes_a_partial_attempt_exact(): void {
+        [$instance, $student, $course, $cm] = $this->create_activity(['grademodel' => 0]);
+        $items = $this->items($instance);
+
+        // The page census lists every evaluable iDevice, answered or not, so the weights
+        // normalise over the whole publication from the very first answer.
+        ingestor::ingest(
+            $instance,
+            $course,
+            $cm,
+            $student->id,
+            $this->initialized([
+                [$items[0]->objectid, 25, 1],
+                [$items[1]->objectid, 75, 2],
+            ]),
+            'census-reg',
+            false
+        );
+
+        $answered = ingestor::ingest(
+            $instance,
+            $course,
+            $cm,
+            $student->id,
+            $this->answered($items[0]->objectid, 1.0, null, 25, 1),
+            'census-reg',
+            false
+        );
+
+        // Perfect on the weight-25 iDevice, the weight-75 one untouched: 25, not 100.
+        $this->assertEqualsWithDelta(25.0, $answered['rawscore'], 0.0001);
+        $grades = grade_get_grades($instance->course, 'mod', 'exelearning', $instance->id, $student->id);
+        $this->assertEqualsWithDelta(25.0, (float) $grades->items[0]->grades[$student->id]->grade, 0.0001);
+
+        // Gradable is not the same as finished: one iDevice is still unanswered.
+        $this->assertSame('incomplete', $this->attempt($instance, $student->id, 0)->status);
+    }
+
+    public function test_census_is_package_metadata_reused_by_every_learner(): void {
+        global $DB;
+        [$instance, $first, $course, $cm] = $this->create_activity(['grademodel' => 0]);
+        $items = $this->items($instance);
+
+        // One learner's page visit teaches the package census...
+        ingestor::ingest(
+            $instance,
+            $course,
+            $cm,
+            $first->id,
+            $this->initialized([
+                [$items[0]->objectid, 25, 1],
+                [$items[1]->objectid, 75, 2],
+            ]),
+            'seed-reg',
+            false
+        );
+        $stored = $DB->get_record('exelearning_grade_item', [
+            'exelearningid' => $instance->id,
+            'itemnumber'    => $items[1]->itemnumber,
+        ]);
+        $this->assertEqualsWithDelta(75.0, (float) $stored->xapiweight, 0.0001);
+        $this->assertSame(2, (int) $stored->xapiorder);
+
+        // ...and a second learner is graded exactly from their very first answer, without
+        // ever emitting a census of their own.
+        $second = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($second->id, $course->id, 'student');
+        $answered = ingestor::ingest(
+            $instance,
+            $course,
+            $cm,
+            $second->id,
+            $this->answered($items[1]->objectid, 1.0, null, 75, 2),
+            'second-reg',
+            false
+        );
+
+        $this->assertEqualsWithDelta(75.0, $answered['rawscore'], 0.0001);
+    }
+
+    public function test_census_does_not_reconstruct_a_legacy_attempt(): void {
+        [$instance, $student, $course, $cm] = $this->create_activity(['grademodel' => 0]);
+        $items = $this->items($instance);
+
+        ingestor::ingest(
+            $instance,
+            $course,
+            $cm,
+            $student->id,
+            $this->initialized([
+                [$items[0]->objectid, 25, 1],
+                [$items[1]->objectid, 75, 2],
+            ]),
+            'legacy-reg',
+            false
+        );
+        // A pre-contract answered statement carries no weight at all. Reconstructing it
+        // would publish a package of zeroes over the score its package statement carries.
+        ingestor::ingest(
+            $instance,
+            $course,
+            $cm,
+            $student->id,
+            $this->answered($items[0]->objectid, 1.0),
+            'legacy-reg',
+            false
+        );
+        $package = ingestor::ingest(
+            $instance,
+            $course,
+            $cm,
+            $student->id,
+            $this->package('passed', 0.9),
+            'legacy-reg',
+            false
+        );
+
+        $this->assertEqualsWithDelta(90.0, $package['rawscore'], 0.0001);
     }
 
     public function test_duplicate_statement_id_is_not_reapplied(): void {

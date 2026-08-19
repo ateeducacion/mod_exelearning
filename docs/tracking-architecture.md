@@ -76,11 +76,15 @@ to the SCORM endpoint today):
 - Respect `gradeenabled` (DEC-13-07): when grading is off there are no grade items, so
   statements route nowhere (a no-op, consistent with rejecting unknown objectids).
 - Re-validate the overall on the server (spirit of DEC-6-01).
-- Validate `weight` and `idevice-order` as one contract: neither field alone. Their joint absence (or
-  joint `null`, legal inside an extensions map) selects the backward-compatible package-score path; a
-  weight outside eXeLearning's own 1..100 domain is clamped exactly as `getFinalScore()` clamps it,
-  never rejected — `xapi_track.php` answers an invalid statement with HTTP 200 + `ok:false` and the
-  listener treats every 2xx as final, so rejecting would silently discard the learner's score.
+- Read `idevice-weight` + `idevice-order` as **best effort, never fatal**. `xapi_track.php` answers an
+  invalid statement with HTTP 200 + `ok:false` and the listener treats every 2xx as final, so any
+  rejection here is silent grade loss. The score always applies; only the reconstruction input can be
+  dropped. Both values are needed together, so either one missing or unreadable grades the iDevice on
+  its own column and leaves it out of the overall — which is also what the emitter does with an
+  iDevice whose package-global position it cannot resolve. A weight outside 1..100 is clamped exactly
+  as `effectiveWeight()`/`getFinalScore()` clamp it. The shipped key is `.../extensions/idevice-weight`;
+  the pre-release `.../extensions/weight` spelling is still accepted, because an unrecognised key
+  degrades to the legacy path with no error at all.
 - `postMessage`: the host injects `parentOrigin = <Moodle origin>` and the listener checks
   `event.origin` against the iframe `pluginfile.php` origin; `'*'`/mismatch is rejected
   (RIE-013).
@@ -115,15 +119,28 @@ bounded server-side:
   tracker's dirty-resend; the server is idempotent by `statement.id`, so a resend never
   double-grades. Without it a single transient `500` would lose that statement's grade,
   whereas the SCORM path self-heals.
-- **Answered-only compatibility differs by contract version.** Once every registered gradable iDevice of
-  the package has reported its weight, a #2302 `answered` statement updates the overall immediately, so a
-  lost package lifecycle statement does not lose the grade. Until then — and for legacy xAPI `answered`
-  statements, which carry no weight/order at all — no overall row is written and the package statement
-  remains the source of the number. The full set is required because eXeLearning normalises the weights
-  over every registered iDevice (unanswered ones count as a 0, `common.js#registerActivity`): renormalising
-  over the answered subset alone would report 100 for a learner who only answered the lightest question.
-  Package verbs remain authoritative for terminal status in both paths, and an `answered` statement never
-  downgrades a terminal status back to `incomplete`.
+- **Multipage packages emit no package verdict at all.** With `pageCount > 1` the emitter sends no
+  `completed`/`passed`/`failed` for the package, because a page can only aggregate its own scores and two
+  pages would emit a `passed` and a `failed` for the same activity in one attempt. A complete
+  reconstruction is therefore the only end-of-attempt signal Moodle will ever get, and it derives the
+  terminal status itself from the activity's `gradepass` (`completed` when no pass grade is set). Without
+  that, every multipage attempt would stay `incomplete` for ever: no `completionstatusrequired`, no
+  `attempt_completed`. A package statement still wins when one does arrive.
+- **`initialized` / `terminated` are audit-only, and repeat.** Both are emitted once per page load and
+  once per `pagehide`, carry a null `result`, and in a multipage attempt arrive N times. Reading
+  `terminated` as end-of-attempt would close the attempt on the first page turn.
+- **The package census is what makes partial attempts gradable.** The emitter only ever tracks what the
+  learner answered (`common.js#sendScoreNew` tracks under `gameStarted || gameOver`), so renormalising over
+  that subset would report 100 for a learner who only answered the lightest question. The
+  `idevice-census` extension on each page's `initialized` statement lists every evaluable iDevice of that
+  page, answered or not; Moodle learns it onto `exelearning_grade_item` (package metadata, shared by every
+  learner and attempt) and from then on scores an unanswered iDevice as the 0 eXeLearning counts for it.
+  One learner visiting all the pages is enough to make the package exactly gradable for everybody.
+- **Without a census, the overall waits for a fully answered attempt**, because only that carries the whole
+  weight vector. A legacy attempt — no weight/order on any row — is never reconstructed at all: it keeps
+  its package-statement score instead of being rebuilt as a row of zeroes.
+- **Gradable is not finished.** With a census a single answer already yields an exact grade, so the
+  end-of-attempt test is separate: every gradable iDevice answered in that attempt.
 - **Concurrent same-attempt writes.** `attempts::record_item` is a check-then-insert guarded
   by a per-`(instance,user)` lock; on a 5 s lock-timeout it proceeds unlocked (the documented
   SCORM degraded mode it is shared with). A genuine `UNIQUE(exelearningid,userid,attempt,

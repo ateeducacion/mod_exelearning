@@ -64,7 +64,8 @@ class backup_exelearning_activity_structure_step extends backup_activity_structu
         // (DEC-12-01) when an iDevice is edited in place.
         $gradeitem = new backup_nested_element('gradeitem', ['id'], [
             'itemnumber', 'objectid', 'pageid', 'idevicetype', 'name',
-            'grademax', 'grademin', 'contenthash', 'deleted', 'timecreated', 'timemodified',
+            'grademax', 'grademin', 'contenthash', 'deleted',
+            'xapiweight', 'xapiorder', 'timecreated', 'timemodified',
         ]);
 
         $attempts = new backup_nested_element('attempts');

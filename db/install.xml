@@ -54,6 +54,8 @@
         <FIELD NAME="grademin"       TYPE="number" LENGTH="10" DECIMALS="5" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="deleted"        TYPE="int"  LENGTH="2"   NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Set to 1 when the iDevice disappears in a re-upload (preserves grade history)."/>
         <FIELD NAME="contenthash"    TYPE="char" LENGTH="40"  NOTNULL="false" SEQUENCE="false" COMMENT="sha1 of the iDevice content block in content.xml. Detects an in-place options edit (same objectid, changed scoring) so the teacher can be warned that existing grades are now stale."/>
+        <FIELD NAME="xapiweight"     TYPE="number" LENGTH="10" DECIMALS="5" NOTNULL="false" SEQUENCE="false" COMMENT="Effective 1..100 relative weight, learned from the xAPI page census. Package metadata shared by every user; NULL until a census reports this iDevice."/>
+        <FIELD NAME="xapiorder"      TYPE="int"  LENGTH="10"  NOTNULL="false" SEQUENCE="false" COMMENT="Deterministic 1-based package-global iDevice order, learned from the xAPI page census; NULL until reported."/>
         <FIELD NAME="timecreated"    TYPE="int"  LENGTH="10"  NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="timemodified"   TYPE="int"  LENGTH="10"  NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
       </FIELDS>

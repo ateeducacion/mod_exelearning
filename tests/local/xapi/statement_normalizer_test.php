@@ -95,16 +95,41 @@ final class statement_normalizer_test extends \advanced_testcase {
     }
 
     /**
-     * Invalid weighted-contract extension combinations are rejected.
+     * The shipped `idevice-weight` spelling is accepted like the pre-release one.
+     */
+    public function test_answered_accepts_the_idevice_namespaced_weight_key(): void {
+        $statement = $this->answered('ide-1', 0.7);
+        $statement['context']['extensions'][statement_normalizer::EXT_IDEVICE_WEIGHT] = 25;
+        $statement['context']['extensions'][statement_normalizer::EXT_IDEVICE_ORDER] = 3;
+
+        $out = statement_normalizer::normalize($statement);
+
+        $this->assertTrue($out['ok']);
+        $this->assertSame(25.0, $out['weight']);
+        $this->assertSame(3, $out['ideviceorder']);
+    }
+
+    /**
+     * Incomplete or unreadable metadata never fails the statement.
      *
-     * @dataProvider invalid_weighted_metadata_provider
+     * The endpoint answers `ok:false` with HTTP 200 and the listener treats every 2xx as
+     * final, so failing here would discard the learner's per-iDevice score with no error
+     * anywhere. The score survives; only the reconstruction input is dropped, which is
+     * also what the emitter does with an iDevice it cannot place (ADR-2302-01).
+     *
+     * @dataProvider unusable_weighted_metadata_provider
      * @param mixed $weight
      * @param mixed $order
+     * @param string|null $warning Expected developer warning, or null when the case is legal.
      */
-    public function test_invalid_weighted_metadata_is_rejected($weight, $order): void {
+    public function test_unusable_weighted_metadata_degrades_instead_of_failing(
+        $weight,
+        $order,
+        ?string $warning
+    ): void {
         $statement = $this->answered('ide-1', 0.5);
         if ($weight !== null) {
-            $statement['context']['extensions'][statement_normalizer::EXT_WEIGHT] = $weight;
+            $statement['context']['extensions'][statement_normalizer::EXT_IDEVICE_WEIGHT] = $weight;
         }
         if ($order !== null) {
             $statement['context']['extensions'][statement_normalizer::EXT_IDEVICE_ORDER] = $order;
@@ -112,39 +137,43 @@ final class statement_normalizer_test extends \advanced_testcase {
 
         $out = statement_normalizer::normalize($statement);
 
-        $this->assertFalse($out['ok']);
-        $this->assertSame('invalidxapimetadata', $out['error']);
+        $this->assertTrue($out['ok']);
+        $this->assertNull($out['weight']);
+        $this->assertNull($out['ideviceorder']);
+        // The grade itself is untouched: the iDevice still reaches its own column.
+        $this->assertEqualsWithDelta(50.0, $out['itemscores']['ide-1']['scorepct'], 0.0001);
+        $this->assertSame($warning, $out['metadatawarning']);
     }
 
     /**
-     * Invalid weighted-contract values for {@see test_invalid_weighted_metadata_is_rejected}.
+     * Values for {@see test_unusable_weighted_metadata_degrades_instead_of_failing}.
      *
-     * Only a genuinely contradictory contract is rejected: half of it present, or a
-     * value that cannot be read as the number the contract requires.
+     * A weight with no order is the emitter's documented behaviour for an iDevice whose
+     * package-global position cannot be resolved, so it carries no warning. A value that
+     * is present but cannot be read is an emitter bug and does.
      *
-     * @return array<string, array{mixed, mixed}>
+     * @return array<string, array{mixed, mixed, string|null}>
      */
-    public static function invalid_weighted_metadata_provider(): array {
+    public static function unusable_weighted_metadata_provider(): array {
         return [
-            'weight without order' => [25, null],
-            'order without weight' => [null, 1],
-            'zero order' => [25, 0],
-            'negative order' => [25, -1],
-            'fractional order' => [25, 1.5],
-            'non-numeric weight' => ['heavy', 1],
-            'non-numeric order' => [25, 'first'],
-            'boolean weight' => [true, 1],
-            'array order' => [25, [1]],
-            'order beyond the column range' => [25, 2147483648],
+            'weight without order' => [25, null, null],
+            'order without weight' => [null, 1, null],
+            'zero order' => [25, 0, 'unreadable xAPI iDevice order'],
+            'negative order' => [25, -1, 'unreadable xAPI iDevice order'],
+            'fractional order' => [25, 1.5, 'unreadable xAPI iDevice order'],
+            'non-numeric weight' => ['heavy', 1, 'unreadable xAPI iDevice weight'],
+            'non-numeric order' => [25, 'first', 'unreadable xAPI iDevice order'],
+            'boolean weight' => [true, 1, 'unreadable xAPI iDevice weight'],
+            'array order' => [25, [1], 'unreadable xAPI iDevice order'],
+            'order beyond the column range' => [25, 2147483648, 'unreadable xAPI iDevice order'],
         ];
     }
 
     /**
      * A weight outside the emitter's own domain costs precision, never the grade.
      *
-     * Rejecting the statement would drop the per-iDevice score for good: xapi_track.php
-     * answers with HTTP 200 + ok:false and js/xapi_listener.js treats any 2xx as final.
-     * eXeLearning's own getFinalScore() clamps the weight to 1..100; mirror that.
+     * eXeLearning's own effectiveWeight()/getFinalScore() clamp the weight to 1..100
+     * rather than discarding it; mirror that so the iDevice still feeds the overall.
      *
      * @dataProvider tolerated_weighted_metadata_provider
      * @param mixed $weight
@@ -152,7 +181,7 @@ final class statement_normalizer_test extends \advanced_testcase {
      * @param float $expectedweight
      * @param int $expectedorder
      */
-    public function test_out_of_domain_weighted_metadata_is_clamped_not_rejected(
+    public function test_out_of_domain_weighted_metadata_is_clamped_not_dropped(
         $weight,
         $order,
         float $expectedweight,
@@ -171,7 +200,7 @@ final class statement_normalizer_test extends \advanced_testcase {
     }
 
     /**
-     * Values for {@see test_out_of_domain_weighted_metadata_is_clamped_not_rejected}.
+     * Values for {@see test_out_of_domain_weighted_metadata_is_clamped_not_dropped}.
      *
      * @return array<string, array{mixed, mixed, float, int}>
      */
@@ -216,6 +245,47 @@ final class statement_normalizer_test extends \advanced_testcase {
         $this->assertSame('ide-1', $out['objectid']);
         $this->assertNull($out['weight']);
         $this->assertNull($out['ideviceorder']);
+    }
+
+    /**
+     * The page census is read from any statement, including the lifecycle verb it rides
+     * on, and unusable entries are skipped instead of failing the whole census.
+     */
+    public function test_page_census_is_parsed_and_sanitised(): void {
+        $statement = [
+            'id'   => self::UUID,
+            'verb' => ['id' => 'http://adlnet.gov/expapi/verbs/initialized'],
+            'object' => ['id' => 'https://exelearning.net/xapi/abc'],
+            'context' => ['extensions' => [statement_normalizer::EXT_IDEVICE_CENSUS => [
+                ['idevice-id' => 'ide-1', 'idevice-weight' => 25, 'idevice-order' => 1],
+                // Clamped to the emitter's own domain, exactly like a per-iDevice weight.
+                ['idevice-id' => 'ide-2', 'idevice-weight' => 0, 'idevice-order' => 2],
+                // No resolvable order: out of the census, as it is out of the emitter's
+                // own order-sensitive aggregate.
+                ['idevice-id' => 'ide-3', 'idevice-weight' => 40],
+                ['idevice-id' => '', 'idevice-weight' => 10, 'idevice-order' => 4],
+                'not-an-entry',
+            ]]],
+        ];
+
+        $out = statement_normalizer::normalize($statement);
+
+        $this->assertTrue($out['ok']);
+        $this->assertTrue($out['lifecycle']);
+        $this->assertSame(['ide-1', 'ide-2'], array_keys($out['census']));
+        $this->assertSame(25.0, $out['census']['ide-1']['weight']);
+        $this->assertSame(1, $out['census']['ide-1']['ideviceorder']);
+        $this->assertSame(1.0, $out['census']['ide-2']['weight']);
+    }
+
+    /**
+     * A statement with no census yields an empty one, never a failure.
+     */
+    public function test_absent_census_is_empty(): void {
+        $out = statement_normalizer::normalize($this->answered('ide-1', 0.5));
+
+        $this->assertTrue($out['ok']);
+        $this->assertSame([], $out['census']);
     }
 
     public function test_objectid_falls_back_to_object_id_suffix(): void {

@@ -42,11 +42,34 @@ class statement_normalizer {
     /** @var string The eXeLearning extension IRI carrying the stable raw iDevice id. */
     public const EXT_IDEVICE_ID = 'https://exelearning.net/xapi/extensions/idevice-id';
 
-    /** @var string Effective 1..100 relative weight introduced by upstream PR #2302. */
+    /**
+     * @var string Effective 1..100 relative weight introduced by upstream PR 2302.
+     *
+     * The upstream contract renamed this key to the `idevice-*` namespace shared by its
+     * siblings, because it describes the iDevice and not the package. Nothing has shipped
+     * under the earlier `.../extensions/weight` spelling, but it is still accepted: a key
+     * this class does not recognise degrades to the legacy path *silently* (no weight, no
+     * error), so tolerating both names costs one lookup and removes a failure mode that
+     * would be invisible in production.
+     */
+    public const EXT_IDEVICE_WEIGHT = 'https://exelearning.net/xapi/extensions/idevice-weight';
+
+    /** @var string Pre-release spelling of {@see self::EXT_IDEVICE_WEIGHT}, still accepted. */
     public const EXT_WEIGHT = 'https://exelearning.net/xapi/extensions/weight';
 
     /** @var string Deterministic 1-based package-global iDevice render order. */
     public const EXT_IDEVICE_ORDER = 'https://exelearning.net/xapi/extensions/idevice-order';
+
+    /**
+     * @var string Roster of the evaluable iDevices rendered on the current page.
+     *
+     * Rides on the per-page `initialized` statement and lists every evaluable iDevice of
+     * that page — answered or not — as `{idevice-id, idevice-weight, idevice-order}`. It
+     * is the only way a consumer can learn the package's full weight vector: the emitter
+     * only ever tracks what the learner answered, so without this an unanswered iDevice
+     * is invisible and the weights cannot be normalised over the whole publication.
+     */
+    public const EXT_IDEVICE_CENSUS = 'https://exelearning.net/xapi/extensions/idevice-census';
 
     /** @var string[] Verbs that carry a per-iDevice or package grade and are processed. */
     private const GRADING_VERBS = ['answered', 'completed', 'passed', 'failed'];
@@ -114,6 +137,9 @@ class statement_normalizer {
             'verb'         => $verb,
             'statementid'  => $statementid,
             'registration' => $registration,
+            // Package metadata, not a result: it may ride on any statement and is read
+            // even from verbs this class otherwise ignores.
+            'census'       => self::census($statement),
         ];
 
         // A verb outside the known set is accepted-and-ignored, never an error.
@@ -139,14 +165,13 @@ class statement_normalizer {
                 return ['ok' => false, 'error' => 'objectidmissing'];
             }
             $weightedmetadata = self::weighted_metadata($statement);
-            if ($weightedmetadata === false) {
-                return ['ok' => false, 'error' => 'invalidxapimetadata'];
-            }
             return $base + [
                 'objectid'   => $objectid,
                 'scaled'     => $scaled,
                 'weight'     => $weightedmetadata['weight'],
                 'ideviceorder' => $weightedmetadata['ideviceorder'],
+                // Set only when a present value could not be read; the caller logs it.
+                'metadatawarning' => $weightedmetadata['warning'],
                 'itemscores' => [
                     $objectid => [
                         // The scaled value is already normalised to [0,1] by the
@@ -254,56 +279,131 @@ class statement_normalizer {
     }
 
     /**
-     * Validate the additive weighted-score reconstruction contract.
+     * Read the additive weighted-score reconstruction metadata (upstream PR 2302).
      *
-     * Both extensions are optional together for compatibility with packages exported
-     * before exelearning/exelearning#2302. Rejecting is expensive here: `xapi_track.php`
-     * answers an invalid statement with HTTP 200 + `ok:false`, and `js/xapi_listener.js`
-     * treats every 2xx as final, so a rejected `answered` loses the learner's per-iDevice
-     * score for good. Only a genuinely contradictory contract is rejected:
+     * This metadata is **best effort and never fatal**. Failing the statement would be
+     * silent data loss by construction: `xapi_track.php` answers an invalid statement
+     * with HTTP 200 + `ok:false`, and `js/xapi_listener.js` treats every 2xx as final,
+     * so the learner's per-iDevice score would be discarded with no error anywhere. The
+     * score therefore always survives; only the reconstruction input can be dropped.
      *
-     * - Neither extension present (or both null, which an extensions map may legally
-     *   carry per DEC-0-18 §5): legacy statement, graded through the package-score path.
-     * - Exactly one of the two present: an emitter bug whose missing half cannot be
-     *   guessed without producing a wrong overall — rejected.
-     * - Both present but not numeric, or an order that is not a positive integer the
-     *   `xapiorder` column can hold: rejected.
-     * - Both present and numeric: accepted, with the weight clamped to eXeLearning's own
-     *   1..100 domain (`common.js#getFinalScore` clamps rather than discards), so an
-     *   out-of-range weight costs precision instead of the whole grade.
+     * Both values are required *together* to feed the overall, so either one missing or
+     * unreadable yields no metadata at all and the iDevice is graded on its own column
+     * while staying out of the reconstruction. That is not a defensive guess — it is the
+     * upstream contract: the emitter always carries a weight on an evaluable `answered`
+     * but omits `idevice-order` when it cannot resolve the iDevice's package-global
+     * position, and keeps exactly those iDevices out of its own order-sensitive
+     * aggregate (`exe_xapi.js`, ADR-2302-01).
+     *
+     * A weight outside eXeLearning's 1..100 domain is clamped rather than dropped,
+     * mirroring the emitter's own `effectiveWeight()` and `getFinalScore()`.
      *
      * @param array $statement
-     * @return array{weight: float|null, ideviceorder: int|null}|false
+     * @return array{weight: float|null, ideviceorder: int|null, warning: string|null}
      */
-    private static function weighted_metadata(array $statement) {
+    private static function weighted_metadata(array $statement): array {
+        $none = ['weight' => null, 'ideviceorder' => null, 'warning' => null];
+
         $extensions = $statement['context']['extensions'] ?? [];
         if (!is_array($extensions)) {
             // No usable extensions map at all: no metadata, not a broken contract.
-            return ['weight' => null, 'ideviceorder' => null];
+            return $none;
         }
-        $weightvalue = $extensions[self::EXT_WEIGHT] ?? null;
+        // Accept the shipped `idevice-weight` key and the earlier `weight` spelling.
+        $weightvalue = $extensions[self::EXT_IDEVICE_WEIGHT]
+            ?? $extensions[self::EXT_WEIGHT]
+            ?? null;
         $ordervalue = $extensions[self::EXT_IDEVICE_ORDER] ?? null;
-        if ($weightvalue === null && $ordervalue === null) {
-            return ['weight' => null, 'ideviceorder' => null];
+
+        $weight = self::effective_weight($weightvalue);
+        $order = self::effective_order($ordervalue);
+
+        // Distinguish "absent" (legal, silent) from "present but unreadable" (an emitter
+        // bug worth surfacing to a developer without costing the learner the grade).
+        $warning = null;
+        if ($weightvalue !== null && $weight === null) {
+            $warning = 'unreadable xAPI iDevice weight';
+        } else if ($ordervalue !== null && $order === null) {
+            $warning = 'unreadable xAPI iDevice order';
         }
-        if ($weightvalue === null || $ordervalue === null) {
-            return false;
+        if ($weight === null || $order === null) {
+            return ['weight' => null, 'ideviceorder' => null, 'warning' => $warning];
         }
-        if (!is_numeric($weightvalue) || !is_numeric($ordervalue)) {
-            return false;
+        return ['weight' => $weight, 'ideviceorder' => $order, 'warning' => null];
+    }
+
+    /**
+     * The page's evaluable-iDevice roster, keyed by stable iDevice id.
+     *
+     * Entries that are unusable are skipped rather than failing the statement, for the
+     * same reason the per-iDevice metadata is best effort: a rejection here would be
+     * invisible to the learner and cost the package its census. An entry with no
+     * resolvable order is skipped exactly as the emitter keeps it out of its own
+     * order-sensitive aggregate.
+     *
+     * @param array $statement
+     * @return array<string, array{weight: float, ideviceorder: int}> Possibly empty.
+     */
+    private static function census(array $statement): array {
+        $extensions = $statement['context']['extensions'] ?? [];
+        if (!is_array($extensions)) {
+            return [];
+        }
+        $raw = $extensions[self::EXT_IDEVICE_CENSUS] ?? null;
+        if (!is_array($raw)) {
+            return [];
         }
 
-        $weight = (float) $weightvalue;
-        $order = (float) $ordervalue;
+        $census = [];
+        foreach ($raw as $entry) {
+            if (!is_array($entry)) {
+                continue;
+            }
+            $ideviceid = $entry['idevice-id'] ?? null;
+            if (!is_string($ideviceid) || $ideviceid === '') {
+                continue;
+            }
+            $weight = self::effective_weight($entry['idevice-weight'] ?? null);
+            $order = self::effective_order($entry['idevice-order'] ?? null);
+            if ($weight === null || $order === null) {
+                continue;
+            }
+            $census[$ideviceid] = ['weight' => $weight, 'ideviceorder' => $order];
+        }
+        return $census;
+    }
+
+    /**
+     * The relative iDevice weight, clamped to the emitter's own 1..100 domain.
+     *
+     * @param mixed $value Raw extension value.
+     * @return float|null Null when absent or not a finite number.
+     */
+    private static function effective_weight($value): ?float {
+        if ($value === null || !is_numeric($value)) {
+            return null;
+        }
+        $weight = (float) $value;
+        return is_finite($weight) ? max(1.0, min(100.0, $weight)) : null;
+    }
+
+    /**
+     * The 1-based package-global iDevice order.
+     *
+     * @param mixed $value Raw extension value.
+     * @return int|null Null when absent, or not a positive integer the column can hold.
+     */
+    private static function effective_order($value): ?int {
+        if ($value === null || !is_numeric($value)) {
+            return null;
+        }
+        $order = (float) $value;
         // The upper bound keeps a crafted order out of the `xapiorder` integer column,
         // where it would fail the write rather than the validation.
-        if (
-            !is_finite($weight) || !is_finite($order)
-            || $order < 1.0 || $order > 2147483647.0 || floor($order) !== $order
-        ) {
-            return false;
+        if (!is_finite($order) || $order < 1.0 || $order > 2147483647.0 || floor($order) !== $order) {
+            return null;
         }
-        return ['weight' => max(1.0, min(100.0, $weight)), 'ideviceorder' => (int) $order];
+        return (int) $order;
     }
 
     /**

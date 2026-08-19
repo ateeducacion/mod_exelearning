@@ -593,5 +593,22 @@ function xmldb_exelearning_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026081900, 'exelearning');
     }
 
+    // Stage 22 (2026081902): learn the package's evaluable-iDevice census (effective
+    // weight + package-global order) from the xAPI page census on exelearning_grade_item.
+    // It is package metadata, identical for every user, so one learner visiting every
+    // page makes partial attempts reconstructible for everybody afterwards.
+    if ($oldversion < 2026081902) {
+        $table = new xmldb_table('exelearning_grade_item');
+        $weight = new xmldb_field('xapiweight', XMLDB_TYPE_NUMBER, '10, 5', null, null, null, null, 'contenthash');
+        if (!$dbman->field_exists($table, $weight)) {
+            $dbman->add_field($table, $weight);
+        }
+        $order = new xmldb_field('xapiorder', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'xapiweight');
+        if (!$dbman->field_exists($table, $order)) {
+            $dbman->add_field($table, $order);
+        }
+        upgrade_mod_savepoint(true, 2026081902, 'exelearning');
+    }
+
     return true;
 }

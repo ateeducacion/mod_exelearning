@@ -71,7 +71,7 @@ Reverse lookups for the privacy registry: `get_contexts_for_userid()`
 | Element | Backed up? | Conditional | Restore / remap |
 |---------|-----------|-------------|-----------------|
 | `exelearning` instance (all settings incl. `gradeenabled`, `grademodel`, `grademethod`, `gradepass`, `gradecat`, `maxattempt`, `reviewmode`, `teachermodevisible`) | Yes | always | `process_exelearning()` (`restore_…stepslib.php:60-96`) |
-| `exelearning_grade_item` | Yes | **always** (structural package metadata, not user data) | `process_exelearning_gradeitem()` (`:103-116`) |
+| `exelearning_grade_item` | Yes, including the learned `xapiweight` / `xapiorder` census | **always** (structural package metadata, not user data) | `process_exelearning_gradeitem()` (`:103-116`) |
 | `exelearning_attempt` | Yes, including `xapiweight` / `xapiorder` | **only when `userinfo` is set** | `process_exelearning_attempt()` (`:123-137`) |
 | `intro` files | Yes | `annotate_files('mod_exelearning','intro')` | `add_related_files(...,'intro')` |
 | `package` files (ELPX source) | Yes | `annotate_files(...,'package')` | `add_related_files(...,'package')` |

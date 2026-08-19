@@ -107,6 +107,15 @@ class ingestor {
             return ['ok' => true, 'duplicate' => true, 'verb' => $norm['verb']];
         }
 
+        // The package census (upstream PR 2302) rides on the per-page `initialized`
+        // statement and lists every evaluable iDevice of that page, answered or not. It
+        // is package metadata — identical for every user — so it is learned once onto
+        // exelearning_grade_item and from then on lets ANY learner's partial attempt be
+        // reconstructed exactly, including the iDevices they never opened.
+        if ($norm['census'] !== []) {
+            self::record_census($exe->id, $norm['census']);
+        }
+
         // Lifecycle verbs carry no grade: record them for audit only.
         if (!empty($norm['lifecycle'])) {
             self::record_event($exe->id, $userid, $norm, $registration);
@@ -172,6 +181,17 @@ class ingestor {
             $result = ['ok' => true, 'verb' => $norm['verb'], 'attempt' => $attempt];
 
             if ($norm['verb'] === 'answered') {
+                // Unreadable reconstruction metadata never costs the learner the score
+                // (the endpoint's ok:false is final for the listener), but it does mean a
+                // broken emitter: surface it to developers instead of swallowing it.
+                if (!empty($norm['metadatawarning'])) {
+                    debugging(
+                        'mod_exelearning: ' . $norm['metadatawarning'] . ' on statement '
+                            . $norm['statementid'] . '; the iDevice score was graded but is '
+                            . 'excluded from the reconstructed overall.',
+                        DEBUG_DEVELOPER
+                    );
+                }
                 // Per-iDevice column(s): reuse the shared, objectid-routed applier.
                 $peritem = track::apply_item_scores($exe, $userid, $attempt, $norm['itemscores'], $registration);
                 $result['objectid'] = $norm['objectid'];
@@ -184,20 +204,28 @@ class ingestor {
                 if ($norm['weight'] !== null && $norm['ideviceorder'] !== null && $peritem !== []) {
                     $reconstructed = self::reconstruct_overall_pct($exe->id, $userid, $attempt);
                     if ($reconstructed !== null) {
-                        // An answered statement is a score update, never a lifecycle
-                        // transition: keep whatever status the package statements already
-                        // established. Downgrading a finished attempt to 'incomplete' would
-                        // revoke custom completion (completionstatusrequired) and make
-                        // attempt_completed fire again on the next package statement
-                        // (DEC-68-01).
-                        $status = (is_string($prioroverallstatus) && $prioroverallstatus !== '')
-                            ? $prioroverallstatus
-                            : 'incomplete';
+                        // Being able to compute a number is NOT the same as the attempt
+                        // being finished: with the package census a single answer already
+                        // yields an exact grade. The attempt ends when every gradable
+                        // iDevice has been answered, and that is also the only end signal
+                        // a multipage package will ever send — upstream emits NO
+                        // package-level verdict when pageCount > 1 (ADR-2302-01), so
+                        // without deriving it here every multipage attempt would stay
+                        // 'incomplete' for ever: no completionstatusrequired, no
+                        // attempt_completed. A package statement still overrides it when
+                        // one does arrive. Short of that, never downgrade a status a
+                        // package statement already set (DEC-68-01).
+                        $overall = ($reconstructed / 100.0) * $grademax;
+                        $status = self::attempt_is_complete($exe->id, $userid, $attempt)
+                            ? self::derive_terminal_status($exe, $overall, $grademin, $grademax)
+                            : ((is_string($prioroverallstatus) && $prioroverallstatus !== '')
+                                ? $prioroverallstatus
+                                : 'incomplete');
                         $result['rawscore'] = self::record_overall(
                             $exe,
                             $userid,
                             $attempt,
-                            ($reconstructed / 100.0) * $grademax,
+                            $overall,
                             $status,
                             $registration,
                             $grademax,
@@ -215,6 +243,16 @@ class ingestor {
                         if ($completion->is_enabled($cm)) {
                             $completion->update_state($cm, COMPLETION_UNKNOWN, $userid);
                         }
+                        self::maybe_emit_completed(
+                            $exe,
+                            $course,
+                            $cm,
+                            $userid,
+                            $attempt,
+                            (float) $result['rawscore'],
+                            $status,
+                            $prioroverallstatus
+                        );
                     }
                 }
                 // Package lifecycle statements still determine terminal status. The
@@ -272,6 +310,117 @@ class ingestor {
     }
 
     /**
+     * Learn the package's evaluable-iDevice census onto the grade items.
+     *
+     * Package metadata, not user data: the same values for every learner and attempt, so
+     * one learner visiting every page is enough to make the whole package reconstructible
+     * for everybody afterwards. An id the instance does not expose as a gradable iDevice
+     * has no row to learn onto and is ignored, exactly like an unknown objectid in
+     * {@see track::apply_item_scores()}.
+     *
+     * @param int $exelearningid Activity instance id.
+     * @param array<string, array{weight: float, ideviceorder: int}> $census Keyed by objectid.
+     * @return void
+     */
+    private static function record_census(int $exelearningid, array $census): void {
+        global $DB;
+
+        $rows = $DB->get_records(
+            'exelearning_grade_item',
+            ['exelearningid' => $exelearningid, 'deleted' => 0],
+            '',
+            'id, objectid, xapiweight, xapiorder'
+        );
+        $byobjectid = [];
+        foreach ($rows as $row) {
+            $byobjectid[(string) $row->objectid] = $row;
+        }
+
+        $now = time();
+        foreach ($census as $objectid => $meta) {
+            if (!isset($byobjectid[(string) $objectid])) {
+                continue;
+            }
+            $row = $byobjectid[(string) $objectid];
+            // A re-export can legitimately change weights or reorder pages, so the latest
+            // census wins; skip the write when nothing moved.
+            $sameweight = ($row->xapiweight !== null)
+                && (abs((float) $row->xapiweight - $meta['weight']) < 0.00001);
+            if ($sameweight && (int) $row->xapiorder === $meta['ideviceorder']) {
+                continue;
+            }
+            $DB->update_record('exelearning_grade_item', (object) [
+                'id'           => $row->id,
+                'xapiweight'   => $meta['weight'],
+                'xapiorder'    => $meta['ideviceorder'],
+                'timemodified' => $now,
+            ]);
+        }
+    }
+
+    /**
+     * Whether every gradable iDevice of the package has been answered in this attempt.
+     *
+     * This is the end-of-attempt test, deliberately separate from whether a grade can be
+     * computed: the package census makes a one-answer attempt exactly gradable, but it is
+     * obviously not finished.
+     *
+     * @param int $exelearningid Activity instance id.
+     * @param int $userid Attempt owner.
+     * @param int $attempt Attempt number.
+     * @return bool
+     */
+    private static function attempt_is_complete(int $exelearningid, int $userid, int $attempt): bool {
+        global $DB;
+
+        $expected = $DB->count_records('exelearning_grade_item', [
+            'exelearningid' => $exelearningid,
+            'deleted'       => 0,
+        ]);
+        if ($expected === 0) {
+            return false;
+        }
+        $answered = $DB->count_records_sql(
+            'SELECT COUNT(1)
+               FROM {exelearning_attempt} a
+               JOIN {exelearning_grade_item} gi ON gi.exelearningid = a.exelearningid
+                    AND gi.itemnumber = a.itemnumber AND gi.deleted = 0
+              WHERE a.exelearningid = ? AND a.userid = ? AND a.attempt = ? AND a.itemnumber > 0',
+            [$exelearningid, $userid, $attempt]
+        );
+        return $answered >= $expected;
+    }
+
+    /**
+     * The terminal status of a fully reported attempt, in Moodle's own terms.
+     *
+     * The emitter calls a single-page package passed at >= 50/100. Moodle's equivalent
+     * knob is the activity's `gradepass`, so that is what decides here; with no pass
+     * grade configured there is no pass/fail distinction and the attempt is merely
+     * `completed`. Never returns `incomplete`: the caller only reaches this once every
+     * gradable iDevice of the package has reported.
+     *
+     * @param \stdClass $exe Activity instance.
+     * @param float $overall Raw overall before clamping.
+     * @param float $grademin Activity minimum grade.
+     * @param float $grademax Activity maximum grade.
+     * @return string completed|passed|failed
+     */
+    private static function derive_terminal_status(
+        \stdClass $exe,
+        float $overall,
+        float $grademin,
+        float $grademax
+    ): string {
+        $gradepass = (float) ($exe->gradepass ?? 0);
+        if ($gradepass <= 0.0) {
+            return 'completed';
+        }
+        // Compare the value that actually reaches the gradebook, not the raw one.
+        return (max($grademin, min($grademax, $overall)) >= $gradepass) ? 'passed' : 'failed';
+    }
+
+    /**
      * Reconstruct the exact current package score from persisted new-contract rows.
      *
      * The attempt table is already the latest-state map: its unique key contains one
@@ -280,13 +429,21 @@ class ingestor {
      * join drops rows whose iDevice disappeared in a re-upload (`deleted = 1`), which
      * must no longer weigh on the result.
      *
-     * The denominator is the whole publication, never the answered subset. eXeLearning
-     * registers every evaluable iDevice in its `lmsData` at page load (score 0, its own
-     * weight) and normalises over that full set, so renormalising over the iDevices that
-     * happen to have answered so far would inflate a partial attempt — reporting 100 for
-     * a learner who only answered the lightest question. Until every registered iDevice
-     * has reported its weight the package total is simply unknown, so the attempt keeps
-     * the DEC-85-01 package-score fallback instead of publishing a guess.
+     * The denominator is the whole publication, never the answered subset: the emitter
+     * only ever tracks what the learner answered, so renormalising over that subset would
+     * inflate a partial attempt — reporting 100 for a learner who only answered the
+     * lightest question. Two ways to get the full weight vector, in order of preference:
+     *
+     * 1. The package census learned from the `initialized` statements. Once every
+     *    gradable iDevice of the instance carries its weight and order, an unanswered one
+     *    is scored as the 0 eXeLearning counts for it and even a one-answer attempt is
+     *    exact. Because the census is package metadata this holds for every learner as
+     *    soon as anybody has visited all the pages.
+     * 2. Without a census, only a fully answered attempt carries every weight, so
+     *    anything less returns null and keeps the DEC-85-01 package-score fallback.
+     *
+     * An attempt with no new-contract row at all is legacy in either case: it must keep
+     * the package-statement score rather than be reconstructed as a row of zeroes.
      *
      * @param int $exelearningid Activity instance id.
      * @param int $userid Attempt owner.
@@ -296,34 +453,59 @@ class ingestor {
     private static function reconstruct_overall_pct(int $exelearningid, int $userid, int $attempt): ?float {
         global $DB;
 
-        $expected = $DB->count_records('exelearning_grade_item', [
-            'exelearningid' => $exelearningid,
-            'deleted'       => 0,
-        ]);
-        if ($expected === 0) {
+        $roster = $DB->get_records(
+            'exelearning_grade_item',
+            ['exelearningid' => $exelearningid, 'deleted' => 0],
+            'xapiorder ASC, itemnumber ASC',
+            'itemnumber, xapiweight, xapiorder'
+        );
+        if ($roster === []) {
             return null;
         }
-
-        $rows = $DB->get_records_sql(
-            'SELECT a.itemnumber, a.scaledscore, a.xapiweight, a.xapiorder
-               FROM {exelearning_attempt} a
-               JOIN {exelearning_grade_item} gi ON gi.exelearningid = a.exelearningid
-                    AND gi.itemnumber = a.itemnumber AND gi.deleted = 0
-              WHERE a.exelearningid = ? AND a.userid = ? AND a.attempt = ? AND a.itemnumber > 0
-                    AND a.xapiweight IS NOT NULL AND a.xapiorder IS NOT NULL
-           ORDER BY a.xapiorder ASC, a.itemnumber ASC',
-            [$exelearningid, $userid, $attempt]
+        $scores = $DB->get_records_select(
+            'exelearning_attempt',
+            'exelearningid = ? AND userid = ? AND attempt = ? AND itemnumber > 0',
+            [$exelearningid, $userid, $attempt],
+            '',
+            'itemnumber, scaledscore, xapiweight, xapiorder'
         );
-        if (count($rows) < $expected) {
+
+        // A legacy attempt reports no weight at all; reconstructing it would publish a
+        // package of zeroes over the score its package statement legitimately carries.
+        $hasnewcontract = false;
+        foreach ($scores as $score) {
+            if ($score->xapiweight !== null && $score->xapiorder !== null) {
+                $hasnewcontract = true;
+                break;
+            }
+        }
+        if (!$hasnewcontract) {
             return null;
         }
 
         $items = [];
-        foreach ($rows as $row) {
+        foreach ($roster as $itemnumber => $gradeitem) {
+            $score = $scores[$itemnumber] ?? null;
+            $scorepct = ($score !== null) ? ((float) $score->scaledscore * 100.0) : 0.0;
+
+            if ($gradeitem->xapiweight !== null && $gradeitem->xapiorder !== null) {
+                // Censused: this iDevice weighs whether or not it was ever answered.
+                $items[] = [
+                    'scorepct' => $scorepct,
+                    'weight' => (float) $gradeitem->xapiweight,
+                    'ideviceorder' => (int) $gradeitem->xapiorder,
+                ];
+                continue;
+            }
+            // Not censused: only this attempt's own answer can supply its weight, and a
+            // single missing one makes the package total unknowable.
+            if ($score === null || $score->xapiweight === null || $score->xapiorder === null) {
+                return null;
+            }
             $items[] = [
-                'scorepct' => (float) $row->scaledscore * 100.0,
-                'weight' => (float) $row->xapiweight,
-                'ideviceorder' => (int) $row->xapiorder,
+                'scorepct' => $scorepct,
+                'weight' => (float) $score->xapiweight,
+                'ideviceorder' => (int) $score->xapiorder,
             ];
         }
         return weighted_score_calculator::calculate($items);
