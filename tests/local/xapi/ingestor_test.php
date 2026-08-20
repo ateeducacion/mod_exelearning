@@ -58,6 +58,20 @@ final class ingestor_test extends \advanced_testcase {
     }
 
     /**
+     * All registered (non-deleted) gradable items, ordered by itemnumber.
+     *
+     * @param \stdClass $instance
+     * @return \stdClass[] Rows with itemnumber + objectid.
+     */
+    private function items(\stdClass $instance): array {
+        global $DB;
+        return array_values($DB->get_records('exelearning_grade_item', [
+            'exelearningid' => $instance->id,
+            'deleted'       => 0,
+        ], 'itemnumber ASC', 'itemnumber, objectid'));
+    }
+
+    /**
      * The first registered (non-deleted) gradable item of the instance.
      *
      * @param \stdClass $instance
@@ -274,13 +288,13 @@ final class ingestor_test extends \advanced_testcase {
         $this->assertEquals(0, $DB->count_records('exelearning_attempt', ['exelearningid' => $instance->id]));
     }
 
-    public function test_answered_only_attempt_has_no_overall_row(): void {
-        // DEC-85-01 edge: the authoritative overall (itemnumber=0) comes from the package
-        // passed/failed/completed statement, emitted right after the answered ones. An
-        // answered-only flow (the terminal package statement never arrives — e.g. the tab
-        // closes first) writes per-iDevice rows but NO overall row, so the participation
-        // summary and status/passgrade completion reflect only package-bearing attempts.
-        // Pinned so a future change to this intentional behaviour is noticed.
+    public function test_answered_writes_a_server_derived_overall_row(): void {
+        // DEC-122-01 reverses the old answered-only edge: multipage packages emit NO
+        // package verdict (upstream ADR-2302-01), so every answered commit derives the
+        // itemnumber=0 row server-side from the roster and this attempt's own rows.
+        // With one of two registered items answered, the attempt is a running partial:
+        // mean of the answered subset over the full roster is not yet computable as
+        // terminal, so the row is 'incomplete' with the running mean of answered items.
         [$instance, $student, $course, $cm] = $this->create_activity();
         [$itemnumber, $objectid] = $this->first_item($instance);
 
@@ -288,6 +302,183 @@ final class ingestor_test extends \advanced_testcase {
 
         $this->assertTrue($result['ok']);
         $this->assertNotFalse($this->attempt($instance, $student->id, $itemnumber)); // Per-iDevice row written.
-        $this->assertFalse($this->attempt($instance, $student->id, 0));              // Overall row absent.
+        $overall = $this->attempt($instance, $student->id, 0);
+        $this->assertNotFalse($overall);
+        $this->assertSame('incomplete', $overall->status);
+        // Running mean of the ANSWERED items (100), visible to the participation
+        // summary and the OVERALL grade model while the attempt is in flight —
+        // SCORM-channel parity (it recomputes on every commit too).
+        $this->assertEqualsWithDelta(100.0, (float) $overall->rawscore, 0.0001);
+    }
+
+    /**
+     * Completing the roster turns the derived overall terminal: gradepass > 0 decides
+     * passed/failed against the derived mean; the value is the unweighted mean of the
+     * per-item scores (weights are unrecoverable on this channel by design).
+     */
+    public function test_completing_the_roster_derives_a_terminal_overall(): void {
+        global $DB;
+        [$instance, $student, $course, $cm] = $this->create_activity(['gradepass' => 60]);
+        $items = $this->items($instance);
+
+        ingestor::ingest($instance, $course, $cm, $student->id, $this->answered($items[0]->objectid, 1.0), 'r1', false);
+        $mid = $this->attempt($instance, $student->id, 0);
+        $this->assertSame('incomplete', $mid->status);
+
+        ingestor::ingest($instance, $course, $cm, $student->id, $this->answered($items[1]->objectid, 0.4), 'r1', false);
+
+        $overall = $this->attempt($instance, $student->id, 0);
+        // Mean of 100 and 40 = 70 >= gradepass 60 -> passed.
+        $this->assertEqualsWithDelta(70.0, (float) $overall->rawscore, 0.0001);
+        $this->assertSame('passed', $overall->status);
+    }
+
+    /**
+     * gradepass = 0 disables pass-based status: a complete roster reads 'completed'.
+     * The server does not invent a pass policy (the emitter's single-page verdict uses
+     * a fixed 50% threshold; that wording difference is deliberate and documented).
+     */
+    public function test_gradepass_zero_yields_completed(): void {
+        [$instance, $student, $course, $cm] = $this->create_activity();
+        $items = $this->items($instance);
+
+        ingestor::ingest($instance, $course, $cm, $student->id, $this->answered($items[0]->objectid, 0.1), 'r1', false);
+        ingestor::ingest($instance, $course, $cm, $student->id, $this->answered($items[1]->objectid, 0.1), 'r1', false);
+
+        $this->assertSame('completed', $this->attempt($instance, $student->id, 0)->status);
+    }
+
+    /**
+     * A re-answer can flip passed -> failed, and attempt_completed fires exactly once
+     * (on the first transition into a terminal status, DEC-68-01).
+     */
+    public function test_reanswer_flips_status_and_completed_fires_once(): void {
+        [$instance, $student, $course, $cm] = $this->create_activity(['gradepass' => 60]);
+        $items = $this->items($instance);
+
+        $sink = $this->redirectEvents();
+        ingestor::ingest($instance, $course, $cm, $student->id, $this->answered($items[0]->objectid, 1.0), 'r1', false);
+        ingestor::ingest($instance, $course, $cm, $student->id, $this->answered($items[1]->objectid, 1.0), 'r1', false);
+        $this->assertSame('passed', $this->attempt($instance, $student->id, 0)->status);
+
+        // Re-answer the first item much worse: mean drops to 30 -> failed.
+        ingestor::ingest($instance, $course, $cm, $student->id, $this->answered($items[0]->objectid, 0.0), 'r1', false);
+        $events = array_filter(
+            $sink->get_events(),
+            fn($event) => $event instanceof \mod_exelearning\event\attempt_completed
+        );
+        $sink->close();
+
+        $this->assertSame('failed', $this->attempt($instance, $student->id, 0)->status);
+        $this->assertCount(1, $events);
+    }
+
+    /**
+     * attempt_started precedes attempt_completed even when the FIRST commit finishes
+     * the whole attempt (a single-iDevice roster).
+     */
+    public function test_started_precedes_completed_on_single_item_roster(): void {
+        global $DB;
+        [$instance, $student, $course, $cm] = $this->create_activity();
+        $items = $this->items($instance);
+        $DB->set_field('exelearning_grade_item', 'deleted', 1, [
+            'exelearningid' => $instance->id, 'itemnumber' => $items[1]->itemnumber,
+        ]);
+
+        $sink = $this->redirectEvents();
+        ingestor::ingest($instance, $course, $cm, $student->id, $this->answered($items[0]->objectid, 1.0), 'r1', false);
+        $names = array_values(array_map(
+            fn($event) => $event->eventname,
+            array_filter($sink->get_events(), fn($event) => strpos(get_class($event), 'mod_exelearning') === 0)
+        ));
+        $sink->close();
+
+        $started = array_search('\\mod_exelearning\\event\\attempt_started', $names, true);
+        $completed = array_search('\\mod_exelearning\\event\\attempt_completed', $names, true);
+        $this->assertNotFalse($started, 'attempt_started was not emitted');
+        $this->assertNotFalse($completed, 'attempt_completed was not emitted');
+        $this->assertLessThan($completed, $started);
+        $this->assertSame('completed', $this->attempt($instance, $student->id, 0)->status);
+    }
+
+    /**
+     * A soft-deleted item neither blocks completeness nor pollutes the mean.
+     */
+    public function test_soft_deleted_item_is_ignored_by_the_derivation(): void {
+        global $DB;
+        [$instance, $student, $course, $cm] = $this->create_activity();
+        $items = $this->items($instance);
+
+        // Answer BOTH, then the teacher republishes without the second iDevice.
+        ingestor::ingest($instance, $course, $cm, $student->id, $this->answered($items[0]->objectid, 1.0), 'r1', false);
+        ingestor::ingest($instance, $course, $cm, $student->id, $this->answered($items[1]->objectid, 0.0), 'r1', false);
+        $DB->set_field('exelearning_grade_item', 'deleted', 1, [
+            'exelearningid' => $instance->id, 'itemnumber' => $items[1]->itemnumber,
+        ]);
+
+        // The next commit rederives over the live roster only: mean = 100, complete.
+        ingestor::ingest($instance, $course, $cm, $student->id, $this->answered($items[0]->objectid, 1.0), 'r1', false);
+
+        $overall = $this->attempt($instance, $student->id, 0);
+        $this->assertEqualsWithDelta(100.0, (float) $overall->rawscore, 0.0001);
+        $this->assertSame('completed', $overall->status);
+    }
+
+    /**
+     * Roster drift: a republish that ADDS a gradable iDevice mid-attempt regresses the
+     * derived status to 'incomplete' on the next commit — same hazard class the SCORM
+     * channel already tolerates; pinned so the behaviour is deliberate, not accidental.
+     */
+    public function test_roster_growth_regresses_the_attempt_to_incomplete(): void {
+        global $DB;
+        [$instance, $student, $course, $cm] = $this->create_activity();
+        $items = $this->items($instance);
+        $DB->set_field('exelearning_grade_item', 'deleted', 1, [
+            'exelearningid' => $instance->id, 'itemnumber' => $items[1]->itemnumber,
+        ]);
+
+        ingestor::ingest($instance, $course, $cm, $student->id, $this->answered($items[0]->objectid, 1.0), 'r1', false);
+        $this->assertSame('completed', $this->attempt($instance, $student->id, 0)->status);
+
+        // Republish restores the second gradable iDevice.
+        $DB->set_field('exelearning_grade_item', 'deleted', 0, [
+            'exelearningid' => $instance->id, 'itemnumber' => $items[1]->itemnumber,
+        ]);
+        ingestor::ingest($instance, $course, $cm, $student->id, $this->answered($items[0]->objectid, 1.0), 'r1', false);
+
+        $this->assertSame('incomplete', $this->attempt($instance, $student->id, 0)->status);
+    }
+
+    /**
+     * Single-page overlap is benign: the package verdict arriving after the completing
+     * answered overwrites the derived row — the producer's weighted value wins.
+     */
+    public function test_package_verdict_overwrites_the_derived_overall(): void {
+        [$instance, $student, $course, $cm] = $this->create_activity();
+        $items = $this->items($instance);
+
+        ingestor::ingest($instance, $course, $cm, $student->id, $this->answered($items[0]->objectid, 1.0), 'r1', false);
+        ingestor::ingest($instance, $course, $cm, $student->id, $this->answered($items[1]->objectid, 0.0), 'r1', false);
+        // Derived mean = 50; the producer's weighted verdict says 75.
+        ingestor::ingest($instance, $course, $cm, $student->id, $this->package('passed', 0.75), 'r1', false);
+
+        $overall = $this->attempt($instance, $student->id, 0);
+        $this->assertEqualsWithDelta(75.0, (float) $overall->rawscore, 0.0001);
+        $this->assertSame('passed', $overall->status);
+    }
+
+    /**
+     * OVERALL grade model: the derived running mean is published to the gradebook on
+     * every commit, then refined — an in-progress learner is never gradeless.
+     */
+    public function test_overall_model_publishes_the_running_derived_grade(): void {
+        // EXELEARNING_GRADEMODEL_OVERALL = 0.
+        [$instance, $student, $course, $cm] = $this->create_activity(['grademodel' => 0]);
+        $items = $this->items($instance);
+
+        ingestor::ingest($instance, $course, $cm, $student->id, $this->answered($items[0]->objectid, 0.8), 'r1', false);
+
+        $grades = grade_get_grades($instance->course, 'mod', 'exelearning', $instance->id, $student->id);
+        $this->assertEqualsWithDelta(80.0, (float) $grades->items[0]->grades[$student->id]->grade, 0.0001);
     }
 }

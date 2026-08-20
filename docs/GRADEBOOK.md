@@ -180,3 +180,12 @@ The Grading and Attempts sections of the activity form (`mod_form.php:78-227`), 
 - `docs/PRIVACY_BACKUP_FILES.md` — backup/restore of `exelearning_grade_item` and attempt data
   (`backup/moodle2/backup_exelearning_stepslib.php`).
 - `research/decisiones/adr/` — DEC-0-08, DEC-0-10, DEC-5-01, DEC-12-01, DEC-13-07, DEC-25-01, DEC-37-01, DEC-69-01.
+
+## Weighted multipage packages over xAPI (scope note)
+
+The server-derived overall (DEC-122-01) is the **unweighted mean** of the per-item scores.
+Authors who assign unequal weights to iDevices will see the emitter's weighted result only on
+single-page packages (whose package verdict is authoritative); on multipage packages the
+derived mean is what completion and the OVERALL grade model use. Weights cannot travel over
+this channel: learner statements must not define package structure. If exact weighted parity
+is ever needed, the weights must be parsed server-side from the teacher's package at sync.

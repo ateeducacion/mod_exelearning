@@ -166,61 +166,66 @@ class ingestor {
                 $peritem = track::apply_item_scores($exe, $userid, $attempt, $norm['itemscores'], $registration);
                 $result['objectid'] = $norm['objectid'];
                 $result['peritem'] = $peritem;
-                // The package statement (emitted right after each answered) carries the
-                // authoritative overall, so attempt_started is the only lifecycle event
-                // to fire here (on the commit that creates the attempt).
-                self::maybe_emit_started($exe, $course, $cm, $userid, $attempt, $attemptexisted);
+
+                // Server-derived overall (DEC-122-01). Multipage packages emit NO
+                // package verdict (upstream ADR-2302-01: a page-local one was provably
+                // wrong), so the itemnumber=0 row — which drives completion, the
+                // OVERALL grade model, the attempt lists and the participation
+                // summary — is derived here from data the server already holds: the
+                // teacher-derived roster and this attempt's own per-item rows. The
+                // learner-writable pageCount extension is deliberately never read.
+                // Single-page packages still send their package verdict right after,
+                // and its authoritative (weighted) value overwrites this derived row
+                // via the upsert; the attempt_completed event may therefore carry the
+                // derived score for one commit.
+                $derived = self::derive_overall_from_items($exe, $userid, $attempt, $grademax, $grademin);
+                if ($derived !== null) {
+                    $applied = self::apply_overall(
+                        $exe,
+                        $course,
+                        $cm,
+                        $userid,
+                        $attempt,
+                        $derived['overall'],
+                        $derived['status'],
+                        $registration,
+                        $attemptexisted,
+                        $prioroverallstatus,
+                        $grademax,
+                        $grademin,
+                        $grademethod,
+                        $grademodel
+                    );
+                    $result['rawscore'] = $applied['rawscore'];
+                    $result['status'] = $applied['status'];
+                } else {
+                    self::maybe_emit_started($exe, $course, $cm, $userid, $attempt, $attemptexisted);
+                }
             } else {
                 // Package verb: the overall (itemnumber=0). Take the producer's weighted
                 // finalScore, validate-and-clamp to the grade range (DEC-85-01/DEC-6-01).
+                // Only single-page packages send this post-ADR-2302-01; its weighted
+                // value is authoritative and overwrites any server-derived row.
                 $overall = max($grademin, min($grademax, ((float) $norm['overallpct'] / 100.0) * $grademax));
                 $status = (string) $norm['status'];
-                attempts::record_item($exe->id, $userid, $attempt, 0, $overall, $grademax, $status, $registration);
-                $scaledoverall = attempts::aggregate_scaled($exe->id, $userid, 0, $grademethod);
-                $finaloverall = ($scaledoverall === null) ? $overall : ($scaledoverall * $grademax);
-
-                // Publish the aggregated overall ONLY in OVERALL mode (DEC-25-01); in
-                // PERITEM the per-iDevice columns carry the gradebook and the overall
-                // item exists only for completionpassgrade.
-                if ($grademodel === EXELEARNING_GRADEMODEL_OVERALL) {
-                    grade_update(
-                        'mod/exelearning',
-                        $exe->course,
-                        'mod',
-                        'exelearning',
-                        $exe->id,
-                        0,
-                        (object) ['userid' => $userid, 'rawgrade' => $finaloverall, 'feedback' => null],
-                        [
-                            'gradetype' => GRADE_TYPE_VALUE,
-                            'grademax'  => $exe->grademax ?? 100,
-                            'grademin'  => $exe->grademin ?? 0,
-                            'display'   => (int) ($exe->gradedisplaytype ?? GRADE_DISPLAY_TYPE_DEFAULT),
-                            'itemname'  => clean_param($exe->name, PARAM_NOTAGS),
-                            'hidden'    => 0,
-                        ]
-                    );
-                }
-                $result['rawscore'] = $finaloverall;
-                $result['status'] = $status;
-
-                // Recompute completion (completionpassgrade / DEC-69-01), then the
-                // once-per-attempt lifecycle events (start + outcome).
-                $completion = new \completion_info($course);
-                if ($completion->is_enabled($cm)) {
-                    $completion->update_state($cm, COMPLETION_UNKNOWN, $userid);
-                }
-                self::maybe_emit_started($exe, $course, $cm, $userid, $attempt, $attemptexisted);
-                self::maybe_emit_completed(
+                $applied = self::apply_overall(
                     $exe,
                     $course,
                     $cm,
                     $userid,
                     $attempt,
-                    (float) $finaloverall,
+                    $overall,
                     $status,
-                    $prioroverallstatus
+                    $registration,
+                    $attemptexisted,
+                    $prioroverallstatus,
+                    $grademax,
+                    $grademin,
+                    $grademethod,
+                    $grademodel
                 );
+                $result['rawscore'] = $applied['rawscore'];
+                $result['status'] = $applied['status'];
             }
 
             self::record_event($exe->id, $userid, $norm, $registration);
@@ -230,6 +235,174 @@ class ingestor {
                 $lock->release();
             }
         }
+    }
+
+    /**
+     * Derive this attempt's overall (itemnumber=0) from data the server already holds.
+     *
+     * Value: the mean of the attempt's per-item scores, computed through the SCORM
+     * channel's own {@see track::recompute_overall_pct()} with weight 0 on every entry
+     * (the shape the xAPI normalizer produces), so both channels degenerate to the
+     * identical simple mean. Weights are deliberately unavailable on this channel:
+     * answered statements carry none (upstream ADR-2302-01), and learner-supplied
+     * package structure is banned — a weighted project therefore diverges from the
+     * emitter's single-page weighted verdict and that divergence is documented, not
+     * papered over.
+     *
+     * Completeness: intersection of the teacher-derived roster (registered, non-deleted
+     * grade items from the server-parsed package) with this attempt's own rows. It is
+     * page-agnostic; the learner-writable pageCount extension is never consulted.
+     *
+     * Status: while incomplete, 'incomplete' (the running mean stays visible to the
+     * participation summary, the attempt lists and the OVERALL grade model, exactly as
+     * the SCORM channel behaves). Once complete: gradepass > 0 decides passed/failed
+     * against the derived overall; gradepass = 0 yields 'completed' — the server does
+     * not invent a pass policy, so the wording can differ from the emitter's fixed 50%
+     * threshold on single-page packages.
+     *
+     * @param \stdClass $exe The exelearning instance record.
+     * @param int $userid Attempt owner.
+     * @param int $attempt Attempt number.
+     * @param float $grademax Instance grade maximum.
+     * @param float $grademin Instance grade minimum.
+     * @return array|null ['overall' => float, 'status' => string], or null when the
+     *         attempt has no rows for registered items yet.
+     */
+    private static function derive_overall_from_items(
+        \stdClass $exe,
+        int $userid,
+        int $attempt,
+        float $grademax,
+        float $grademin
+    ): ?array {
+        global $DB;
+
+        // Roster and rows in one pass: every registered gradable iDevice, with this
+        // attempt's row for it when one exists. Soft-deleted items are excluded from
+        // both sides, so they neither block completeness nor pollute the mean.
+        $rows = $DB->get_records_sql(
+            'SELECT gi.itemnumber, a.scaledscore
+               FROM {exelearning_grade_item} gi
+          LEFT JOIN {exelearning_attempt} a ON a.exelearningid = gi.exelearningid
+                    AND a.itemnumber = gi.itemnumber AND a.userid = :userid AND a.attempt = :attempt
+              WHERE gi.exelearningid = :exelearningid AND gi.deleted = 0 AND gi.itemnumber > 0',
+            ['exelearningid' => $exe->id, 'userid' => $userid, 'attempt' => $attempt]
+        );
+        if ($rows === []) {
+            return null;
+        }
+
+        $itemscores = [];
+        $complete = true;
+        foreach ($rows as $row) {
+            if ($row->scaledscore === null) {
+                $complete = false;
+                continue;
+            }
+            $itemscores[(string) $row->itemnumber] = [
+                'scorepct' => max(0.0, min(100.0, (float) $row->scaledscore * 100.0)),
+                'weighted' => 0.0,
+            ];
+        }
+        if ($itemscores === []) {
+            return null;
+        }
+
+        $pct = track::recompute_overall_pct($itemscores);
+        if ($pct === null) {
+            return null;
+        }
+        $overall = max($grademin, min($grademax, ($pct / 100.0) * $grademax));
+
+        $gradepass = (float) ($exe->gradepass ?? 0);
+        if (!$complete) {
+            $status = 'incomplete';
+        } else if ($gradepass > 0) {
+            $status = ($overall >= $gradepass) ? 'passed' : 'failed';
+        } else {
+            $status = 'completed';
+        }
+        return ['overall' => $overall, 'status' => $status];
+    }
+
+    /**
+     * Record and publish an overall (itemnumber=0) for the attempt, update completion
+     * and fire the once-per-attempt lifecycle events in started-before-completed order.
+     *
+     * The single publication path shared by the package-verb branch (producer value,
+     * authoritative) and the server-derived path (DEC-122-01). Emitting started here,
+     * before the completed check, keeps the log ordered even when the very first
+     * commit already finishes the attempt (a single-iDevice roster).
+     *
+     * @param \stdClass $exe The exelearning instance record.
+     * @param \stdClass $course The course record (for completion).
+     * @param \stdClass $cm The course_module record (for completion).
+     * @param int $userid Attempt owner.
+     * @param int $attempt Attempt number.
+     * @param float $overall Overall value on the instance grade scale.
+     * @param string $status completed|passed|failed|incomplete.
+     * @param string $registration Attempt-grouping token.
+     * @param bool $attemptexisted Whether the attempt had rows before this commit.
+     * @param string|false $prioroverallstatus Overall status before this commit.
+     * @param float $grademax Instance grade maximum.
+     * @param float $grademin Instance grade minimum.
+     * @param int $grademethod Attempt aggregation method.
+     * @param int $grademodel PERITEM or OVERALL.
+     * @return array ['rawscore' => float, 'status' => string]
+     */
+    private static function apply_overall(
+        \stdClass $exe,
+        \stdClass $course,
+        \stdClass $cm,
+        int $userid,
+        int $attempt,
+        float $overall,
+        string $status,
+        string $registration,
+        bool $attemptexisted,
+        $prioroverallstatus,
+        float $grademax,
+        float $grademin,
+        int $grademethod,
+        int $grademodel
+    ): array {
+        attempts::record_item($exe->id, $userid, $attempt, 0, $overall, $grademax, $status, $registration);
+        $scaledoverall = attempts::aggregate_scaled($exe->id, $userid, 0, $grademethod);
+        $finaloverall = ($scaledoverall === null) ? $overall : ($scaledoverall * $grademax);
+
+        // Publish the aggregated overall ONLY in OVERALL mode (DEC-25-01); in PERITEM
+        // the per-iDevice columns carry the gradebook and the overall item exists only
+        // for completionpassgrade.
+        if ($grademodel === EXELEARNING_GRADEMODEL_OVERALL) {
+            grade_update(
+                'mod/exelearning',
+                $exe->course,
+                'mod',
+                'exelearning',
+                $exe->id,
+                0,
+                (object) ['userid' => $userid, 'rawgrade' => $finaloverall, 'feedback' => null],
+                [
+                    'gradetype' => GRADE_TYPE_VALUE,
+                    'grademax'  => $exe->grademax ?? 100,
+                    'grademin'  => $exe->grademin ?? 0,
+                    'display'   => (int) ($exe->gradedisplaytype ?? GRADE_DISPLAY_TYPE_DEFAULT),
+                    'itemname'  => clean_param($exe->name, PARAM_NOTAGS),
+                    'hidden'    => 0,
+                ]
+            );
+        }
+
+        // Recompute completion (completionpassgrade / DEC-69-01), then the
+        // once-per-attempt lifecycle events (start + outcome), in that order.
+        $completion = new \completion_info($course);
+        if ($completion->is_enabled($cm)) {
+            $completion->update_state($cm, COMPLETION_UNKNOWN, $userid);
+        }
+        self::maybe_emit_started($exe, $course, $cm, $userid, $attempt, $attemptexisted);
+        self::maybe_emit_completed($exe, $course, $cm, $userid, $attempt, (float) $finaloverall, $status, $prioroverallstatus);
+
+        return ['rawscore' => $finaloverall, 'status' => $status];
     }
 
     /**

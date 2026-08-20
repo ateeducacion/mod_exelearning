@@ -108,44 +108,36 @@ bounded server-side:
   tracker's dirty-resend; the server is idempotent by `statement.id`, so a resend never
   double-grades. Without it a single transient `500` would lose that statement's grade,
   whereas the SCORM path self-heals.
-- **Answered-only attempts have no overall row.** The authoritative overall (`itemnumber=0`)
-  is taken from the package `passed`/`failed`/`completed` statement, emitted right after the
-  per-iDevice `answered` ones. If that terminal statement never arrives (e.g. the learner
-  closes the tab in the gap, now also covered by the resend above for transient failures),
-  the attempt has per-iDevice rows but **no** `itemnumber=0` row, so the front-page
-  participation summary, `completionstatusrequired`/passgrade completion, and the
-  `aggregate_scaled(itemnumber=0)` overall reflect only package-bearing attempts. This is the
-  documented cost of taking the weighted overall from the package statement (the per-iDevice
-  `answered` statements carry no weight to recompute it from); the SCORM path instead writes
-  an overall on every commit. Pinned by `ingestor_test::test_answered_only_attempt_has_no_overall_row`.
+- **Every answered commit derives the overall row server-side (DEC-122-01).** Multipage
+  packages emit **no** package verdict (upstream ADR-2302-01: a page-local one was provably
+  wrong), so the `itemnumber=0` row is derived on each `answered` commit from the
+  teacher-derived roster and the attempt's own per-item rows: value = unweighted mean via the
+  SCORM channel's own `track::recompute_overall_pct()` (identical for weightless packages —
+  the normalizer hardcodes `weighted = 0.0`), status = `incomplete` until every registered
+  gradable iDevice has a row, then `gradepass` decides `passed`/`failed` (or `completed` when
+  `gradepass = 0` — the server does not invent a pass policy, so the wording can differ from
+  the emitter's fixed 50% threshold on single-page packages). Single-page packages still send
+  their package verdict right after, and its authoritative **weighted** value overwrites the
+  derived row via the upsert. Known, documented divergence: on a *weighted* multipage project
+  the derived overall is the unweighted mean, because weights are unrecoverable on this
+  channel by design (learner-supplied package structure is banned; see the PR #121 closing
+  note). The learner-writable `pageCount` extension is never consulted.
 - **Concurrent same-attempt writes.** `attempts::record_item` is a check-then-insert guarded
   by a per-`(instance,user)` lock; on a 5 s lock-timeout it proceeds unlocked (the documented
   SCORM degraded mode it is shared with). A genuine `UNIQUE(exelearningid,userid,attempt,
   itemnumber)` collision there surfaces as a 500, now recovered by the client resend.
 
-### Monitoring the terminal-statement loss
+### Monitoring terminal-statement loss (single-page packages only)
 
-The answered-only edge above is the most delicate functional point, so it is observable from the
-`exelearning_tracking_events` audit log (one row per processed `statement.id`, with its `verb` and
-`registration`). An operator can find page-views that recorded per-iDevice `answered` statements but
-never a terminal `passed`/`failed`/`completed` for the same `registration`:
-
-```sql
-SELECT a.exelearningid, a.userid, a.registration
-  FROM {exelearning_tracking_events} a
- WHERE a.verb = 'answered'
-   AND a.registration IS NOT NULL
-   AND NOT EXISTS (
-        SELECT 1 FROM {exelearning_tracking_events} t
-         WHERE t.registration = a.registration
-           AND t.verb IN ('passed', 'failed', 'completed'))
- GROUP BY a.exelearningid, a.userid, a.registration;
-```
-
-A non-zero, growing count means terminal statements are being lost (network, abrupt tab close, the
-endpoint rejecting the package statement) and those attempts have no overall row — worth alerting on.
-The client resend (above) already covers transient non-2xx; a persistent count points at something
-systemic (origin/CSP, a proxy dropping the unload POST, a package not emitting the package verb).
+Since DEC-122-01, an `answered` without a package verb is the NORMAL shape for multipage
+packages (the overall row is derived server-side), so the old "answered without terminal
+statement" query would page operators on healthy traffic. What remains worth watching is the
+single-page overlap: a registration whose derived overall never got overwritten by a package
+verb *on a package known to be single-page* may indicate the package statement is being lost
+(network, abrupt tab close, endpoint rejection). The audit log (`exelearning_tracking_events`)
+still records every processed `statement.id` with its verb and registration; correlate with
+package metadata before alerting, and remember the client resend already covers transient
+non-2xx failures.
 
 ## Reused vs new
 

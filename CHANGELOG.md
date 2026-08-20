@@ -10,6 +10,7 @@ User-visible changes per release. Each version matches a [GitHub release](https:
 
 ### Fixed
 
+- Attempts tracked over xAPI now derive their overall grade and completion on the server from the attempt's own item scores, so multipage packages — which no longer send a package-level verdict — still complete, feed the OVERALL grade model and appear in the participation summary
 - Deleting a student attempt asks for confirmation, so a stray click or a link prefetch can no longer discard grades
 - Uploading a style package no longer reports internal server details when it fails
 
