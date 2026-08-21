@@ -283,6 +283,11 @@ function exelearning_delete_instance($id) {
 
     $DB->delete_records('exelearning_attempt', ['exelearningid' => $id]);
     $DB->delete_records('exelearning_grade_item', ['exelearningid' => $id]);
+    // The retained xAPI-era audit log (DEC-122-01) is inert, but it still holds
+    // learner-linked rows, so it is cleaned like every other user-data table.
+    // It must go BEFORE the instance row: the privacy API reaches these rows by
+    // joining through {exelearning}, so any left behind become unreachable.
+    $DB->delete_records('exelearning_tracking_events', ['exelearningid' => $id]);
     $DB->delete_records('exelearning', ['id' => $id]);
 
     return true;
@@ -375,6 +380,9 @@ function exelearning_reset_userdata($data) {
     );
     foreach ($instanceids as $instanceid) {
         $DB->delete_records('exelearning_attempt', ['exelearningid' => $instanceid]);
+        // The retained xAPI-era audit log (DEC-122-01) is inert, but it still holds
+        // learner-linked rows, so a course reset clears it alongside the attempts.
+        $DB->delete_records('exelearning_tracking_events', ['exelearningid' => $instanceid]);
     }
 
     // Clear the gradebook so attempt deletion and grades stay consistent.

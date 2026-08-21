@@ -12,6 +12,7 @@ User-visible changes per release. Each version matches a [GitHub release](https:
 
 - Deleting a student attempt asks for confirmation, so a stray click or a link prefetch can no longer discard grades
 - Uploading a style package no longer reports internal server details when it fails
+- Deleting an activity or resetting a course now also clears the xAPI tracking log recorded by v4.0.2 and v4.0.3, which until now kept learner rows after the activity they belonged to was gone
 
 ### Removed
 
