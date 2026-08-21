@@ -155,13 +155,13 @@ function exelearning_update_instance($data, $mform = null) {
 
     $data->id = $data->instance;
     $data->timemodified = time();
-    // Snapshot the pre-update grading model/method so we can tell a pure grading
+    // Snapshot the pre-update grading configuration so we can tell a pure grading
     // change (re-aggregate valid attempts) from a package re-upload (DEC-12-01
     // snapshot-and-warn) after the record is written (B2, DEC-34-01).
     $oldrow = $DB->get_record(
         'exelearning',
         ['id' => $data->id],
-        'revision, grademodel, grademethod',
+        'revision, grademodel, grademethod, gradeenabled',
         MUST_EXIST
     );
     $data->revision = (int) ($oldrow->revision ?: 0) + 1;
@@ -224,16 +224,34 @@ function exelearning_update_instance($data, $mform = null) {
 
     $delta = exelearning_sync_grade_items($data->id, $contextid);
 
-    // A pure grading model/method change leaves the stored attempts valid, but
+    // A pure grading-configuration change leaves the stored attempts valid, but
     // exelearning_sync_grade_items() deletes and recreates the gradebook columns
-    // empty (PERITEM<->OVERALL) or keeps them aggregated with the old method — so
-    // the published grades would vanish or go stale until students resubmit.
-    // Re-publish them from the attempt history (B2, DEC-34-01). A package re-upload
-    // (content change) is deliberately NOT recomputed here: it keeps DEC-12-01
-    // snapshot-and-warn semantics via exelearning_warn_if_grades_stale() below.
+    // empty (PERITEM<->OVERALL, or grading switched back on) or keeps them aggregated
+    // with the old method — so the published grades would vanish or go stale until
+    // students resubmit. Re-publish them from the attempt history (B2, DEC-34-01).
+    // A package re-upload (content change) is deliberately NOT recomputed here: it
+    // keeps DEC-12-01 snapshot-and-warn semantics via exelearning_warn_if_grades_stale()
+    // below.
+    //
+    // gradeenabled belongs in this condition for the same reason as the other two, and
+    // it is what finally makes DEC-13-07's promise true: switching the master grading
+    // switch off keeps exelearning_attempt so that "reactivar gradeenabled re-detecta y
+    // recalcula desde el historial". sync() only did the re-detect half — it recreated
+    // the columns EMPTY — so a teacher who toggled the switch off and back on lost the
+    // published grades of learners who had already been assessed.
+    //
+    // The off direction is a safe no-op: grade_sync::update_grades() returns immediately
+    // when gradeenabled is unset, so nothing is published into the items sync() has just
+    // deleted.
+    //
+    // Fall back to the stored value rather than to a constant when the caller omits the
+    // field: unlike grademodel/grademethod above there is no safe default here, and
+    // assuming "enabled" would let a programmatic update silently switch grading on.
+    $newgradeenabled = (int) ($data->gradeenabled ?? $oldrow->gradeenabled);
     if (
         (int) $data->grademodel !== (int) $oldrow->grademodel
         || (int) $data->grademethod !== (int) $oldrow->grademethod
+        || $newgradeenabled !== (int) $oldrow->gradeenabled
     ) {
         exelearning_update_grades($data, 0);
     }
@@ -772,7 +790,10 @@ function exelearning_patch_idevice_save_guards(int $contextid, int $revision): v
  * Soft-deletes the plugin's grade-item mapping rows and deletes the matching Moodle
  * grade items, including the overall item (itemnumber 0), so nothing shows in the
  * gradebook. The attempt history (exelearning_attempt) is preserved, so re-enabling
- * grading re-detects and recomputes from it.
+ * grading re-detects and recomputes from it. This function and sync() only do the
+ * re-detect half; the recompute is the exelearning_update_grades() call in
+ * exelearning_update_instance(), reached because gradeenabled is one of the grading
+ * fields that trigger a republish from history (DEC-124-01).
  *
  * @param stdClass $instance The exelearning instance row.
  * @return void

@@ -77,6 +77,91 @@ final class grades_test extends advanced_testcase {
     }
 
     /**
+     * Toggling "Graded activity" off and back on republishes the stored grades.
+     *
+     * DEC-13-07 keeps exelearning_attempt when the switch goes off precisely so that
+     * "reactivar gradeenabled re-detecta y recalcula desde el historial". grade_sync::sync()
+     * only does the re-detection half: it recreates the gradebook columns, empty. The
+     * republish-from-history call in exelearning_update_instance() has to be reached for
+     * the recompute half, and it was gated on grademodel/grademethod alone.
+     *
+     * Without gradeenabled in that condition, step 3 below leaves the column at NULL and
+     * the teacher sees an empty gradebook for learners who had already been graded.
+     */
+    public function test_gradeenabled_toggled_back_on_republishes_from_history(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $course = $this->getDataGenerator()->create_course();
+        /** @var \mod_exelearning_generator $generator */
+        $generator = $this->getDataGenerator()->get_plugin_generator('mod_exelearning');
+        $instance = $generator->create_instance([
+            'course'     => $course->id,
+            'grademodel' => EXELEARNING_GRADEMODEL_OVERALL,
+        ]);
+        $student = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($student->id, $course->id, 'student');
+
+        // A graded attempt, recorded the way a learner produces one.
+        $cm = get_coursemodule_from_instance('exelearning', $instance->id);
+        $item = $DB->get_records(
+            'exelearning_grade_item',
+            ['exelearningid' => $instance->id, 'deleted' => 0],
+            'itemnumber'
+        );
+        $first = reset($item);
+        \mod_exelearning\local\track::ingest($instance, $course, $cm, $student->id, [
+            'session'    => 'sessToggle',
+            'cmi'        => [
+                'cmi.core.score.raw'      => '80',
+                'cmi.core.score.max'      => '100',
+                'cmi.core.lesson_status'  => 'completed',
+            ],
+            'itemscores' => [
+                $first->objectid => ['scorepct' => 80.0, 'weighted' => 100.0, 'title' => 'a'],
+            ],
+        ], false);
+        $this->assertEqualsWithDelta(80.0, $this->published_overall($instance, $student->id), 0.0001);
+        $attempts = $DB->count_records('exelearning_attempt', ['exelearningid' => $instance->id]);
+        $this->assertGreaterThan(0, $attempts);
+
+        // 1. Switch grading off: the column goes, the history stays.
+        $this->assertTrue(exelearning_update_instance($this->update_payload($instance, [
+            'gradeenabled' => 0,
+        ])));
+        $this->assertFalse($this->fetch_item($instance, 0));
+        $this->assertSame(
+            $attempts,
+            $DB->count_records('exelearning_attempt', ['exelearningid' => $instance->id])
+        );
+
+        // 2. Switch it back on: the column must come back WITH the stored grade in it,
+        // not empty.
+        $this->assertTrue(exelearning_update_instance($this->update_payload($instance, [
+            'gradeenabled' => 1,
+        ])));
+        $this->assertNotFalse($this->fetch_item($instance, 0));
+        $this->assertEqualsWithDelta(80.0, $this->published_overall($instance, $student->id), 0.0001);
+    }
+
+    /**
+     * Helper: the published overall grade (itemnumber 0), or null when unset.
+     *
+     * @param \stdClass $instance
+     * @param int $userid
+     * @return float|null
+     */
+    protected function published_overall(\stdClass $instance, int $userid): ?float {
+        $grades = grade_get_grades($instance->course, 'mod', 'exelearning', $instance->id, $userid);
+        if (!isset($grades->items[0])) {
+            return null;
+        }
+        $grade = $grades->items[0]->grades[$userid] ?? null;
+        return ($grade === null || $grade->grade === null) ? null : (float) $grade->grade;
+    }
+
+    /**
      * Helper: build the $data object used to call exelearning_update_instance().
      *
      * @param \stdClass $instance the existing exelearning instance row

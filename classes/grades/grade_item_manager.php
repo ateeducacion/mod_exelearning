@@ -126,7 +126,10 @@ final class grade_item_manager {
      * Soft-deletes the plugin's grade-item mapping rows and deletes the matching Moodle
      * grade items, including the overall item (itemnumber 0), so nothing shows in the
      * gradebook. The attempt history (exelearning_attempt) is preserved, so re-enabling
-     * grading re-detects and recomputes from it.
+     * grading re-detects and recomputes from it. This function and sync() only do the
+     * re-detect half; the recompute is the exelearning_update_grades() call in
+     * exelearning_update_instance(), reached because gradeenabled is one of the grading
+     * fields that trigger a republish from history (DEC-124-01).
      *
      * @param stdClass $instance The exelearning instance row.
      * @return void
