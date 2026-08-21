@@ -1,0 +1,35 @@
+{
+  "traceVersion": 1,
+  "scenario": "synthetic-stale-slot",
+  "recordedFrom": {
+    "repo": "hand-authored",
+    "ref": "none",
+    "exportFormat": "scorm12"
+  },
+  "package": {
+    "odeId": "",
+    "pageCount": 2
+  },
+  "pages": [
+    { "index": 0, "url": "index.html",     "ideviceNodes": ["objA1", "objA2"] },
+    { "index": 1, "url": "html/p2.html",   "ideviceNodes": ["objB1", "objB2"] }
+  ],
+  "scorm": [
+    { "seq": 0, "page": 0, "method": "LMSInitialize", "args": [""] },
+    { "seq": 1, "page": 0, "method": "LMSSetValue",
+      "args": ["cmi.suspend_data", "1. \"A1\"; Score: 80%; Weight: 100%.\t2. \"A2\"; Score: 0%; Weight: 100%"] },
+    { "seq": 2, "page": 0, "method": "LMSSetValue",
+      "args": ["cmi.suspend_data", "1. \"A1\"; Score: 80%; Weight: 100%.\t2. \"A2\"; Score: 40%; Weight: 100%"] },
+    { "seq": 3, "page": 1, "method": "LMSSetValue",
+      "args": ["cmi.suspend_data", "1. \"B1\"; Score: 30%; Weight: 100%.\t2. \"A2\"; Score: 40%; Weight: 100%"] },
+    { "seq": 4, "page": 1, "method": "LMSFinish", "args": [""] }
+  ],
+  "xapi": [],
+  "expected": {
+    "perItem": { "objA1": 80, "objA2": 40, "objB1": 30 },
+    "ungraded": ["objB2"],
+    "overall": 50,
+    "weights": { "objA1": 100, "objA2": 100, "objB1": 100 },
+    "note": "Hand-authored S6. Page 1 loads with objB1/objB2 in slots 1/2, but the producer rewrites the WHOLE lmsData map, so slot 2 still carries page 0's stale 'A2 40%' entry. objB2 was never answered and MUST NOT be graded. objA2's 40% is the value it was last given on page 0. overall = (80+40+30)/3 = 50 over the three genuinely graded items."
+  }
+}

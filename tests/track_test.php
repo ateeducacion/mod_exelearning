@@ -303,6 +303,154 @@ final class track_test extends advanced_testcase {
     }
 
     /**
+     * parse_suspend_data() also decodes the VERSIONED `exe12/` payload written by
+     * eXeLearning's SCORM 1.2 runtime (core PR #2209). Its records carry the activity
+     * id, so the result is keyed by stable objectid instead of by a page-local index,
+     * and the score is read from its own field — never derived from the counters.
+     */
+    public function test_parse_suspend_data_reads_the_versioned_exe12_payload(): void {
+        // Captured verbatim from a package built by the new runtime: answered 0 of
+        // total 4, yet the score is 100.
+        $parsed = track::parse_suspend_data('exe12/1|ide-a;7;0;4;100;25;0;100');
+
+        $this->assertSame(['ide-a'], array_keys($parsed));
+        $this->assertSame('ide-a', $parsed['ide-a']['objectid']);
+        $this->assertEqualsWithDelta(100.0, $parsed['ide-a']['scorepct'], 0.0001);
+        $this->assertEqualsWithDelta(25.0, $parsed['ide-a']['weighted'], 0.0001);
+        // The versioned format drops titles.
+        $this->assertSame('', $parsed['ide-a']['title']);
+
+        // Several records, each scaled with its own min/max window: 5 in 0..10 = 50%.
+        $parsed = track::parse_suspend_data('exe12/1|a;1;0;0;5;75;0;10|b;1;0;0;30;1;0;0');
+        $this->assertSame(['a', 'b'], array_keys($parsed));
+        $this->assertEqualsWithDelta(50.0, $parsed['a']['scorepct'], 0.0001);
+        $this->assertEqualsWithDelta(75.0, $parsed['a']['weighted'], 0.0001);
+        // A degenerate range (max <= min) falls back to a 100-wide window.
+        $this->assertEqualsWithDelta(30.0, $parsed['b']['scorepct'], 0.0001);
+
+        // Out-of-window scores are clamped, and the id is percent-decoded.
+        $this->assertEqualsWithDelta(
+            100.0,
+            track::parse_suspend_data('exe12/1|q;1;0;0;250;1;0;100')['q']['scorepct'],
+            0.0001
+        );
+        $this->assertSame(
+            ['ide a|b'],
+            array_keys(track::parse_suspend_data('exe12/1|ide%20a%7Cb;1;0;0;10;1;0;100'))
+        );
+
+        // A header with no records at all is valid: nothing has registered yet.
+        $this->assertSame([], track::parse_suspend_data('exe12/1'));
+    }
+
+    /**
+     * The versioned records that must never reach a gradebook column are dropped:
+     * an unclaimed migrated legacy pool record (which names a page position, not an
+     * iDevice), a non-evaluable activity, and one whose score field is still empty.
+     */
+    public function test_parse_suspend_data_skips_unusable_exe12_records(): void {
+        $parsed = track::parse_suspend_data(
+            'exe12/1|ok;1;0;0;40;1;0;100'          // Evaluable and scored: kept.
+                . '|noscore;1;0;0;;1;0;100'        // Evaluable but no result yet.
+                . '|notevaluable;6;0;0;80;1;0;100' // Flagged completionRequired + completed only.
+                . '|3;40;1'                        // Unclaimed migrated legacy record.
+                . '|;1;0;0;50;1;0;100'             // Empty id.
+                . '|short;1;0;0'                   // Truncated record.
+                . '|bad;x;0;0;50;1;0;100'          // Unreadable flags.
+                . '|ide%zz;1;0;0;50;1;0;100'       // Malformed percent escape in the id.
+        );
+
+        $this->assertSame(['ok'], array_keys($parsed));
+        $this->assertEqualsWithDelta(40.0, $parsed['ok']['scorepct'], 0.0001);
+    }
+
+    /**
+     * A payload version this parser does not know yields NOTHING rather than a
+     * best-effort parse: a future revision may reorder or repurpose fields, and
+     * publishing a wrong grade is worse than publishing none.
+     */
+    public function test_parse_suspend_data_ignores_an_unsupported_exe12_version(): void {
+        $this->assertSame([], track::parse_suspend_data('exe12/2|ide-a;7;0;4;100;25;0;100'));
+        $this->assertDebuggingCalled();
+
+        $this->assertSame([], track::parse_suspend_data('exe12/x|ide-a;7;0;4;100;25;0;100'));
+        $this->assertDebuggingCalled();
+
+        $this->assertSame([], track::parse_suspend_data('exe12/|ide-a;7;0;4;100;25;0;100'));
+        $this->assertDebuggingCalled();
+    }
+
+    /**
+     * objectid_scores() lifts out the entries that know their own identity. Only the
+     * versioned format produces them; a legacy payload yields an empty array, which
+     * is what keeps it on the page-local fallback path.
+     */
+    public function test_objectid_scores_only_returns_self_identifying_entries(): void {
+        $versioned = track::parse_suspend_data('exe12/1|ide-a;7;0;4;100;25;0;100');
+        $this->assertSame(['ide-a'], array_keys(track::objectid_scores($versioned)));
+
+        $legacy = track::parse_suspend_data('1. "Quiz"; Puntuación: 80%; Peso: 100%');
+        $this->assertSame([], track::objectid_scores($legacy));
+        $this->assertSame([], track::objectid_scores([]));
+    }
+
+    /**
+     * apply_legacy_peritem() treats its keys as itemnumbers, so it must refuse an
+     * entry that carries an objectid: casting "ide-a" to int would route a real score
+     * to itemnumber 0. ingest() never sends one here; this is the guard for any other
+     * caller.
+     */
+    public function test_apply_legacy_peritem_refuses_objectid_entries(): void {
+        global $DB;
+        [$instance, $student] = $this->create_activity_with_student();
+
+        $attempt = local\attempts::resolve_attempt_number($instance->id, $student->id, 'sessV');
+        $saved = track::apply_legacy_peritem($instance, $student->id, $attempt, [
+            'ide-a' => ['scorepct' => 70.0, 'weighted' => 100.0, 'title' => '', 'objectid' => 'ide-a'],
+        ], 'sessV');
+
+        $this->assertSame([], $saved);
+        $this->assertSame(0, $DB->count_records('exelearning_attempt', [
+            'exelearningid' => $instance->id, 'userid' => $student->id,
+        ]));
+    }
+
+    /**
+     * End to end: a client that sends no objectid map but whose package writes the
+     * versioned payload is still graded per iDevice, because every record names its
+     * own objectid. The overall is recomputed from those records (DEC-6-01), so the
+     * client's cmi.core.score.raw is not trusted here either.
+     */
+    public function test_ingest_routes_a_versioned_suspend_payload_by_objectid(): void {
+        [$instance, $student] = $this->create_activity_with_student();
+        [$course, $cm] = $this->course_and_cm($instance);
+        $obj1 = $this->objectid_for($instance, 1);
+        $obj2 = $this->objectid_for($instance, 2);
+
+        $payload = [
+            'session' => 'sessExe12',
+            'cmi' => [
+                'cmi.core.score.raw' => '0',
+                'cmi.core.score.max' => '100',
+                'cmi.core.lesson_status' => 'completed',
+                'cmi.suspend_data' => 'exe12/1|' . rawurlencode($obj1) . ';7;0;4;80;100;0;100'
+                    . '|' . rawurlencode($obj2) . ';7;0;4;40;100;0;100',
+            ],
+        ];
+
+        $result = track::ingest($instance, $course, $cm, $student->id, $payload, false);
+
+        // The recomputed overall (60) diverges from the client's 0, which is logged.
+        $this->assertDebuggingCalled();
+        $this->assertTrue($result['ok']);
+        $this->assertEqualsWithDelta(80.0, $result['peritem'][1], 0.0001);
+        $this->assertEqualsWithDelta(40.0, $result['peritem'][2], 0.0001);
+        $this->assertEqualsWithDelta(60.0, $result['rawscore'], 0.0001);
+        $this->assertEqualsWithDelta(80.0, $this->published_grade($instance, $student->id, 1), 0.0001);
+        $this->assertEqualsWithDelta(40.0, $this->published_grade($instance, $student->id, 2), 0.0001);
+    }
+
+    /**
      * Loads the course and cm records for an instance (ingest() needs both for the
      * completion update).
      *
@@ -365,6 +513,59 @@ final class track_test extends advanced_testcase {
      * concurrent interleaving (the race the lock prevents) is not reproducible in
      * single-threaded PHPUnit, so this is the functional-equivalence guard.
      */
+    /**
+     * With the master grading switch off (DEC-13-07), ingest() writes nothing.
+     *
+     * Without the guard, gradeenabled=0 leaves the instance with no grade items, the
+     * registered-objectid filter empties itemscores, the server-side recompute never
+     * runs — and ingest falls back to trusting the CLIENT's cmi.core.score.raw,
+     * writing attempt rows, gradebook updates and lifecycle events for an activity
+     * its teacher configured as ungraded. The xAPI channel has had this guard since
+     * its first version; the SCORM channel was missing it.
+     */
+    public function test_ingest_with_grading_disabled_writes_nothing(): void {
+        global $DB;
+        [$instance, $student] = $this->create_activity_with_student(['gradeenabled' => 0]);
+        [$course, $cm] = $this->course_and_cm($instance);
+
+        $payload = [
+            'session' => 'sessOff',
+            'cmi' => [
+                // A corruptible client-side value: nothing may trust it.
+                'cmi.core.score.raw' => '95',
+                'cmi.core.score.max' => '100',
+                'cmi.core.lesson_status' => 'passed',
+            ],
+        ];
+
+        $result = track::ingest($instance, $course, $cm, $student->id, $payload, false);
+
+        $this->assertTrue($result['ok']);
+        $this->assertTrue($result['noop']);
+        $this->assertArrayNotHasKey('rawscore', $result);
+        // No attempt rows, no gradebook column, no events were produced.
+        $this->assertFalse($DB->record_exists('exelearning_attempt', [
+            'exelearningid' => $instance->id, 'userid' => $student->id,
+        ]));
+        $grades = grade_get_grades($instance->course, 'mod', 'exelearning', $instance->id, $student->id);
+        $this->assertSame([], $grades->items);
+    }
+
+    /**
+     * The grading guard sits after preview handling: preview keeps its own contract.
+     */
+    public function test_preview_acknowledges_even_with_grading_disabled(): void {
+        [$instance, $student] = $this->create_activity_with_student(['gradeenabled' => 0]);
+        [$course, $cm] = $this->course_and_cm($instance);
+
+        $result = track::ingest($instance, $course, $cm, $student->id, [
+            'cmi' => ['cmi.core.score.raw' => '80', 'cmi.core.score.max' => '100'],
+        ], true);
+
+        $this->assertTrue($result['ok']);
+        $this->assertSame('preview', $result['mode']);
+    }
+
     public function test_ingest_two_sessions_allocate_distinct_attempts(): void {
         global $DB;
         [$instance, $student] = $this->create_activity_with_student();
