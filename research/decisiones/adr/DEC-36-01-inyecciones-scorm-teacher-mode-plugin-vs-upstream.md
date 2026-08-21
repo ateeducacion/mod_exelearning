@@ -11,13 +11,19 @@ deciders:
 sources:
   - REPO-004
 related:
-  adrs: [DEC-34-02, DEC-13-11, DEC-17-01, DEC-0-16]
+  adrs: [DEC-80-06, DEC-34-02, DEC-13-11, DEC-17-01, DEC-0-16]
 ai_assistance:
   tool: claude-code
   model: claude-fable-5
 ---
 
 # DEC-36-01: Inyecciones SCORM-loader y teacher-mode: corrección en el plugin vs upstream en eXeLearning
+
+> **Superseded-in-part (2026-06-28).** La inyección **#2 (teacher-mode hider)** descrita aquí es ya
+> **histórica**: la función `exelearning_require_teacher_mode_hider()` se **eliminó** (PR 86) y el
+> teacher-mode se revela por el **parámetro core `?exe-teacher`**, compatible con origen opaco y sin
+> mutar el paquete — ver **[[DEC-80-06]]**. La inyección **#1 (SCORM-loader)** y el resto del análisis
+> de esta entrada siguen vigentes salvo donde [[DEC-80-01]]/[[DEC-80-02]]/[[DEC-34-02]] los cubran.
 
 ## Contexto
 

@@ -420,6 +420,52 @@ decisiones_bloqueantes:
       las vías (el editor pasa de irrecuperable a recuperable). Resuelve RIE-019. Promueve maturity
       BETA->STABLE (consecuencia, no decisión aparte; version sentinel intacto, DEC-13-08). 263 tests
       verdes (make test). Tests nuevos: 6 en package_manager_extract_test, 2 en lib_test.
+  DEC-80-01:
+    titulo: "Bridge SCORM por postMessage + iframe de origen opaco (modo seguro configurable): RIE-001 Tier 2"
+    estado: Aceptada
+    ruta: decisiones/adr/DEC-80-01-bridge-scorm-postmessage-origen-opaco.md
+    fecha: 2026-06-13
+    relacionados: [DEC-0-16, RIE-001, AN-008, DEC-5-01, DEC-13-11]
+    notas: >-
+      Implementa el Tier 2 que DEC-0-16 dejó para "su propio ADR" (no lo supersede). Ajuste
+      global mod_exelearning/iframemode (secure por defecto | legacy de respaldo,
+      \mod_exelearning\local\ui\player_iframe, fail-safe a secure). Modo secure: iframe sandbox
+      sin allow-same-origin (origen opaco) ni allow-popups-to-escape-sandbox; el shim window.API
+      vive DENTRO del iframe (js/scorm_bridge_shim.js, copiado a libs/exe_scorm_bridge.js e
+      inyectado por scorm_injector al inicio de <head>), reutiliza js/scorm_tracker.js vía nueva
+      opción transport, resuelve objectid en su propio DOM y postMessea los deltas al relevo del
+      padre (js/scorm_bridge_relay.js), que valida por identidad de ventana + nonce + acción
+      cerrada y hace el POST a track.php (sesskey sólo en el padre; flush por sendBeacon en
+      pagehide). Polyfill de localStorage/sessionStorage en el shim (origen opaco lanza
+      SecurityError; lo usan exe_atools/exe_export/checklist/edicuatex). Linchpin: pipwerks find()
+      mira window.API local primero (SCORM_API_wrapper.js:71-106). Legacy = comportamiento actual
+      byte-a-byte. phpcs 0/0; Vitest 40/40 (24 nuevos); PHPUnit player_iframe_test + Behat en CI.
+      RIE-001 -> mitigado. OJO: su Ruta A (servir el iframe opaco por pluginfile normal) fue
+      REFUTADA en verificación y corregida por DEC-80-02.
+  DEC-80-02:
+    titulo: "Modo iframe seguro funcional: servir el contenido opaco por tokenpluginfile + CSP + watchdog (corrige Ruta A de DEC-80-01)"
+    estado: Aceptada
+    ruta: decisiones/adr/DEC-80-02-iframe-seguro-tokenpluginfile.md
+    fecha: 2026-06-13
+    relacionados: [DEC-80-01, DEC-0-16, RIE-001, AN-008, DEC-5-01]
+    notas: >-
+      Verificado en navegador (Chrome DevTools, Moodle real :80): la Ruta A de DEC-80-01 (iframe
+      opaco servido por pluginfile normal) NO carga los subrecursos: un documento de origen opaco
+      no envía la cookie SameSite=Lax (session/manager.php:513-518) y pluginfile exige login -> CSS/
+      JS/shim 404. Corrección: servir el iframe por tokenpluginfile (make_pluginfile_url includetoken;
+      token core_files de TTL corto en la RUTA, lo arrastran los subrecursos relativos -> cargan sin
+      cookie). tokenpluginfile valida el token y SIGUE aplicando require_capability (solo lectura de
+      ficheros, no sesskey -> más seguro que legacy). Precedente: H5P usa includetoken embebido
+      (h5p/classes/player.php:429). + CSP/Permissions-Policy desde exelearning_pluginfile (object-src
+      none, base-uri none, frame-ancestors self, connect-src acotado anti-exfiltración del token;
+      mantiene unsafe-inline/eval que exe necesita). + NO degradar en silencio a legacy: watchdog del
+      relay muestra aviso securemodeblocked si el iframe no emite ready (slasharguments off, o host con
+      service worker como el Playground PHP-WASM que no sirve iframes opacos). + self-heal del bridge en
+      view.php para paquetes ya extraídos. Investigado y descartado: origen separado/subdominio (B, no
+      hay mecanismo en core, requiere infra) y sandbox JS en cliente (M8, inviable: el contenido
+      necesita DOM real+jQuery). Evidencia: track.php responde {ok:true,rawscore:100,peritem:{1:100}}.
+      phpcs 0/0; Vitest 42/42; PHPUnit player_iframe_test (modo+sandbox+CSP). Residuo: token visible
+      en URL (acotado CSP+TTL); legacy opt-in reabre same-origin. Futuro: toggle CSP estricto, Ruta B.
 tareas:
   TAREA-001:
     fecha: 2026-05-28
@@ -618,17 +664,66 @@ tareas:
       create_file_from_url + gating por contenthash + curl_security_helper + ajuste admin
       allowexternalurl opt-in) + botón 'Actualizar ahora' + tests/backup/upgrade. Fase 2
       (opcional): updatefreq + db/tasks.php + token para el REST de eXeLearning v4.
+  TAREA-017:
+    fecha: 2026-06-13
+    titulo: "RIE-001 Tier 2: implementar el bridge SCORM por postMessage + iframe de origen opaco (modo seguro)"
+    estado: Done
+    agente: claude-code
+    relacionados:
+      - RIE-001
+      - DEC-80-01
+      - DEC-0-16
+      - DEC-5-01
+    notas: >-
+      Implementado el modo seguro configurable (iframemode secure|legacy, default secure).
+      Ficheros: classes/local/ui/player_iframe.php (modo + tokens sandbox), settings.php
+      (admin_setting_configselect), lang/en/exelearning.php (4 strings), view.php (rama
+      secure/legacy + sandbox por modo + teacher-mode por bridge), js/scorm_tracker.js (opción
+      transport), js/scorm_bridge_shim.js + js/scorm_bridge_relay.js (nuevos),
+      classes/local/scorm/scorm_injector.php (inyección del bridge), classes/local/package_manager.php
+      (copia de scorm_tracker.js + exe_scorm_bridge.js a libs/). Tests: tests/player_iframe_test.php,
+      tests/js/scorm_bridge.test.js. Verificado phpcs 0/0 + Vitest 40/40 + php -l; PHPUnit/Behat en
+      CI/contenedor. Follow-up opcional: M2/M3 (Permissions-Policy/CSP).
+  TAREA-018:
+    fecha: 2026-06-13
+    titulo: "Corregir la Ruta A: servir el iframe seguro por tokenpluginfile + CSP + watchdog (DEC-80-02)"
+    estado: Done
+    agente: claude-code
+    relacionados:
+      - RIE-001
+      - DEC-80-02
+      - DEC-80-01
+    notas: >-
+      Verificación en navegador (Chrome DevTools, Moodle real :80) refutó la Ruta A de DEC-80-01
+      (subrecursos del iframe opaco 404 por cookie SameSite=Lax). Corregido: view.php sirve el iframe
+      por tokenpluginfile (get_user_key core_files TTL corto en la ruta) sin fallback silencioso a
+      legacy; exelearning_pluginfile emite CSP + Permissions-Policy (player_iframe::content_security_policy
+      / permissions_policy) en modo secure; js/scorm_bridge_relay.js añade watchdog que muestra el aviso
+      securemodeblocked si el iframe no emite ready; view.php self-heal del bridge para paquetes ya
+      extraídos; blueprint.json deja iframemode en secure (el Playground muestra el aviso, no legacy).
+      Tests: ampliado player_iframe_test (CSP/Permissions-Policy) y scorm_bridge.test.js (watchdog),
+      Vitest 42/42, phpcs 0/0. Evidencia track.php {ok:true,rawscore:100,peritem:{1:100}}.
 riesgos:
   RIE-001:
     titulo: "XSS cross-component desde paquete eXeLearning malicioso"
     severidad: media
     probabilidad: baja
-    estado: aceptado
+    estado: mitigado
     aceptacion: >-
       ACEPTADO 2026-06-17 (erseco): riesgo media/baja aceptado con la mitigación v1 (sandbox del iframe).
       El hardening Tier 1/2 (DEC-0-16) lo implementa la rama feature/secure-iframe-scorm-bridge
       (PR #80, con sus propias decisiones aún no fusionadas), NO como bloqueante. TAREA-013 (sandboxing JS) queda cubierta ahí; no se crea ficha aparte.
     mitigacion: >-
+      MITIGADO (2026-06-13, DEC-80-01 + DEC-80-02): el modo seguro por defecto (iframemode=secure)
+      sirve el paquete en un iframe de ORIGEN OPACO (sin allow-same-origin) por tokenpluginfile
+      (DEC-80-02 corrige la Ruta A: el opaco no envía la cookie SameSite, así que los assets se
+      sirven por token en la URL, no por cookie) y releva el scoring SCORM por un canal postMessage
+      validado (identidad de ventana + nonce + acción cerrada), con el sesskey sólo en el padre; el
+      contenido ya no puede leer DOM/cookies/sesión ni forjar peticiones (solo recibe un token de
+      lectura de ficheros, acotado por CSP+TTL). Sin degradación silenciosa a legacy: watchdog que
+      avisa si secure no puede renderizar. Verificado en navegador (track.php guarda la nota).
+      legacy queda como respaldo opt-in (vuelve al riesgo same-origin). Contexto previo (DEC-0-16,
+      sin implementar entonces):
       v1 VIGENTE: sandbox del iframe sin allow-top-navigation / allow-modals (AN-008).
       Investigación TAREA-012 completada en DEC-0-16 (2026-06-02): core NO aísla (mod_scorm
       sin sandbox; core_h5p curado), mod_exelearning ya es el mejor aislado de los tres, y
@@ -643,7 +738,10 @@ riesgos:
       - DEC-0-03
       - DEC-0-04
       - DEC-0-16
+      - DEC-80-01
+      - DEC-80-02
       - TAREA-012
+      - TAREA-017
   RIE-007:
     titulo: "suspend_data N (índice local de página) tratado como itemnumber → mis-ruteo y colisión de notas"
     severidad: alta

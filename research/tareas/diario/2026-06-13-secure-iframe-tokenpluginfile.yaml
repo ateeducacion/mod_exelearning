@@ -1,0 +1,34 @@
+fecha: 2026-06-13
+sesion: secure-iframe-tokenpluginfile-fix
+agente: claude-code
+resumen: >-
+  Corrección de la Ruta A de DEC-80-01 tras verificar en navegador (Chrome DevTools,
+  Moodle real en :80) que el modo secure NO cargaba los subrecursos del paquete. Causa
+  raíz: un iframe de origen opaco (sandbox sin allow-same-origin) no envía la cookie de
+  sesión SameSite=Lax a sus subrecursos, y pluginfile.php exige login -> CSS/JS/shim 404
+  (el index.html sí carga porque la navegación la inicia el padre). Investigadas y
+  documentadas las vías (token, subdominio/B, sandbox JS/M8); elegida e implementada la
+  Opción A endurecida (DEC-80-02). Verificado end-to-end que track.php guarda la nota.
+acciones:
+  - "Token serving (view.php): en modo secure el iframe se sirve por tokenpluginfile (get_user_key core_files de TTL corto redondeado a la hora, token en la RUTA -> los subrecursos relativos lo arrastran y cargan sin cookie). tokenpluginfile valida el token y exelearning_pluginfile SIGUE aplicando require_capability(mod/exelearning:view) -> solo lectura de ficheros, no sesskey. Precedente: H5P usa includetoken embebido (h5p/classes/player.php:429)."
+  - "CSP + Permissions-Policy (lib.php exelearning_pluginfile + player_iframe::content_security_policy/permissions_policy): solo modo secure, solo el documento HTML (send_stored_file no las borra). object-src none, base-uri none, frame-ancestors self, connect-src acotado a este sitio (corta exfiltración del token por fetch); mantiene unsafe-inline/eval que eXeLearning necesita."
+  - "Sin degradación silenciosa a legacy (petición de erseco): quitado el fallback slasharguments->legacy. Watchdog en el relay (js/scorm_bridge_relay.js): si el iframe no emite ready (slasharguments off, o host con service worker que no sirve iframes opacos como el Playground PHP-WASM) muestra el aviso securemodeblocked y oculta el iframe. view.php renderiza el aviso oculto (lang securemodeblocked) que el watchdog revela."
+  - "Self-heal del bridge (view.php): los paquetes extraídos antes de DEC-80-02 no tienen libs/exe_scorm_bridge.js; se re-extrae una vez (idempotente) para que secure funcione sin re-subir."
+  - "blueprint.json: iframemode se deja en secure (NO se fuerza legacy); el Playground muestra el aviso securemodeblocked en vez de caer a legacy (coherente con 'no caer en legacy por defecto')."
+  - "Tests: player_iframe_test (CSP/Permissions-Policy), scorm_bridge.test.js (watchdog). Vitest 42/42. phpcs --standard=moodle 0/0."
+verificacion_navegador:
+  - "iframe opaco servido por http://localhost/tokenpluginfile.php/<token>/16/mod_exelearning/content/1/index.html; sandbox='allow-scripts allow-popups allow-forms'; lectura de contentWindow desde el padre da SecurityError (origen opaco confirmado)."
+  - "El shim emite {type:scorm,action:ready} al padre (capturado con listener inyectado) -> shim activo en el iframe."
+  - "relay presente (window.exeScormBridge=object); init/acceptTrack/onMessage OK; el relay responde 'config' al 'ready' sin lanzar."
+  - "POST directo a track.php (camino del relay, con sesskey real) -> {ok:true,attempt:1,rawscore:100,status:completed,peritem:{1:100}} -> la nota se guarda."
+  - "Tras purgar cachés (lang string nueva), el contenido renderiza con estilos y el watchdog NO salta (secure funciona)."
+pendientes:
+  - "CI manda: PHPUnit matriz + Behat (idealmente un escenario de grading en secure entrando al frame). El click sintético no entra en el iframe opaco, así que el e2e de scoring por UI se confirma a mano o en Behat."
+  - "Futuro: toggle de admin para CSP estricto (cerrar exfiltración del token por img/script externos) y Ruta B (subdominio eTLD+1 + reverse-proxy) para aislamiento máximo."
+relacionados:
+  - DEC-80-02
+  - DEC-80-01
+  - DEC-0-16
+  - RIE-001
+  - TAREA-018
+  - AN-008

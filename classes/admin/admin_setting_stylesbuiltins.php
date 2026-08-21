@@ -111,9 +111,10 @@ class admin_setting_stylesbuiltins extends admin_setting {
                 : get_string('stylesenable', 'mod_exelearning');
             $toggleaction = $isenabled ? 'disablebuiltin' : 'enablebuiltin';
 
-            $togglelink = $this->action_link(
+            $togglelink = styles_action_button::link(
                 $baseurl,
                 $toggleaction,
+                'id',
                 $id,
                 $togglelabel,
                 $isenabled ? 'btn-secondary' : 'btn-success'
@@ -144,34 +145,5 @@ class admin_setting_stylesbuiltins extends admin_setting {
             null,
             $query
         );
-    }
-
-    /**
-     * Build a single toggle action as a sesskey-protected link styled as a button.
-     *
-     * Rendered as a link rather than an inline <form>: this setting is shown inside the
-     * admin settings page, which already wraps every setting in one <form>. A nested
-     * <form> is invalid HTML and leaks its own action/sesskey hidden fields into the
-     * outer form's submission, so the page's "Save changes" posts action=disablebuiltin
-     * instead of action=save-settings and silently saves nothing. styles.php accepts the
-     * toggle over GET (optional_param + confirm_sesskey), the same pattern Moodle core
-     * uses to enable/disable plugins.
-     *
-     * @param \moodle_url $baseurl
-     * @param string $action
-     * @param string $id
-     * @param string $label
-     * @param string $btnclass
-     * @return string
-     */
-    private function action_link(
-        \moodle_url $baseurl,
-        string $action,
-        string $id,
-        string $label,
-        string $btnclass
-    ): string {
-        $url = new \moodle_url($baseurl, ['action' => $action, 'id' => $id, 'sesskey' => sesskey()]);
-        return \html_writer::link($url, $label, ['class' => 'btn btn-sm ' . $btnclass, 'role' => 'button']);
     }
 }

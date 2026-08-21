@@ -110,16 +110,18 @@ class admin_setting_stylesuploaded extends admin_setting {
                 : get_string('stylesenable', 'mod_exelearning');
             $toggleaction = $enabled ? 'disable' : 'enable';
 
-            $togglelink = $this->action_link(
+            $togglelink = styles_action_button::link(
                 $baseurl,
                 $toggleaction,
+                'slug',
                 $slug,
                 $togglelabel,
                 $enabled ? 'btn-secondary' : 'btn-success'
             );
-            $deletelink = $this->action_link(
+            $deletelink = styles_action_button::link(
                 $baseurl,
                 'delete',
+                'slug',
                 $slug,
                 get_string('stylesdelete', 'mod_exelearning'),
                 'btn-danger'
@@ -151,34 +153,5 @@ class admin_setting_stylesuploaded extends admin_setting {
             null,
             $query
         );
-    }
-
-    /**
-     * Build a single action as a sesskey-protected link styled as a button.
-     *
-     * Rendered as a link rather than an inline <form>: this setting appears inside the
-     * admin settings page, which already wraps every setting in one <form>. A nested
-     * <form> is invalid HTML and leaks its action/sesskey hidden fields into the outer
-     * form's submission, so the page's "Save changes" posts the nested action (e.g.
-     * delete) instead of action=save-settings and silently saves nothing. styles.php
-     * accepts these actions over GET (optional_param + confirm_sesskey); the destructive
-     * delete is confirmed server-side there, so a prefetch cannot destroy data.
-     *
-     * @param \moodle_url $baseurl
-     * @param string $action
-     * @param string $slug
-     * @param string $label
-     * @param string $btnclass
-     * @return string
-     */
-    private function action_link(
-        \moodle_url $baseurl,
-        string $action,
-        string $slug,
-        string $label,
-        string $btnclass
-    ): string {
-        $url = new \moodle_url($baseurl, ['action' => $action, 'slug' => $slug, 'sesskey' => sesskey()]);
-        return \html_writer::link($url, $label, ['class' => 'btn btn-sm ' . $btnclass, 'role' => 'button']);
     }
 }

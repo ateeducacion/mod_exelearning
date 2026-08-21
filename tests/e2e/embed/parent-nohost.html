@@ -1,0 +1,17 @@
+<!doctype html>
+<!--
+  E2E harness — the "no host" half. Same opaque-origin sandboxed content as
+  parent.html, but this page loads NO relay, exactly like exported content opened
+  in a third-party page, an ePub reader or straight off the filesystem.
+
+  The shim must leave the author's iframes alone. Promoting here would replace them
+  with geometry placeholders nobody can ever fill: a permanent black box, strictly
+  worse than an unprotected embed and invisible to whoever published the package.
+-->
+<html><head><meta charset="utf-8">
+<style>#wrap{position:relative;width:520px;height:760px}#content{width:100%;height:100%;border:0}</style>
+</head><body>
+<div id="wrap">
+    <iframe id="content" sandbox="allow-scripts" src="content.html"></iframe>
+</div>
+</body></html>

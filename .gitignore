@@ -29,4 +29,8 @@ node_modules/
 # JS test artifacts (Vitest)
 coverage/
 junit-js.xml
+
+# E2E artifacts (Playwright)
+test-results/
+playwright-report/
 .env

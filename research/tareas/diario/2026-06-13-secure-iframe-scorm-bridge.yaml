@@ -1,0 +1,45 @@
+fecha: 2026-06-13
+sesion: secure-iframe-scorm-bridge
+agente: claude-code
+resumen: >-
+  Implementación de RIE-001 Tier 2 (DEC-80-01): bridge SCORM por postMessage + iframe de
+  origen opaco, como modo seguro configurable y por defecto, con legacy de respaldo.
+  DEC-0-16 había dejado este Tier 2 para "su propio ADR" sin implementarlo; el usuario
+  priorizó hacerlo tras confirmar que es la única alternativa que cumple los objetivos de
+  aislamiento (el contenido del .elpx NO puede leer ni modificar DOM/cookies/sesión/JS del
+  marco padre). Linchpin verificado: el pipwerks empaquetado (SCORM_API_wrapper.js:71-106)
+  mira window.API de la propia ventana antes de subir a parent, así que inyectar el shim
+  window.API DENTRO del iframe lo descubre sin tocar el padre; y LMSGetValue ya responde de
+  caché local, así que un relevo asíncrono por postMessage basta. Riesgo de compatibilidad
+  cazado: el motor exportado usa localStorage (exe_atools en todo export, exe_export,
+  checklist, edicuatex) y en origen opaco lanza SecurityError -> el shim instala un polyfill
+  en memoria. Decisiones de diseño confirmadas con el usuario (AskUserQuestion): bridge
+  seguro completo, ajuste global default seguro (sin campo por actividad -> sin tocar BD),
+  nombre iframemode (select secure|legacy).
+acciones:
+  - "player_iframe (classes/local/ui/player_iframe.php): nuevo helper que resuelve el modo (fail-safe a secure ante valor inválido) y centraliza los tokens del sandbox por modo, testeable sin renderizar view.php."
+  - "settings.php: admin_setting_configselect mod_exelearning/iframemode (secure|legacy, default secure). lang/en/exelearning.php: iframemode + _desc + _legacy + _secure (orden alfabético estricto, sin código)."
+  - "view.php: rama por modo. secure = relevo inline (js/scorm_bridge_relay.js) con {iframeid,cmid,trackurl,session,nonce,teachermodevisible}, sin window.API en el padre; sandbox via player_iframe::sandbox_tokens(); teacher-mode por bridge (no por contentDocument). legacy = comportamiento actual byte-a-byte."
+  - "js/scorm_tracker.js: nueva opción transport(data,sync) que sustituye al XHR cuando está presente (legacy y los tests siguen con XHR; sin regresión). js/scorm_bridge_shim.js (iframe): detección de origen opaco, polyfill de localStorage/sessionStorage, window.API local vía exeScormTracker, objectid de su propio DOM, handshake + cola pre-nonce, ocultado teacher-mode local. js/scorm_bridge_relay.js (padre): validación por identidad de ventana + acción cerrada + nonce + forma, POST a track.php (sesskey sólo en el padre), sendBeacon en pagehide."
+  - "scorm_injector.php: inyecta el bridge (scorm_tracker.js + exe_scorm_bridge.js) al INICIO de <head> (polyfill+API antes de cualquier script del paquete), idempotente y separado del wrapper pipwerks. package_manager.php: copia scorm_tracker.js + exe_scorm_bridge.js a libs/ del paquete (plugin-owned: refresh en cada extract; los assets pipwerks siguen sin sobrescribir un bundle propio del export)."
+  - "Tests: tests/player_iframe_test.php (@covers player_iframe: default secure, fail-safe, legacy, tokens por modo) y tests/js/scorm_bridge.test.js (24 casos: polyfill, origen opaco, handshake, identidad de fuente/ventana, nonce, forma, cuerpo a track.php, sendBeacon)."
+  - "status.yaml (append): DEC-80-01 + TAREA-017; RIE-001 estado identificado -> mitigado (+DEC-80-01/TAREA-017 en relacionados). ADR research/decisiones/adr/DEC-80-01-... (advances DEC-0-16, no lo supersede)."
+evidencia:
+  - "assets/scorm/SCORM_API_wrapper.js:71-106 (pipwerks find() mira window.API local primero)"
+  - "js/scorm_tracker.js (LMSGetValue de caché local; nueva opción transport en send())"
+  - "rg localStorage/sessionStorage en /Users/ernesto/Downloads/git/exelearning (exe_atools, exe_export.js, checklist.js, edicuatex)"
+  - "public/h5p/js/embed.js:38-46 (core_h5p valida source+context, no origin); mod/scorm/player.php + loadSCO.php (sin sandbox, parent-walk)"
+  - "phpcs --standard=moodle 0/0 sobre los 7 ficheros PHP tocados; php -l limpio"
+  - "Vitest 40/40 (npx vitest run): 16 tracker + 24 bridge"
+pendientes:
+  - "CI/contenedor manda: ejecutar PHPUnit (player_iframe_test + suite completa, sin regresión en scorm_injector/package_manager) y Behat de grading en modo secure (adaptar el escenario @javascript que usa window.API, que ahora vive en el iframe, o apoyarse en el paso server-side 'the following eXeLearning SCORM scores exist')."
+  - "Verificar en Chrome y Firefox reales que el polyfill sustituye el getter nativo de localStorage en origen opaco y que la nota llega al gradebook sin SecurityError; togglear a legacy y confirmar paridad con el comportamiento actual."
+  - "Follow-up opcional (DEC-0-16): M2 Permissions-Policy + M3 CSP de red estricta-con-toggle en exelearning_pluginfile(); M8 sandboxing de JS en cliente (TAREA-013)."
+relacionados:
+  - DEC-80-01
+  - DEC-0-16
+  - DEC-5-01
+  - DEC-13-11
+  - RIE-001
+  - AN-008
+  - TAREA-017

@@ -21,4 +21,44 @@
     <version>1.1.20121006</version>
     <license>MIT</license>
   </library>
+  <!-- The external-embed pair is maintained in eXeLearning core and mirrored here
+       byte-for-byte (tools/check-embed-sync.mjs asserts the shared invariants). Both
+       files are dual-licensed AGPL-3.0-or-later OR GPL-3.0-or-later by their copyright
+       holder, so this plugin distributes them under GPLv3+ while eXeLearning ships the
+       same file under AGPLv3+. Declared here because they are an external component,
+       not plugin-interface code. -->
+  <library>
+    <location>js/exe_embed_shim.js</location>
+    <name>eXeLearning external-embed shim</name>
+    <description>Runs inside the opaque-origin content iframe: announces itself to the parent relay and, only once welcomed, replaces cross-origin/PDF iframes with geometry placeholders the relay renders on the trusted side.</description>
+    <version>1.0.0</version>
+    <license>GPLv3+</license>
+    <licenseversion>3.0+</licenseversion>
+  </library>
+  <library>
+    <location>js/exe_embed_relay.js</location>
+    <name>eXeLearning external-embed relay</name>
+    <description>Parent-side half of the embed pair: authenticates the content frame by window identity, validates each embed URL and overlays the real sandboxed player over the placeholder.</description>
+    <version>1.0.0</version>
+    <license>GPLv3+</license>
+    <licenseversion>3.0+</licenseversion>
+  </library>
+  <!-- Same provenance and same dual grant as the embed pair above: the modal media
+       bridge is maintained in eXeLearning core and mirrored here. -->
+  <library>
+    <location>js/exe_media_policy.js</location>
+    <name>eXeLearning external-media policy</name>
+    <description>Pure, framework-free policy shared by the media bridge halves: provider detection, canonical privacy-friendly embed URLs rebuilt from a bare id, and strict validation of the postMessage contract.</description>
+    <version>1.0.0</version>
+    <license>GPLv3+</license>
+    <licenseversion>3.0+</licenseversion>
+  </library>
+  <library>
+    <location>js/exe_media_host.js</location>
+    <name>eXeLearning external-media host</name>
+    <description>Parent-side media relay: completes the capability handshake, opens the real provider player in an accessible dialog on the trusted side, and relays a validated set of media commands and events over a private MessageChannel.</description>
+    <version>1.0.0</version>
+    <license>GPLv3+</license>
+    <licenseversion>3.0+</licenseversion>
+  </library>
 </libraries>

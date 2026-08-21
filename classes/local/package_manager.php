@@ -239,25 +239,48 @@ final class package_manager {
             1
         );
 
-        // 5) If the package (web export) does not include libs/SCORM_API_wrapper.js,
-        // inject it from the plugin's assets/ directory. eXeLearning v4 only bundles
-        // this wrapper in the SCORM export; without it, gradable iDevices display
-        // "this page is not part of a SCORM package".
-        foreach (['SCORM_API_wrapper.js', 'SCOFunctions.js'] as $shimname) {
+        // 5) Ensure the SCORM client assets live under libs/ of the extracted package.
+        // The vendored pipwerks wrapper + SCOFunctions are copied only when the export
+        // does not already bundle them: eXeLearning v4 bundles them in the SCORM export
+        // but not in the web/elpx export, and without them gradable iDevices show "this
+        // page is not part of a SCORM package". A bundled copy is never overwritten
+        // ($refresh = false). The bridge client (scorm_tracker + exe_scorm_bridge) powers
+        // the secure opaque-origin iframe mode (DEC-80-01); it runs INSIDE the iframe so it
+        // must be served from the package, and being plugin-owned it is refreshed on every
+        // extract so a shim update reaches existing packages ($refresh = true).
+        $clientassets = [
+            ['SCORM_API_wrapper.js', __DIR__ . '/../../assets/scorm/SCORM_API_wrapper.js', false],
+            ['SCOFunctions.js', __DIR__ . '/../../assets/scorm/SCOFunctions.js', false],
+            ['scorm_tracker.js', __DIR__ . '/../../js/scorm_tracker.js', true],
+            ['exe_scorm_bridge.js', __DIR__ . '/../../js/scorm_bridge_shim.js', true],
+            // External-media CHILD bundle, vendored from eXeLearning core and verified
+            // against its manifest (eXe ADR-2199-12). Promotes whitelisted/PDF iframes to the
+            // parent in secure mode and carries the media bridge the interactive-video
+            // iDevice drives; dormant until the parent host answers its handshake, so a
+            // package served without one is left exactly as authored (eXe ADR-2199-08).
+            // Plugin-owned, refreshed on every extract, so a re-vendor reaches existing
+            // packages. Keeps the historical filename: the injected <script> tag lives in
+            // packages that were extracted before this change.
+            ['exe_embed_shim.js', __DIR__ . '/../../js/exe_external_media/exe-external-media-child.min.js', true],
+        ];
+        foreach ($clientassets as $asset) {
+            [$destname, $assetpath, $refresh] = $asset;
+            if (!is_file($assetpath)) {
+                continue;
+            }
             $present = $fs->get_file(
                 $context->id,
                 'mod_exelearning',
                 'content',
                 (int) $data->revision,
                 '/libs/',
-                $shimname
+                $destname
             );
             if ($present) {
-                continue;
-            }
-            $assetpath = __DIR__ . '/../../assets/scorm/' . $shimname;
-            if (!is_file($assetpath)) {
-                continue;
+                if (!$refresh) {
+                    continue;
+                }
+                $present->delete();
             }
             $fs->create_file_from_pathname([
                 'contextid' => $context->id,
@@ -265,7 +288,7 @@ final class package_manager {
                 'filearea'  => 'content',
                 'itemid'    => (int) $data->revision,
                 'filepath'  => '/libs/',
-                'filename'  => $shimname,
+                'filename'  => $destname,
             ], $assetpath);
         }
 

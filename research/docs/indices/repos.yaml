@@ -9,3 +9,5 @@ items:
   - id: 'REPO-007', titulo: 'tool_migratehvp2h5p — migración oficial mod_hvp → mod_h5pactivity (Moodle HQ)', estado: None, fecha: None, ruta: 'fuentes/repositorios/REPO-007-tool-migratehvp2h5p.md'
   - id: 'REPO-008', titulo: 'Moodle-mod_cmi5launch (ADL) — módulo de referencia de ingesta xAPI/cmi5 → gradebook', estado: None, fecha: None, ruta: 'fuentes/repositorios/REPO-008-moodle-mod-cmi5launch.md'
   - id: 'REPO-009', titulo: 'Moodle-PHP-Libs (ADL) — vendor-bundle de Composer, DESCARTADO como dependencia', estado: None, fecha: None, ruta: 'fuentes/repositorios/REPO-009-moodle-php-libs.md'
+  - id: 'REPO-010', titulo: 'Procomún — plataforma de recursos educativos que abre .elpx de forma segura', estado: None, fecha: None, ruta: 'fuentes/repositorios/REPO-010-procomun.md'
+  - id: 'REPO-011', titulo: 'Paper de seguridad — contenido no confiable en LMS (SoK / principio de origen opaco + promote-to-parent)', estado: None, fecha: None, ruta: 'fuentes/repositorios/REPO-011-paper-seguridad-lms.md'

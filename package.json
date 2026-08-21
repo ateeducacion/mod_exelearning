@@ -2,13 +2,15 @@
   "name": "mod_exelearning",
   "version": "1.0.0",
   "private": true,
-  "description": "JavaScript unit tests (Vitest) for the mod_exelearning SCORM tracker.",
+  "description": "JavaScript unit tests (Vitest) + Firefox e2e (Playwright) for mod_exelearning.",
   "license": "GPL-3.0-or-later",
   "scripts": {
     "test:js": "vitest run",
-    "test:js:coverage": "vitest run --coverage"
+    "test:js:coverage": "vitest run --coverage",
+    "test:e2e:embed": "playwright test -c playwright-embed.config.cjs"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@vitest/coverage-v8": "^4.1.8",
     "happy-dom": "^20.10.2",
     "vitest": "^4.1.8"

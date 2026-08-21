@@ -1,0 +1,28 @@
+<!doctype html>
+<!--
+  E2E harness — the "content" half for the interactive-video media bridge (DEC-110-01).
+  Runs in the opaque sandbox. Loads the eXeLearning child runtime (exe_media_policy.js +
+  exe_media_bridge.js, the exact files an .elpx bakes) and simulates what the
+  interactive-video / quick-questions-video iDevice does in secure mode: ask the trusted
+  parent to open the provider video via window.exeMediaBridge.openMedia(). The parent half
+  (parent-media.html) runs mod's own exe_media_host.js, which controls the player by RAW
+  postMessage (no YouTube IFrame API / Vimeo SDK).
+-->
+<html><head><meta charset="utf-8"></head><body>
+<div id="iv">interactive-video iDevice (simulated)</div>
+<script src="/tests/e2e/embed/exe_media_policy.js"></script>
+<script src="/tests/e2e/embed/exe_media_bridge.js"></script>
+<script>
+  (function () {
+    var b = window.exeMediaBridge;
+    if (b && b.shouldUseBridge && b.shouldUseBridge()) {
+      // Same call the interactive-video iDevice makes (startBridgePlayer -> openMedia).
+      b.openMedia({ provider: 'youtube', videoId: 'aqz-KE-bpKQ' })
+        .then(function () { window.__exeMediaReady = true; })
+        .catch(function () { /* ready-timeout without real YT network is fine: the modal + player are already created on 'open' */ });
+    } else {
+      window.__exeMediaNoBridge = true;
+    }
+  })();
+</script>
+</body></html>

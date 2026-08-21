@@ -1,10 +1,10 @@
 import { defineConfig } from 'vitest/config';
 
-// Vitest config for the plugin's own JavaScript unit tests. Scope is deliberately
-// narrow: only the grade-critical SCORM tracker (js/scorm_tracker.js). UI glue
-// (amd/src/fullscreen.js, resize.js, editor_modal.js, ...) and the vendored pipwerks
-// wrappers (assets/scorm/*) are out of scope. The embedded editor (exelearning/) ships
-// its own Vitest suite and is not retested here.
+// Vitest config for the plugin's own JavaScript unit tests. Scope: the grade-critical
+// SCORM tracker (js/scorm_tracker.js), the secure-mode SCORM bridge (js/scorm_bridge_*)
+// and the external-embed shim/relay (js/exe_embed_*). UI glue (amd/src/*) and the
+// vendored pipwerks wrappers (assets/scorm/*) are out of scope. The embedded editor
+// (exelearning/) ships its own Vitest suite and is not retested here.
 export default defineConfig({
     test: {
         globals: true,

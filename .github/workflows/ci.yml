@@ -277,6 +277,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify the vendored external-media artifact
+        # eXeLearning core is canonical (eXe ADR-2199-12): this repo holds the BYTES and
+        # verifies them against the manifest core published, rather than a copy of the
+        # logic that could drift. --build-hash makes it a PROVENANCE check and not merely
+        # an integrity one: without it a locally rebuilt-and-resigned copy would pass.
+        #
+        # If this fails, a vendored file was edited here. Fix it in eXeLearning core and
+        # re-vendor; a local patch is invisible upstream and is overwritten next time.
+        run: |
+          # The expected hash is PINNED HERE, deliberately, and not read from the vendored
+          # manifest. A hash taken from the copy under test cannot say anything about that
+          # copy: file, digest and buildHash can all be rewritten together, and a check that
+          # trusted them would pass a consistent forgery. This line is the out-of-band half.
+          # Bump it in the same commit that re-vendors the artifact.
+          node js/exe_external_media/verify.mjs js/exe_external_media --build-hash "43c776daa551fd770b6dade520629362e5a8ca8745e4245c359447c4689b34d6"
+
       - name: JS unit tests with coverage
         run: npx vitest run --coverage --reporter=default --reporter=junit --outputFile=junit-js.xml
 

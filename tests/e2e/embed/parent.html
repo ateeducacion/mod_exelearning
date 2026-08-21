@@ -1,0 +1,25 @@
+<!doctype html>
+<!--
+  E2E harness — the "parent" half (the trusted host page).
+  Loads the real parent relay (js/exe_embed_relay.js) and embeds the content in an
+  opaque-origin sandboxed iframe (sandbox="allow-scripts", no allow-same-origin),
+  exactly like the player iframe in secure mode.
+-->
+<html><head><meta charset="utf-8">
+<script>
+window.ExeEmbedRelayConfig = { whitelist: [
+    'www.youtube.com', 'youtube.com', 'www.youtube-nocookie.com',
+    'youtube-nocookie.com', 'player.vimeo.com', 'vimeo.com',
+    'www.dailymotion.com', 'dailymotion.com', 'geo.dailymotion.com',
+    'mediateca.educa.madrid.org'
+] };
+</script>
+<style>#wrap{position:relative;width:520px;height:760px}#content{width:100%;height:100%;border:0}</style>
+</head><body>
+<div id="wrap">
+    <iframe id="content" sandbox="allow-scripts" src="content.html"></iframe>
+</div>
+<script src="/js/exe_embed_relay.js"></script>
+<!-- mod's relay is dual-export and does not auto-run; view.php bootstraps it the same way. -->
+<script>window.exeEmbedRelay.init(window.ExeEmbedRelayConfig);</script>
+</body></html>

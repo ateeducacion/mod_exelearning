@@ -312,3 +312,34 @@ describe('createScormApi state machine', () => {
     });
 
 });
+
+describe('createScormApi transport (bridge mode)', () => {
+    function cfg(transport) {
+        // No-op timers so the only send() is the explicit LMSCommit (no stray autocommit).
+        return { transport, bindUnload: false, getScoringDocument: () => document, setTimeout: () => 0, clearTimeout: () => {} };
+    }
+
+    it('clears dirty when the transport accepts the payload (no XHR)', () => {
+        let calls = 0;
+        const { api } = createScormApi(cfg(() => { calls++; return true; }));
+        api.LMSSetValue('cmi.core.score.raw', '50');
+        expect(api.LMSCommit()).toBe('true');
+        expect(calls).toBe(1);
+        // Not dirty anymore: a second commit sends nothing.
+        expect(api.LMSCommit()).toBe('true');
+        expect(calls).toBe(1);
+    });
+
+    it('keeps dirty (Commit -> "false") when the transport rejects', () => {
+        const { api } = createScormApi(cfg(() => false));
+        api.LMSSetValue('cmi.core.score.raw', '50');
+        expect(api.LMSCommit()).toBe('false');
+    });
+
+    it('reports error 101 when the transport throws', () => {
+        const { api } = createScormApi(cfg(() => { throw new Error('boom'); }));
+        api.LMSSetValue('cmi.core.score.raw', '50');
+        expect(api.LMSCommit()).toBe('false');
+        expect(api.LMSGetLastError()).toBe('101');
+    });
+});

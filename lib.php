@@ -595,6 +595,15 @@ function exelearning_pluginfile($course, $cm, $context, $filearea, $args, $force
     // must render, not be downloaded). Same flag used by mod_scorm.
     $options['dontforcesvgdownload'] = true;
 
+    // Defense-in-depth headers for the embedded package HTML document, in secure mode
+    // only (DEC-80-02). The decision + values live in player_iframe::content_headers()
+    // (unit tested); here we just emit them. send_stored_file() neither emits nor strips
+    // these, and header(..., true) only replaces same-named headers, so they survive.
+    $secureheaders = \mod_exelearning\local\ui\player_iframe::content_headers($file->get_filename(), $CFG->wwwroot);
+    foreach ($secureheaders as $hname => $hval) {
+        @header($hname . ': ' . $hval);
+    }
+
     // Reasonable cache-control: a revision bump automatically invalidates the URL.
     $lifetime = $CFG->filelifetime ?? 86400;
     send_stored_file($file, $lifetime, 0, $forcedownload, $options);
