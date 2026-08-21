@@ -17,7 +17,7 @@ User-visible changes per release. Each version matches a [GitHub release](https:
 ### Removed
 
 - Grading over xAPI. Every package is graded through SCORM 1.2 again, which reports the same per-iDevice scores and a correctly weighted total. Existing grades, attempts and reports are unaffected
-- The xAPI tracking log. Upgrading removes it, discarding the raw statements that v4.0.2 and v4.0.3 recorded alongside the grades. Grades, attempts and reports come from a different table and are untouched
+- The xAPI tracking log. Upgrading removes the audit/idempotency metadata recorded by v4.0.2 and v4.0.3 alongside the grades, and the site setting that switched the channel on. Grades, attempts and reports are stored separately and are unaffected
 
 ## v4.0.2 – 2026-07-07
 

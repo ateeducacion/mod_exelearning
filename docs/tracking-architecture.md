@@ -93,13 +93,20 @@ language strings that translated them are removed, and upgrade stage `2026082100
 table wherever it exists. Stage 19, which created it, is left untouched: upgrade history is
 append-only and has to keep working for a site that has the table.
 
+The same stage calls `unset_config('xapiprimaryenabled', 'exelearning')`, mirroring what stage
+20 did for the editor installer's configs. Removing a setting from the code without removing its
+stored value leaves an orphan in `mdl_config_plugins` that a future setting reusing the name
+would inherit.
+
 **This does delete data, and that is a deliberate call.** `v4.0.2` and `v4.0.3` are public
 releases and both ship the table plus a working writer, so a site that used the xAPI channel can
 hold rows, and the table is absent from `backup/moodle2`. It is dropped anyway: what is lost is
-the raw statement and its `statement.id` deduplication — audit trail, never a grade, since
-grades, attempts and reports live in `exelearning_grade_item` and `exelearning_attempt` and are
-untouched. The exposure window is short (v4.0.2 is from 2026-07-07, in a plugin still in early
-deployment, with the channel switchable off), and keeping an inert table would have meant fixing
+the per-statement audit metadata it held — statement id, verb, objectid, registration and
+scaled score — along with the `statement.id` deduplication those ids provided. It never stored
+the statement JSON itself, and never a grade: grades, attempts and reports live in
+`exelearning_grade_item` and `exelearning_attempt` and are untouched. The exposure window is
+short (v4.0.2 is from 2026-07-07, in a plugin still in early deployment, with the channel
+switchable off), and keeping an inert table would have meant fixing
 and then maintaining two cleanup paths that never worked: neither `exelearning_delete_instance()`
 nor `exelearning_reset_userdata()` ever cleaned it, so deleting an activity or resetting a course
 orphaned those rows — unreachably, since the privacy API finds them by joining through the

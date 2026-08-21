@@ -219,8 +219,9 @@ decisiones_bloqueantes:
       pierde es auditoría y no calificación, la ventana de exposición es muy breve, y
       conservarla habría exigido limpiarla en delete_instance/reset_userdata, cosa que nunca
       se hizo (filas huérfanas latentes e inalcanzables). La etapa 19 se deja intacta
-      (historial append-only) y una nueva etapa 2026082100 la borra donde exista; el borrado
-      se anuncia en CHANGELOG bajo Removed. Los paquetes antiguos siguen
+      (historial append-only) y una nueva etapa 2026082100 la borra donde exista, junto con el
+      valor persistido de xapiprimaryenabled (unset_config, mismo patrón que la etapa 20); el
+      borrado se anuncia en CHANGELOG bajo Removed. Los paquetes antiguos siguen
       emitiendo postMessage sin oyente: inocuo (fire-and-forget, sin acuse ni reintento).
   DEC-18-01:
     titulo: "Actualización de contenido: reemplazo del .elpx y origen por URL con sincronización"

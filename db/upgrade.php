@@ -577,16 +577,29 @@ function xmldb_exelearning_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026072400, 'exelearning');
     }
 
-    // Stage 21 (2026082100): drop exelearning_tracking_events. It was the audit/idempotency
-    // log of the xAPI ingestion channel created in stage 19; that channel has been retired
-    // (DEC-122-01) and no code writes to or reads this table any more. Stage 19 is left
-    // untouched — upgrade history is append-only, so a site that installed a dev build
+    // Stage 21 (2026082100): retire the xAPI ingestion channel (DEC-122-01). Drop its
+    // audit/idempotency log, created in stage 19, and the site setting that switched the
+    // channel on — no code writes to or reads either one any more.
+    //
+    // This IS a destructive migration, knowingly: v4.0.2 and v4.0.3 are public releases
+    // that shipped the table together with a writer, so a site that used the channel may
+    // hold rows, and the table is absent from backup/moodle2. What goes is audit metadata
+    // — statement id, verb, objectid, registration and scaled score — never a grade:
+    // grades, attempts and reports live in exelearning_grade_item and exelearning_attempt
+    // and are untouched. DEC-122-01 section 4 records the trade-off, and the CHANGELOG
+    // announces it so an administrator can dump the rows before upgrading.
+    //
+    // Stage 19 is left untouched — upgrade history is append-only, so a site older than it
     // still creates the table on its way through and drops it here.
+    //
+    // unset_config mirrors stage 20: leaving the value behind would let a future setting
+    // that happened to reuse the name inherit a stale one.
     if ($oldversion < 2026082100) {
         $table = new xmldb_table('exelearning_tracking_events');
         if ($dbman->table_exists($table)) {
             $dbman->drop_table($table);
         }
+        unset_config('xapiprimaryenabled', 'exelearning');
         upgrade_mod_savepoint(true, 2026082100, 'exelearning');
     }
 

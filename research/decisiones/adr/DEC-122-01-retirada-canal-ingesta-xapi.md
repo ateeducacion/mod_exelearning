@@ -89,7 +89,11 @@ camino aporta algo que el primero no puede dar.
    cableado de `view.php`, los helpers `exelearning_package_emits_xapi()` /
    `exelearning_xapi_primary_enabled()`, la sección de ajustes y sus cadenas de idioma en los
    cinco idiomas, la llamada a `config_injector::inject()` en `package_manager` y
-   `tracking_endpoint::xapi_config()`.
+   `tracking_endpoint::xapi_config()`. El **valor persistido** del ajuste
+   (`exelearning/xapiprimaryenabled` en `mdl_config_plugins`) lo borra la etapa 21 con
+   `unset_config()`, igual que la etapa 20 hizo con los tres configs del instalador del
+   editor: retirar el ajuste del código sin retirar su valor deja un huérfano que un futuro
+   ajuste con el mismo nombre heredaría.
 2. **`DEC-0-03` recupera su vigencia literal:** SCORM 1.2 es el estándar de tracking, y el
    overall se **recompone en servidor** desde las notas por iDevice (`DEC-6-01`), que sí
    llevan el peso en línea.
@@ -129,8 +133,10 @@ camino aporta algo que el primero no puede dar.
    **La pérdida se asume a conciencia**, por tres motivos:
    - **Lo que se pierde es auditoría, no evaluación.** Las notas, los intentos y los informes
      viven en `exelearning_grade_item` y `exelearning_attempt`, que no se tocan. De esta tabla
-     se pierde el statement crudo y la deduplicación por `statement.id`: trazabilidad fina, que
-     ningún cálculo de nota consulta.
+     se pierden los metadatos de auditoría por statement —`statementid`, `verb`, `objectid`,
+     `registration` y `scaled`— y con ellos la deduplicación por `statement.id`. La tabla
+     **nunca guardó el JSON del statement**: era trazabilidad fina, que ningún cálculo de nota
+     consulta.
    - **La ventana es muy breve.** v4.0.2 se publicó el 2026-07-07 y el canal se retira ahora, en
      un plugin en despliegue temprano y con el canal además desactivable por ajuste. El volumen
      de filas afectadas en instalaciones reales es despreciable frente al coste de arrastrar la
@@ -161,8 +167,9 @@ camino aporta algo que el primero no puede dar.
 - **Negativas / coste:** se pierde la deduplicación por `statement.id` y la auditoría por
   statement (nadie dependía de ellas para la nota); vuelve la dependencia del `cmi.suspend_data`
   y del parche de guardas de `form`/`scrambled-list` (`DEC-13-11`), deuda ya conocida y con
-  salida documentada en `DEC-34-02`/`DEC-36-01`; los sitios que hubieran fijado
-  `xapiprimaryenabled` se quedan con un ajuste huérfano en `mdl_config_plugins`, inofensivo.
+  salida documentada en `DEC-34-02`/`DEC-36-01`. No queda ajuste huérfano: la etapa 21 borra
+  también el valor de `xapiprimaryenabled`, de modo que un sitio que lo hubiera fijado no
+  arrastra nada en `mdl_config_plugins`.
 - **Migración de datos: destructiva sólo en la tabla de auditoría.** Las notas, intentos e
   informes existentes no se tocan — los dos canales escribían en las mismas tablas. La única
   que desaparece (`exelearning_tracking_events`) no alimentaba ni la nota ni la interfaz, y sus
