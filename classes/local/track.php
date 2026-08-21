@@ -226,8 +226,27 @@ class track {
 
             // Publish the aggregated overall grade ONLY in OVERALL mode (DEC-25-01): in
             // PERITEM the per-iDevice grades carry the gradebook.
+            //
+            // And only while the master grading switch is on (DEC-13-07, DEC-124-02).
+            // With it off, exelearning_sync_grade_items() has deleted this instance's
+            // grade items — and grade_update() RECREATES a deleted item, so publishing
+            // here would resurrect the very column the teacher turned off. It would also
+            // publish the CLIENT's cmi.core.score.raw, because with no registered
+            // objectids there is nothing for the server-side recompute to work from.
+            //
+            // The attempt row above is still written, deliberately: DEC-69-01's
+            // completion by status reads it filtering on exelearningid, userid,
+            // itemnumber and status, never on gradeenabled, and mod_form.php does not
+            // gate that rule on the switch either. It is also the history DEC-13-07
+            // preserves so grading recomputes when the switch goes back on (DEC-124-01).
+            //
+            // apply_one()'s per-iDevice grade_update() needs no guard of its own: it
+            // routes by registered objectid (DEC-5-01), and with the switch off none is
+            // registered, so it never runs. A second check there would be dead code
+            // implying a path that does not exist — pinned by the peritem case of
+            // test_ingest_with_grading_disabled_records_attempt_but_publishes_no_grade.
             $result = GRADE_UPDATE_OK;
-            if ($grademodel === EXELEARNING_GRADEMODEL_OVERALL) {
+            if ($grademodel === EXELEARNING_GRADEMODEL_OVERALL && !empty($exe->gradeenabled)) {
                 $grade = (object) [
                     'userid'   => $userid,
                     'rawgrade' => $finaloverall,

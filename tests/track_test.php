@@ -359,6 +359,85 @@ final class track_test extends advanced_testcase {
     }
 
     /**
+     * With the master grading switch off (DEC-13-07), ingest() records the attempt but
+     * publishes NOTHING to the gradebook.
+     *
+     * This is the contract the form's own help text states — "no grade columns and no
+     * reports" — and until this change it did not hold. gradeenabled=0 leaves the
+     * instance with no grade items, so the registered-objectid filter empties
+     * itemscores and the server-side recompute never runs; the OVERALL publication then
+     * fell through to the CLIENT's corruptible cmi.core.score.raw and grade_update()
+     * RECREATED the column exelearning_sync_grade_items() had just deleted.
+     *
+     * Retiring the xAPI channel is what makes this reachable for every package: view.php
+     * used to pass disableTracking = $emitsxapi, so the SCORM shim was inert for any
+     * package that emits xAPI — which is every recent export. With the shim always live,
+     * the first submission after a teacher turns grading off would resurrect the column.
+     *
+     * The attempt row IS still written, deliberately. DEC-69-01's completion by status
+     * reads it filtering on exelearningid, userid, itemnumber and status — never on
+     * gradeenabled — and mod_form.php does not gate that rule on the switch either, so
+     * completion by status is settable, and has to work, on an ungraded activity. It is
+     * also the history DEC-13-07 preserves so grading can be recomputed when the switch
+     * goes back on (DEC-124-01).
+     *
+     * @param int $grademodel The grade model to exercise.
+     * @dataProvider grading_disabled_models_provider
+     */
+    public function test_ingest_with_grading_disabled_records_attempt_but_publishes_no_grade(
+        int $grademodel
+    ): void {
+        global $DB;
+        [$instance, $student] = $this->create_activity_with_student([
+            'gradeenabled' => 0,
+            'grademodel'   => $grademodel,
+        ]);
+        [$course, $cm] = $this->course_and_cm($instance);
+
+        $result = track::ingest($instance, $course, $cm, $student->id, [
+            'session'    => 'sessOff',
+            'cmi'        => [
+                // A corruptible client-side value: the gradebook may not see it.
+                'cmi.core.score.raw'     => '95',
+                'cmi.core.score.max'     => '100',
+                'cmi.core.lesson_status' => 'passed',
+            ],
+            // A client may also send scores for objectids that are no longer registered.
+            'itemscores' => [
+                'ide-a' => ['scorepct' => 95.0, 'weighted' => 100.0, 'title' => 'a'],
+            ],
+        ], false);
+        $this->assertTrue($result['ok']);
+
+        // Nothing in the gradebook: not the overall column, not a per-iDevice one. Note
+        // this asserts more than "the value is null" — grade_update() would RECREATE a
+        // deleted grade item, so the item itself must not come back.
+        $grades = grade_get_grades($instance->course, 'mod', 'exelearning', $instance->id, $student->id);
+        $this->assertSame([], $grades->items);
+
+        // But the attempt IS recorded, itemnumber 0 included: completion by status reads
+        // exactly that row.
+        $this->assertTrue($DB->record_exists('exelearning_attempt', [
+            'exelearningid' => $instance->id,
+            'userid'        => $student->id,
+            'itemnumber'    => 0,
+        ]));
+    }
+
+    /**
+     * Both grade models, because they publish through different code paths: OVERALL
+     * through the grade_update() in ingest(), PERITEM through apply_one().
+     *
+     * @return array<string,array{int}>
+     */
+    public static function grading_disabled_models_provider(): array {
+        return [
+            'overall' => [EXELEARNING_GRADEMODEL_OVERALL],
+            'peritem' => [EXELEARNING_GRADEMODEL_PERITEM],
+        ];
+    }
+
+    /**
      * Two ingest() calls for the same user with different session tokens allocate
      * distinct, gap-free attempt numbers (1 then 2). The serializing per-(instance,
      * user) lock makes the sequential path identical to the unlocked one; a real

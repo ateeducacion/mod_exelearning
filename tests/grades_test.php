@@ -146,6 +146,61 @@ final class grades_test extends advanced_testcase {
     }
 
     /**
+     * A programmatic caller that changes the grade model without passing gradeenabled
+     * still gets the grades republished.
+     *
+     * exelearning_update_grades() reads $exelearning->gradeenabled and returns early
+     * when it is empty, so an update payload missing the field looked to it exactly like
+     * an ungraded activity: the condition fired, the call was made, and it did nothing.
+     * The recreated OVERALL column stayed empty on an activity whose stored gradeenabled
+     * was 1 the whole time.
+     *
+     * The form is not affected — it posts the whole instance — but the migration tool and
+     * any other server-side caller build the payload by hand, and DEC-124-01 makes the
+     * fallback explicit for exactly them.
+     */
+    public function test_update_omitting_gradeenabled_still_republishes(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $course = $this->getDataGenerator()->create_course();
+        /** @var \mod_exelearning_generator $generator */
+        $generator = $this->getDataGenerator()->get_plugin_generator('mod_exelearning');
+        $instance = $generator->create_instance([
+            'course'     => $course->id,
+            'grademodel' => EXELEARNING_GRADEMODEL_PERITEM,
+        ]);
+        $student = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($student->id, $course->id, 'student');
+        $cm = get_coursemodule_from_instance('exelearning', $instance->id);
+
+        $rows = $DB->get_records(
+            'exelearning_grade_item',
+            ['exelearningid' => $instance->id, 'deleted' => 0],
+            'itemnumber'
+        );
+        $first = reset($rows);
+        \mod_exelearning\local\track::ingest($instance, $course, $cm, $student->id, [
+            'session'    => 'sessProg',
+            'cmi'        => ['cmi.core.score.raw' => '80', 'cmi.core.score.max' => '100'],
+            'itemscores' => [
+                $first->objectid => ['scorepct' => 80.0, 'weighted' => 100.0, 'title' => 'a'],
+            ],
+        ], false);
+
+        // PERITEM -> OVERALL, built by hand and deliberately missing gradeenabled.
+        $data = $this->update_payload($instance, ['grademodel' => EXELEARNING_GRADEMODEL_OVERALL]);
+        unset($data->gradeenabled);
+        $this->assertTrue(exelearning_update_instance($data));
+
+        // The activity was graded throughout, so the new overall column must carry the
+        // grade recomputed from the attempt history, not sit empty.
+        $this->assertEquals(1, (int) $DB->get_field('exelearning', 'gradeenabled', ['id' => $instance->id]));
+        $this->assertEqualsWithDelta(80.0, $this->published_overall($instance, $student->id), 0.0001);
+    }
+
+    /**
      * Helper: the published overall grade (itemnumber 0), or null when unset.
      *
      * @param \stdClass $instance

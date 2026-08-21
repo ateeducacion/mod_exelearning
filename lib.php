@@ -247,7 +247,16 @@ function exelearning_update_instance($data, $mform = null) {
     // Fall back to the stored value rather than to a constant when the caller omits the
     // field: unlike grademodel/grademethod above there is no safe default here, and
     // assuming "enabled" would let a programmatic update silently switch grading on.
+    //
+    // Hydrating $data with the result is not cosmetic. exelearning_update_grades()
+    // reads $exelearning->gradeenabled and returns early when it is empty, so a
+    // programmatic caller that changed grademodel or grademethod WITHOUT passing
+    // gradeenabled would reach the republish call and have it silently do nothing —
+    // leaving the recreated columns empty on a perfectly graded activity. Predates the
+    // gradeenabled clause below; the form is unaffected because it posts the whole
+    // object.
     $newgradeenabled = (int) ($data->gradeenabled ?? $oldrow->gradeenabled);
+    $data->gradeenabled = $newgradeenabled;
     if (
         (int) $data->grademodel !== (int) $oldrow->grademodel
         || (int) $data->grademethod !== (int) $oldrow->grademethod

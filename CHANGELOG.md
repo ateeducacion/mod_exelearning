@@ -14,6 +14,7 @@ User-visible changes per release. Each version matches a [GitHub release](https:
 - Uploading a style package no longer reports internal server details when it fails
 - The help text for "Graded activity" no longer claims that turning it off stops attempt tracking, which it never did
 - Turning "Graded activity" off and back on restores the grades of learners who had already been assessed. The columns used to come back empty until someone triggered a recalculation, even though the attempt history had been preserved all along
+- Turning "Graded activity" off now really removes the activity from the gradebook. A learner submitting after the switch went off used to bring the grade column back, carrying a score reported by the browser; attempts and completion keep being recorded as before
 
 ### Removed
 
