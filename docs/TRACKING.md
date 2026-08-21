@@ -76,9 +76,13 @@ persists**: `ingest()` returns before any gradebook write
   is an iDevice (`db/install.xml:71-82`). `record_item()` upserts so repeated
   auto-commits in the same session refine the same row (`attempts.php:223-268`).
 - **Aggregation across attempts** by `grademethod` (highest/average/first/last/lowest)
-  in `aggregate_scaled()` (`attempts.php:279-311`).
+  in `aggregate_scaled()` (`attempts.php:279-311`), over **gradable rows only**: a row
+  recorded while the activity was not a graded one carries `gradable = 0` and never
+  becomes a mark (DEC-124-03).
 - **Cap enforcement (DEC-0-07 phase 2).** When `maxattempt > 0` and a *fresh* session
-  would exceed `count_user_attempts()`, `ingest()` returns
+  would exceed `count_user_attempts()` — which counts **gradable attempts only**, so work
+  done while the activity was ungraded does not use up the learner's allowance
+  (DEC-124-03) — `ingest()` returns
   `error => 'maxattemptsreached'` (`track.php` ingest at `classes/local/track.php:148-163`)
   and the endpoint replies **HTTP 409** (`track.php:70-72`) — a conflict, not a 500.
   The web service surfaces the same condition as a warning (`save_track.php:140-147`).

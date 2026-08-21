@@ -15,7 +15,7 @@ User-visible changes per release. Each version matches a [GitHub release](https:
 - The help text for "Graded activity" no longer claims that turning it off stops attempt tracking, which it never did
 - Turning "Graded activity" off and back on restores the grades of learners who had already been assessed. The columns used to come back empty until someone triggered a recalculation, even though the attempt history had been preserved all along
 - Turning "Graded activity" off now really removes the activity from the gradebook. A learner submitting after the switch went off used to bring the grade column back, carrying a score reported by the browser; attempts and completion keep being recorded as before
-- Work a learner does while "Graded activity" is off is no longer turned into a mark if the setting is switched back on later. It stays in the attempts report and still counts for completion, as before
+- Work a learner does while "Graded activity" is off is no longer turned into a mark if the setting is switched back on later. It stays in the attempts report and still counts for completion, as before. This applies to work recorded from this version onwards; attempts already in the database are left as gradable, since there is no way to tell after the fact which of them were recorded while the switch was off
 - Backing up and restoring a course no longer turns work done while "Graded activity" was off into gradable work
 - Work done while "Graded activity" was off no longer uses up the learner's allowed attempts, so turning grading on later still leaves them attempts to be graded on
 

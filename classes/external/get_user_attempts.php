@@ -90,6 +90,7 @@ class get_user_attempts extends external_api {
                 'attempt'      => (int) $row->attempt,
                 'status'       => (string) $row->status,
                 'scorepercent' => round((float) $row->scaledscore * 100, 5),
+                'gradable'     => (int) $row->gradable,
                 'timecreated'  => (int) $row->timecreated,
                 'timemodified' => (int) $row->timemodified,
             ];
@@ -99,6 +100,14 @@ class get_user_attempts extends external_api {
             'attempts'    => $attempts,
             'grademethod' => (int) ($exelearning->grademethod ?? 0),
             'maxattempt'  => (int) ($exelearning->maxattempt ?? 0),
+            // The attempts list is deliberately unfiltered — a client showing a learner
+            // their history should show all of it — so a client cannot derive the cap
+            // from count($attempts): ungraded-period attempts do not count against
+            // maxattempt (DEC-124-03). Return the number the server actually enforces.
+            'usedattempts' => \mod_exelearning\local\attempts::count_user_attempts(
+                (int) $exelearning->id,
+                (int) $user->id
+            ),
             'warnings'    => [],
         ];
     }
@@ -115,12 +124,21 @@ class get_user_attempts extends external_api {
                     'attempt'      => new external_value(PARAM_INT, 'Attempt number'),
                     'status'       => new external_value(PARAM_ALPHA, 'completed|passed|failed|incomplete'),
                     'scorepercent' => new external_value(PARAM_FLOAT, 'Overall score as a 0..100 percentage'),
+                    'gradable'     => new external_value(
+                        PARAM_INT,
+                        'Whether the attempt counts towards the gradebook grade '
+                            . '(0 = recorded while the activity was not a graded one)'
+                    ),
                     'timecreated'  => new external_value(PARAM_INT, 'When the attempt started'),
                     'timemodified' => new external_value(PARAM_INT, 'When the attempt was last updated'),
                 ])
             ),
             'grademethod' => new external_value(PARAM_INT, 'Attempt aggregation method'),
             'maxattempt'  => new external_value(PARAM_INT, 'Max attempts (0 = unlimited)'),
+            'usedattempts' => new external_value(
+                PARAM_INT,
+                'Attempts counted against maxattempt: excludes ungraded-period attempts'
+            ),
             'warnings'    => new external_warnings(),
         ]);
     }

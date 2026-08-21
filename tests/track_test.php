@@ -469,13 +469,71 @@ final class track_test extends advanced_testcase {
         // POST #2, same session, grading now on.
         track::ingest($instance, $course, $cm, $student->id, $payload, false);
 
-        // The row keeps the meaning it was created with...
+        // The ungraded-period row keeps the meaning it was created with...
         $this->assertSame(0, (int) $DB->get_field('exelearning_attempt', 'gradable', [
+            'exelearningid' => $instance->id, 'userid' => $student->id,
+            'itemnumber' => 0, 'attempt' => 1,
+        ]));
+
+        // ...and the session was SPLIT rather than merged: the work done after the switch
+        // went on belongs to a new, gradable attempt, so the learner is not left silently
+        // uncreditable in a row that can never produce a mark.
+        $this->assertSame(1, (int) $DB->get_field('exelearning_attempt', 'gradable', [
+            'exelearningid' => $instance->id, 'userid' => $student->id,
+            'itemnumber' => 0, 'attempt' => 2,
+        ]));
+        $this->assertSame(2, $DB->count_records('exelearning_attempt', [
             'exelearningid' => $instance->id, 'userid' => $student->id, 'itemnumber' => 0,
         ]));
-        // ...and produces no mark, which is the guarantee that actually matters.
-        $grades = grade_get_grades($instance->course, 'mod', 'exelearning', $instance->id, $student->id);
-        $this->assertNull($grades->items[0]->grades[$student->id]->grade ?? null);
+    }
+
+    /**
+     * The mirror direction: switching grading OFF mid-session must not leave the row
+     * claiming to be gradable while holding a score earned outside assessment.
+     *
+     * record_item()'s upsert REPLACES the score rather than appending, so the flag has to
+     * describe whatever score is currently stored. A write carrying ungraded-period data
+     * takes the row down with it (DEC-124-03). Splitting handles this too, but the
+     * demotion is the guard for any caller that does not go through
+     * resolve_attempt_number().
+     */
+    public function test_switching_grading_off_mid_session_does_not_leave_a_gradable_row(): void {
+        global $DB;
+        [$instance, $student] = $this->create_activity_with_student([
+            'gradeenabled' => 1,
+            'grademodel'   => 0,
+        ]);
+        [$course, $cm] = $this->course_and_cm($instance);
+
+        $payload = fn(string $raw) => [
+            'session' => 'sessFlipOff',
+            'cmi'     => [
+                'cmi.core.score.raw'     => $raw,
+                'cmi.core.score.max'     => '100',
+                'cmi.core.lesson_status' => 'completed',
+            ],
+        ];
+
+        track::ingest($instance, $course, $cm, $student->id, $payload('80'), false);
+        $this->assertSame(1, (int) $DB->get_field('exelearning_attempt', 'gradable', [
+            'exelearningid' => $instance->id, 'userid' => $student->id, 'itemnumber' => 0,
+        ]));
+
+        // The teacher makes the activity a plain resource; the learner does not reload.
+        $DB->set_field('exelearning', 'gradeenabled', 0, ['id' => $instance->id]);
+        $instance = $DB->get_record('exelearning', ['id' => $instance->id], '*', MUST_EXIST);
+        exelearning_sync_grade_items($instance->id);
+        track::ingest($instance, $course, $cm, $student->id, $payload('95'), false);
+
+        // No row may claim to be gradable while holding the ungraded 95.
+        $rows = $DB->get_records('exelearning_attempt', [
+            'exelearningid' => $instance->id, 'userid' => $student->id, 'itemnumber' => 0,
+        ]);
+        foreach ($rows as $row) {
+            if ((float) $row->rawscore === 95.0) {
+                $this->assertSame(0, (int) $row->gradable, 'The ungraded score must not sit in a gradable row');
+            }
+        }
     }
 
     /**

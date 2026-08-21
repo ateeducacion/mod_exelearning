@@ -82,22 +82,32 @@ Una fila de `exelearning_attempt` escrita con la calificación apagada queda mar
   `attempts::aggregate_scaled()`, `attempts::fetch_scaled_by_user_item()` y la media de
   participación del resumen. Si una sola no filtrara, la asimetría volvería por ahí.
 
-La marca **se decide al crear la fila y no se vuelve a tocar**. `record_item()` no aplica
-`$gradable` en su rama de actualización. El upsert está indexado por el número de intento de
-la sesión, así que un alumno con la página abierta sigue escribiendo en la misma fila mientras
-el profesor cambia el interruptor por debajo; volver a decidir la marca en cada POST permitiría
-reescribir el historial en **las dos** direcciones: apagado→encendido promovería a nota trabajo
-hecho fuera de evaluación —justo la garantía que este campo existe para dar— y
-encendido→apagado degradaría trabajo que **sí** se hizo bajo evaluación, destruyendo el
-historial que [[DEC-124-01]] promete recuperar. El cliente lo hace inevitable en vez de
-improbable: `js/scorm_tracker.js` acumula `itemScores` y no vacía el mapa —a propósito, para
-que un POST fallido no pierda una nota— de modo que cada POST posterior reenvía todo lo
-capturado durante el intervalo apagado.
+**Una sesión que atraviesa un cambio de estado se parte en dos intentos.**
+`resolve_attempt_number()` busca el intento de la sesión por `sessiontoken` **y por
+gradabilidad**, así que un alumno con la página abierta cuando el profesor enciende la
+calificación recibe un intento nuevo y calificable en su siguiente autocommit, en vez de
+seguir escribiendo en una fila que jamás podrá producir nota. No le cuesta nada:
+`count_user_attempts()` no cobra el intento no calificable contra `maxattempt`. El efecto
+lateral importante es que **cada intento queda homogéneo** —todas sus filas se escribieron
+bajo un mismo estado— que es lo que permite que la marca describa las notas junto a las que
+está.
 
-Se consideró **partir el intento** al cambiar de estado, y se descartó:
-`resolve_attempt_number()` indexa por `sessiontoken`, así que partir significa un token
-apuntando a dos números de intento, y el alumno consigue un intento limpio simplemente
-recargando —que ahora no le cuesta nada, por lo que sigue.
+Sin partir, el caso encendido→apagado dejaba al alumno completando la actividad entera
+dentro de una fila marcada como sólo-finalización, sin nota y sin ninguna señal.
+
+**La marca puede bajar, nunca subir.** En `record_item()`, una escritura que trae datos del
+periodo no calificable baja la fila a `gradable = 0`. Es necesario porque el upsert
+**sustituye** la nota en lugar de añadir una fila: si no bajara, la fila afirmaría ser
+calificable mientras guarda una nota obtenida fuera de evaluación. Subirla es lo que nunca
+puede ocurrir: es la garantía que este campo existe para dar. Con el reparto anterior la
+situación casi no se da —los intentos son homogéneos— y esto queda como guarda para
+cualquier llamador que no pase por `resolve_attempt_number()`.
+
+Una revisión anterior de este ADR justificaba «no actualizar nunca» diciendo que bajar la
+marca destruiría el historial que [[DEC-124-01]] promete recuperar. La premisa era falsa:
+las cuatro líneas siguientes de esa misma rama ya sustituyen `rawscore`, `maxscore`,
+`scaledscore` y `status`, así que el historial anterior se pierde de todas formas y sólo
+sobrevivía la marca, ya desligada del contenido que decía describir.
 
 **Sin historial calificable no se publica nada.** `aggregate_scaled()` devuelve `null` cuando
 todas las filas `itemnumber = 0` del alumno son sólo-finalización, y el código caía entonces a
@@ -123,7 +133,9 @@ significa:
 | `aggregate_scaled()`, `fetch_scaled_by_user_item()`, media del resumen | **sí** | son la nota |
 | `COUNT(DISTINCT attempt)` de `count_user_attempts()` (`maxattempt`) | **sí** | `maxattempt` es un control de calificación —`mod_form.php` lo deshabilita junto al resto de ajustes de nota cuando la actividad no califica—, así que cobrárselo al alumno por trabajo que la propia actividad declaró fuera de evaluación crea un estado sin salida: con `maxattempt = 1`, quien usó la actividad mientras no calificaba llega al límite sin haber tenido nunca un intento calificable, y ya no puede obtener nota |
 | `MAX(attempt)` de `resolve_attempt_number()` | **no** | asigna el siguiente número; saltarse filas reemitiría un número existente, colisionando con la clave del upsert de `record_item()` y fundiendo dos intentos en uno |
-| `COUNT(DISTINCT userid)` de participación | **no** | cuenta quién ha participado, no quién ha sido calificado |
+| `COUNT(DISTINCT userid)` de participación | **no** | cuenta quién ha participado, no quién ha sido calificado. Como la media **sí** filtra, las dos mitades de la frase describen poblaciones distintas, así que `participation_summary()` devuelve además `graded` y la cadena nombra las dos: *«N de M han intentado · media X% sobre G calificados»* |
+| contador «intentos usados» de `view.php` | **sí**, vía `count_user_attempts()` | es el número contra el que se muestra el tope; contarlo aparte mostraría «1 de 1» a un alumno al que el servidor todavía acepta |
+| `get_user_attempts` (servicio web) | **no**, pero lo expone | la lista es el historial del alumno y va entera; se añade `gradable` por intento y `usedattempts` con el número que el servidor aplica, para que un cliente no deduzca el tope de `count($attempts)` |
 | `custom_completion` | **no** | la finalización es la razón por la que la fila existe |
 
 Una revisión anterior de este ADR afirmaba que «el recuento y la asignación no filtran» como
@@ -144,11 +156,18 @@ la opción conservadora: preserva las notas que un sitio ya hubiera publicado.
   único que no hace es contar para una nota.
 - El campo se declara a la API de privacidad, se exporta con `transform::yesno()` y lleva
   su cadena en los cinco idiomas.
-- **El informe de intentos no distingue todavía esas filas**, y es una omisión consciente:
-  `report.php` las lista con su puntuación como cualquier otra, de modo que un profesor
-  puede ver ahí un 95 que el libro de calificaciones no recoge. Marcarlas en la interfaz es
-  un cambio de presentación, con sus cadenas y su columna, y no pertenece a un PR cuyo
-  asunto es retirar un canal de tracking. Queda anotado como seguimiento.
+- **La exportación del informe lleva la marca; la tabla en pantalla todavía no.** El CSV/Excel
+  gana una columna «cuenta para la calificación», porque sin ella una descarga no se puede
+  reconciliar contra el libro de calificaciones. La tabla en pantalla sigue mostrando esas
+  filas con su puntuación y sin distintivo: un profesor puede ver ahí un 95 que el libro no
+  recoge. Añadir la columna o el distintivo visual es trabajo de presentación y queda
+  anotado como seguimiento.
+- **Las filas anteriores a esta versión se quedan como calificables.** La etapa 22 no hace
+  backfill: después del hecho no hay forma fiable de saber cuáles se escribieron con el
+  interruptor apagado. Filtrar por «instancias hoy no calificables» no discrimina —al apagar,
+  `remove_all()` marca *todos* los mapeos como borrados— y degradaría historial legítimo de
+  cualquier sitio que tenga ahora el interruptor apagado. El `CHANGELOG` lo dice
+  explícitamente en vez de prometer la garantía sin condiciones.
 - [[DEC-124-01]] sigue cumpliéndose para lo que sí era historial calificable: apagar y
   volver a encender recupera las notas anteriores al apagado. Lo que no recupera es lo que
   nunca fue una nota.

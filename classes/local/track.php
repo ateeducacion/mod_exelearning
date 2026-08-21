@@ -155,7 +155,12 @@ class track {
         $lock = $lockfactory->get_lock('ingest_' . $exe->id . '_' . $userid, 5);
         try {
             // Resolve the attempt number (one per page load / session).
-            $attempt = attempts::resolve_attempt_number($exe->id, $userid, $sessiontoken);
+            $attempt = attempts::resolve_attempt_number(
+                $exe->id,
+                $userid,
+                $sessiontoken,
+                !empty($exe->gradeenabled)
+            );
             // Whether this attempt already has rows, checked before any write for it:
             // drives the one-shot attempt_started event below (fired only when this
             // commit is what brings the attempt into existence).

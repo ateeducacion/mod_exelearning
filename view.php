@@ -293,6 +293,7 @@ if (!$mainfile) {
                 (object) [
                         'attempted' => $summary['attempted'],
                         'total'     => $summary['total'],
+                        'graded'    => $summary['graded'],
                         'mean'      => format_float($summary['meanpercent'], 1),
                 ]
             );
@@ -313,7 +314,12 @@ if (!$mainfile) {
             'userid'        => $USER->id,
             'itemnumber'    => 0,
         ], 'attempt ASC');
-        $used = count($myattempts);
+        // Count through the same function that ENFORCES the cap, not by counting the
+        // list above: count_user_attempts() excludes ungraded-period attempts
+        // (DEC-124-03), so counting rows here would show the learner "1 of 1 used" while
+        // the server still lets them attempt. $myattempts stays unfiltered for the review
+        // list below, which legitimately shows every attempt they made.
+        $used = \mod_exelearning\local\attempts::count_user_attempts($exelearning->id, $USER->id);
         $maxattempt = (int) ($exelearning->maxattempt ?? 0);
         if ($used > 0 || $maxattempt > 0) {
             $label = ($maxattempt > 0)
