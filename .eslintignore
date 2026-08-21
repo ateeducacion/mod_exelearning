@@ -8,3 +8,6 @@ amd/build/
 # export) and ESM test globals; linted/tested by Vitest, not Moodle's grunt eslint.
 js/
 tests/js/
+# Assembled eXeLearning SCORM 1.2 runtime (generated from the eXeLearning
+# repo's public/app/common/scorm/scorm12/ layers; do not edit or lint here).
+assets/scorm/SCOFunctions.js

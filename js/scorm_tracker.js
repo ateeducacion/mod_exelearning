@@ -171,30 +171,29 @@
     }
 
     /**
-     * Parse cmi.suspend_data exactly like \mod_exelearning\local\track::parse_suspend_data.
+     * Parse cmi.suspend_data, mirroring \mod_exelearning\local\track::parse_suspend_data.
      *
-     * Two producer formats reach this LMS and both are supported:
+     * Two producer formats reach this shim and the header selects the parser; nothing
+     * downstream re-sniffs the payload:
      *
      *  - the VERSIONED payload `exe12/1|{record}|{record}…` written by eXeLearning's
-     *    SCORM 1.2 runtime (core PR #2209 onwards). Each record names its own activity
-     *    id, so entries come back keyed by objectid;
-     *  - the LEGACY unversioned lines `{N}. "{title}"; …` written by every earlier
-     *    release. Those name only a page-local slot, so entries come back keyed by N
-     *    and captureItemScores() must resolve them against the loaded page's DOM.
+     *    SCORM 1.2 runtime (core PR #2209 onwards). Every record names its own
+     *    activity id, so entries come back keyed by that stable objectid;
+     *  - the LEGACY unversioned lines written by every earlier release, keyed by the
+     *    page-local DOM index N, which the producer reuses on every page (DEC-5-01).
      *
-     * One internal representation serves both: the value is always
-     * {title, scorepct, weighted}, plus an `objectid` field on — and only on — an
-     * entry that knows its own identity. Consumers branch on the presence of that
-     * field, never on the raw payload, so nothing downstream re-sniffs the format.
+     * One representation serves both: every value carries title, scorepct and
+     * weighted, plus an `objectid` key on — and only on — an entry that knows its own
+     * identity. Callers branch on that key, never on the raw string.
      *
      * @param {string} s Raw cmi.suspend_data value.
-     * @returns {Object} Map of objectid (versioned) or page-local index N (legacy)
-     *          to {title, scorepct, weighted[, objectid]}.
+     * @returns {Object} Map of objectid (versioned) or page-local N (legacy) to
+     *          {title, scorepct, weighted[, objectid]}.
      */
     function parseSuspend(s) {
         if (!s) { return {}; }
         var text = String(s);
-        return (text.indexOf(EXE12_PREFIX) === 0) ? parseExe12(text) : parseLegacySuspend(text);
+        return text.indexOf(EXE12_PREFIX) === 0 ? parseExe12(text) : parseLegacySuspend(text);
     }
 
     /**
@@ -329,6 +328,10 @@
         }
         for (var n in newParsed) {
             if (!newParsed.hasOwnProperty(n)) { continue; }
+            // A VERSIONED (`exe12/`) entry names its own activity, so it needs no DOM
+            // resolution and cannot collide: it is already keyed by the stable objectid.
+            // Everything below exists only because the legacy format cannot name its
+            // owner and reuses the page-local slot N across pages.
             var cur = newParsed[n];
             var oid = cur.objectid;
             if (!oid) {

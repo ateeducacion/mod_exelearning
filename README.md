@@ -295,3 +295,38 @@ GNU General Public License for more details.
 
 You should receive a copy of the GNU General Public License
 along with this program.
+
+### Third-party code
+
+The plugin carries exactly **one third-party library**, declared in
+`thirdpartylibs.xml`; the folders involved carry a `readme_moodle.txt`
+documenting origin, modifications applied (none) and how to update.
+
+| Location | Component | Licence |
+|---|---|---|
+| `assets/scorm/SCORM_API_wrapper.js` | Unmodified upstream [pipwerks SCORM wrapper](https://github.com/pipwerks/scorm-api-wrapper) (v1.1.20180906), as vendored by eXeLearning inside exported packages | MIT |
+
+Everything else the plugin serves is **first-party eXeLearning code**:
+`assets/scorm/SCOFunctions.js` is the project's own SCORM 1.2 runtime, written
+from the specification (AGPL-3.0-or-later, same project and licence as the
+editor), and `dist/static/` (release ZIP only) is the eXeLearning v4 editor
+itself, built from
+[`exelearning/exelearning`](https://github.com/exelearning/exelearning)
+(AGPL-3.0-or-later, declared in the ZIP's `thirdpartylibs.xml` with its exact
+version).
+
+**Why AGPL code ships inside a GPLv3 plugin.** The editor and the SCORM runtime
+are not third-party dependencies in the usual sense: they are the eXeLearning
+application itself, developed and maintained by the same team as this plugin
+(Cedec-INTEF and the collaborating regional administrations), with its own
+public repository, release cycle and licence. Each release bundles them
+unmodified, exactly as produced by the upstream build, so that editing works
+right after installation without downloading anything.
+
+Distributing the combination is explicitly permitted: section 13 of the GPLv3
+grants permission to combine a GPLv3 work with an AGPLv3 work, and section 13 of
+the AGPLv3 grants the mirror-image permission. Each part keeps its own licence —
+the plugin code remains GPL-3.0-or-later and the bundled eXeLearning code
+remains AGPL-3.0-or-later, the AGPL's network-interaction requirement included.
+The editor's own dependencies and their licences are listed in
+`dist/static/libs/LICENSES.md`.

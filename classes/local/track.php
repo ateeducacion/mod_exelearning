@@ -672,9 +672,10 @@ class track {
      * Keeps only the scores whose objectid belongs to a registered, non-deleted
      * gradable iDevice of this instance.
      *
-     * apply_item_scores() already ignores unknown objectids, but the overall
-     * recompute operates on the whole map, so an unfiltered map would let a caller
-     * skew the overall by injecting extra objectids.
+     * apply_item_scores() already ignores unknown objectids, but the overall recompute
+     * operates on the whole map, so an unfiltered map would let a caller skew the
+     * overall by injecting extra objectids. Extracted because the versioned `exe12/`
+     * path needs the same filter for the scores it recovers from cmi.suspend_data.
      *
      * @param \stdClass $exe        The exelearning instance record.
      * @param array     $itemscores Map objectid => entry.

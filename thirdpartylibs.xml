@@ -10,15 +10,8 @@
   <library>
     <location>assets/scorm/SCORM_API_wrapper.js</location>
     <name>pipwerks SCORM API Wrapper</name>
-    <description>pipwerks SCORM wrapper used to bridge gradable iDevices with the LMS SCORM runtime.</description>
-    <version>1.1.20121006</version>
-    <license>MIT</license>
-  </library>
-  <library>
-    <location>assets/scorm/SCOFunctions.js</location>
-    <name>pipwerks SCO Functions</name>
-    <description>pipwerks helper functions wrapping the SCORM API wrapper for gradable iDevices.</description>
-    <version>1.1.20121006</version>
+    <description>Unmodified upstream pipwerks SCORM wrapper used to bridge gradable iDevices with the LMS SCORM runtime (pipwerks/scorm-api-wrapper@82e455b, byte-identical).</description>
+    <version>1.1.20180906</version>
     <license>MIT</license>
   </library>
 </libraries>
