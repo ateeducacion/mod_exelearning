@@ -3,7 +3,8 @@ id: DEC-0-18
 tracking_issue: 0
 legacy_id: DEC-0063
 title: "Reglas de validación canónica del endpoint xAPI y política de versión (1.0.3 con tolerancia a 2.0)"
-status: Proposed
+status: Superseded
+superseded_by: DEC-122-01
 date: 2026-06-17
 deciders:
   - erseco

@@ -200,10 +200,6 @@ mariadb10.11):
   (`research/decisiones/adr/DEC-34-02-transformacion-en-servido.md:4`); the
   `content_transformer` and its tests are still pending (`:84`). Roadmap, not a
   STABLE blocker.
-- **DEC-17-01** dual SCORM 1.2 + xAPI ingestion — status *Propuesta*; the xAPI
-  channel is unimplemented (PR2 / TAREA-015,
-  `research/decisiones/adr/DEC-17-01-ingesta-dual-scorm-xapi.md:4`,`:128`;
-  `docs/tracking-architecture.md`). Roadmap, not a STABLE blocker.
 
 **Documented-and-accepted posture (must remain documented, not necessarily fixed):**
 

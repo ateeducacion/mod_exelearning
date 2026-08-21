@@ -5,7 +5,7 @@
 > request unable to inflate a grade. This is the entry point; the two detailed docs
 > stay authoritative for their slice:
 > - `scorm-shim-current-flow.md` — the SCORM 1.2 shim as shipped today (step-by-step).
-> - `tracking-architecture.md` — the target dual SCORM 1.2 + xAPI architecture (DEC-17-01, not yet implemented).
+> - `tracking-architecture.md` — the single-channel architecture and the retired xAPI channel (DEC-122-01).
 >
 > Decision trail (Spanish ADRs): `research/decisiones/adr/` — DEC-0-03 (SCORM 1.2),
 > DEC-0-06 (preview/grading), DEC-0-07 (attempts), DEC-0-08/DEC-25-01 (grade model),
@@ -76,9 +76,13 @@ persists**: `ingest()` returns before any gradebook write
   is an iDevice (`db/install.xml:71-82`). `record_item()` upserts so repeated
   auto-commits in the same session refine the same row (`attempts.php:223-268`).
 - **Aggregation across attempts** by `grademethod` (highest/average/first/last/lowest)
-  in `aggregate_scaled()` (`attempts.php:279-311`).
+  in `aggregate_scaled()` (`attempts.php:279-311`), over **gradable rows only**: a row
+  recorded while the activity was not a graded one carries `gradable = 0` and never
+  becomes a mark (DEC-124-03).
 - **Cap enforcement (DEC-0-07 phase 2).** When `maxattempt > 0` and a *fresh* session
-  would exceed `count_user_attempts()`, `ingest()` returns
+  would exceed `count_user_attempts()` — which counts **gradable attempts only**, so work
+  done while the activity was ungraded does not use up the learner's allowance
+  (DEC-124-03) — `ingest()` returns
   `error => 'maxattemptsreached'` (`track.php` ingest at `classes/local/track.php:148-163`)
   and the endpoint replies **HTTP 409** (`track.php:70-72`) — a conflict, not a 500.
   The web service surfaces the same condition as a warning (`save_track.php:140-147`).
@@ -116,8 +120,8 @@ removing `allow-same-origin` would break tracking. Cross-component XSS hardening
 
 The SCORM 1.2 `window.API` shim in `view.php` is **not** considered tech debt: it is
 the deliberate compatibility surface (DEC-0-03) that lets an unmodified web export
-report scores, and it is the channel the dual SCORM/xAPI architecture preserves
-(DEC-17-01, `tracking-architecture.md`).
+report scores, and since DEC-122-01 retired the xAPI channel it is the only browser
+channel there is (`tracking-architecture.md`).
 
 The tech debt is the **serve-time HTML injection** into the extracted package:
 `exelearning_inject_scorm_loader()` (delegador en `lib.php`) →
@@ -149,6 +153,6 @@ emit nothing. See `research/decisiones/adr/DEC-68-01-eventos-ciclo-de-vida-inten
 ## See also
 
 - `docs/scorm-shim-current-flow.md` — shim internals and the endpoint step list.
-- `docs/tracking-architecture.md` — dual SCORM 1.2 + xAPI target (DEC-17-01).
+- `docs/tracking-architecture.md` — the single-channel architecture (DEC-122-01).
 - `docs/ELPX_PACKAGE.md` — how gradable iDevices are detected from the package.
 - `docs/GRADEBOOK.md` — how detected iDevices become grade items and columns.

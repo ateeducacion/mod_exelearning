@@ -16,11 +16,10 @@ siendo `status.yaml` + `tareas/backlog/`.
       opt-in) + botón "Actualizar ahora" (Fase 1). **Fase 2 DESCARTADA por ahora**
       (DEC-18-01 §Resolución de alcance, 2026-06-17): sin `updatefreq`/`db/tasks.php`/
       token REST eXe v4. El reemplazo YA está soportado por `update_instance`; falta hacerlo descubrible.
-- [ ] TAREA-015 / DEC-17-01: implementar la ingesta xAPI dual (listener AMD +
-      endpoint + normalizador) reutilizando la tubería existente, sin romper el
-      shim SCORM 1.2. Gated a que el PR upstream #1867 congele el contrato.
-      **Diseño del endpoint DECIDIDO 2026-06-17** (DEC-0-18 §Resoluciones: `scaled∉[0,1]`→rechazo 400,
-      overall recalculado server-side, `registration`/`sessiontoken` conviven, endpoint custom + `core_xapi` opcional).
+- [x] TAREA-015 / DEC-17-01: la ingesta xAPI dual se implementó (DEC-85-01) y se ha
+      **retirado** (DEC-122-01, 2026-08-21): medida de punta a punta, la nota por iDevice era
+      idéntica a la de SCORM y el overall era peor (media no ponderada). SCORM 1.2 vuelve a
+      ser el canal único. DEC-17-01 y DEC-0-18 quedan Superseded.
 - [ ] Cumplimiento: solo **accesibilidad** pendiente (pasada `axe-core`; known-gap post-STABLE, no
       bloqueante). Licencias y privacidad: vigentes (revisadas 2026-06-17, ver `cumplimiento/`).
 - [x] TAREA-013 / RIE-001: **DECIDIDO 2026-06-17** — RIE-001 **aceptado** (media/baja, mitigación v1
