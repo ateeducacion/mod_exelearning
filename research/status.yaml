@@ -213,10 +213,12 @@ decisiones_bloqueantes:
       (media no ponderada 50 frente a la ponderada 25 que recompone SCORM en servidor, par
       25/75); intentos, finalización, libro y eventos ya eran código compartido. Se elimina
       todo el canal (ingestor, normalizador, config_injector, xapi_track.php, listener,
-      ajustes y cadenas) y también el flag disableTracking del shim. Se CONSERVA la tabla
-      exelearning_tracking_events (datos de alumno declarados a privacidad y ausentes de
-      backup/moodle2). Los paquetes antiguos siguen emitiendo postMessage sin oyente: inocuo
-      (fire-and-forget, sin acuse ni reintento).
+      ajustes y cadenas) y también el flag disableTracking del shim. Se ELIMINA la tabla
+      exelearning_tracking_events: el plugin nunca se ha publicado (ningún sitio la tiene) y
+      conservarla habría exigido limpiarla en delete_instance/reset_userdata, cosa que nunca
+      se hizo (filas huérfanas latentes). La etapa 19 se deja intacta (historial append-only)
+      y una nueva etapa 2026082100 la borra donde exista. Los paquetes antiguos siguen
+      emitiendo postMessage sin oyente: inocuo (fire-and-forget, sin acuse ni reintento).
   DEC-18-01:
     titulo: "Actualización de contenido: reemplazo del .elpx y origen por URL con sincronización"
     estado: Propuesta

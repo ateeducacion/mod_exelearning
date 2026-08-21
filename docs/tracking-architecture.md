@@ -86,11 +86,22 @@ retry, no error path — so a message nothing listens for is simply discarded by
 Its LRS transport (`_postToLrs`) stays inert unless the package is launched with xAPI launch
 parameters, which this plugin never supplies.
 
-**The `exelearning_tracking_events` table is deliberately kept**, inert, along with its
-`db/install.xml` definition and its `classes/privacy/provider.php` declarations. It holds
-learner-linked rows on any site that ran the channel, it is declared to the privacy API, and
-it is absent from `backup/moodle2`, so dropping it would destroy personal data with no
-restore path. Nothing writes to it any more; export and deletion keep working.
+**The `exelearning_tracking_events` table is dropped.** It was the channel's
+audit/idempotency log, so with the channel gone nothing writes to or reads it. Its
+`db/install.xml` definition and its `classes/privacy/provider.php` declarations are removed,
+and upgrade stage `2026082100` drops the table wherever it exists. An earlier revision kept it
+to avoid destroying learner-linked rows, but the plugin has never been published, so no site
+holds that table — and the retention was not even wired up: neither
+`exelearning_delete_instance()` nor `exelearning_reset_userdata()` ever cleaned it, so deleting
+an activity or resetting a course would have orphaned those rows. Stage 19, which created the
+table, is left untouched: upgrade history is append-only and has to keep working for a site
+that installed a dev build.
+
+**Upgrading with a page open.** A learner holding an xAPI-era page when the upgrade lands keeps,
+*in that tab only*, an inert SCORM shim (`disableTracking`, as it was served) and a listener
+posting to `xapi_track.php`, which no longer exists. Those interactions are lost until the page
+reloads and is served again with the SCORM shim active. This is the usual maintenance-mode
+upgrade consideration, not a data-loss path: attempts already committed are unaffected.
 
 ## Scope
 

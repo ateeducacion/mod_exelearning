@@ -103,12 +103,22 @@ camino aporta algo que el primero no puede dar.
      la finalización por estado (`DEC-69-01`, que consulta `exelearning_attempt` sin filtrar
      por calificación) y dejaría sin historial la promesa explícita de `DEC-13-07` de
      «reactivar `gradeenabled` re-detecta y recalcula desde el historial».
-4. **`exelearning_tracking_events` se conserva**, inerte: su definición en `db/install.xml`, su
-   etapa de upgrade y sus declaraciones en `classes/privacy/provider.php` se quedan como
-   están. Contiene filas vinculadas a alumnos en los sitios que ejecutaron el canal, está
-   declarada a la API de privacidad y **no** está en `backup/moodle2`, así que borrarla
-   destruiría datos personales sin camino de restauración. Nadie escribe ya en ella; exportar
-   y borrar por privacidad siguen funcionando.
+4. **`exelearning_tracking_events` se elimina.** Era el registro de auditoría/idempotencia del
+   canal, y con el canal retirado nadie la escribe ni la lee. Desaparecen su definición en
+   `db/install.xml` y todas sus declaraciones en `classes/privacy/provider.php` (metadatos,
+   consulta de contextos, exportación y los cuatro caminos de borrado), y una **nueva etapa de
+   upgrade** (`2026082100`) la borra donde exista. La etapa 19, que la creaba, se deja
+   **intacta**: el historial de upgrade es *append-only* y tiene que seguir funcionando para un
+   sitio que instalara una compilación de desarrollo — la crea al pasar y la nueva etapa la
+   borra a continuación.
+   - Una revisión anterior la **conservaba** por no destruir datos personales sin camino de
+     restauración. Ese motivo no se sostiene: **el plugin nunca se ha publicado**, así que no
+     hay ningún sitio en producción con esa tabla, ni con filas dentro.
+   - Y la conservación **no estaba siquiera bien cableada**: ni `exelearning_delete_instance()`
+     ni `exelearning_reset_userdata()` la limpiaban, de modo que borrar una actividad o
+     restaurar un curso dejaba filas huérfanas vinculadas a alumnos. Mantener la tabla exigía
+     además arreglar esos dos caminos; eliminarla es más simple y evita arrastrar un defecto
+     latente de datos huérfanos a cambio de ningún beneficio.
 5. **Los paquetes antiguos siguen emitiendo, y es inocuo.** `_postToParent()` es *fire and
    forget* dentro de un `try`/`catch`: no hay acuse de recibo, ni reintento, ni rama de error,
    así que un `postMessage` que nadie escucha lo descarta el navegador. `_postToLrs()` sólo
@@ -120,23 +130,33 @@ camino aporta algo que el primero no puede dar.
 ## Consecuencias
 
 - **Positivas:** un solo canal, una sola tubería y un overall ponderado correcto para todos los
-  paquetes; un endpoint público menos; menos superficie que auditar y traducir; el shim SCORM
-  vuelve a su comportamiento previo a `DEC-85-01`, byte a byte.
+  paquetes; un endpoint público menos y una tabla menos; menos superficie que auditar y
+  traducir; el shim SCORM vuelve a su comportamiento previo a `DEC-85-01`, byte a byte, y
+  `classes/privacy/provider.php` vuelve a declarar exactamente lo que el plugin almacena.
 - **Negativas / coste:** se pierde la deduplicación por `statement.id` y la auditoría por
   statement (nadie dependía de ellas para la nota); vuelve la dependencia del `cmi.suspend_data`
   y del parche de guardas de `form`/`scrambled-list` (`DEC-13-11`), deuda ya conocida y con
   salida documentada en `DEC-34-02`/`DEC-36-01`; los sitios que hubieran fijado
   `xapiprimaryenabled` se quedan con un ajuste huérfano en `mdl_config_plugins`, inofensivo.
 - **Sin migración de datos.** Las notas, intentos e informes existentes no se tocan: los dos
-  canales escribían en las mismas tablas.
+  canales escribían en las mismas tablas, y la única que desaparece
+  (`exelearning_tracking_events`) no alimentaba ni la nota ni la interfaz.
+- **Nota operativa: actualizar con una pestaña abierta.** Un alumno que tuviera cargada una
+  página de la época xAPI cuando se aplica la actualización se queda, en **esa pestaña**, con
+  el shim SCORM inerte (`disableTracking`, tal como se sirvió) y con un listener posteando a
+  `xapi_track.php`, que ya no existe. Las interacciones de esa sesión se pierden hasta que la
+  página se recargue, momento en el que vuelve a servirse con el shim SCORM activo. Es la
+  consideración habitual de una actualización en modo mantenimiento, **no** una vía de pérdida
+  de datos: los intentos ya registrados no se ven afectados.
 
 ## Validación
 
 `npx vitest run` (el tracker SCORM sigue verde; los tests del listener desaparecen con él),
 la suite PHPUnit completa del plugin sobre el stack de evaluación, y `composer lint`
 (phpcs, estándar moodle). Búsqueda de `xapi`/`xAPI` en todo el árbol tras el cambio: sólo
-quedan el registro histórico de `research/`, la entrada de la v4.0.2 en `CHANGELOG.md`, las
-cadenas de privacidad de la tabla conservada y las referencias explícitas a esta retirada.
+quedan el registro histórico de `research/`, la entrada de la v4.0.2 en `CHANGELOG.md`, la
+etapa 19 de `db/upgrade.php` (historial *append-only*) y las referencias explícitas a esta
+retirada.
 
 ## Seguimiento
 
