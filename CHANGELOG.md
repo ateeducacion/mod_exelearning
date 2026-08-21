@@ -12,12 +12,12 @@ User-visible changes per release. Each version matches a [GitHub release](https:
 
 - Deleting a student attempt asks for confirmation, so a stray click or a link prefetch can no longer discard grades
 - Uploading a style package no longer reports internal server details when it fails
-- Deleting an activity or resetting a course now also clears the xAPI tracking log recorded by v4.0.2 and v4.0.3, which until now kept learner rows after the activity they belonged to was gone
 - The help text for "Graded activity" no longer claims that turning it off stops attempt tracking. Attempts keep being recorded, which is what lets re-enabling it recover the grades
 
 ### Removed
 
 - Grading over xAPI. Every package is graded through SCORM 1.2 again, which reports the same per-iDevice scores and a correctly weighted total. Existing grades, attempts and reports are unaffected
+- The xAPI tracking log. Upgrading removes it, discarding the raw statements that v4.0.2 and v4.0.3 recorded alongside the grades. Grades, attempts and reports come from a different table and are untouched
 
 ## v4.0.2 – 2026-07-07
 

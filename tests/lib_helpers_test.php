@@ -59,9 +59,6 @@ final class lib_helpers_test extends advanced_testcase {
 
     /**
      * exelearning_reset_userdata() clears attempts only when the reset flag is set.
-     *
-     * The retained xAPI-era audit log (DEC-122-01) is user data too, so it follows
-     * the attempts on both branches: untouched without the flag, gone with it.
      */
     public function test_reset_userdata_deletes_attempts(): void {
         global $DB;
@@ -70,28 +67,14 @@ final class lib_helpers_test extends advanced_testcase {
         local\attempts::record_item($instance->id, $student->id, 1, 1, 80.0, 100.0, 'completed', 'sess');
         $this->assertSame(1, $DB->count_records('exelearning_attempt', ['exelearningid' => $instance->id]));
 
-        $DB->insert_record('exelearning_tracking_events', (object) [
-            'exelearningid' => $instance->id,
-            'userid'        => $student->id,
-            'statementid'   => 'b7f1c0de-0000-4000-8000-000000000002',
-            'verb'          => 'answered',
-            'objectid'      => 'idev-1',
-            'registration'  => 'sess',
-            'scaled'        => 0.8,
-            'timecreated'   => time(),
-        ]);
-        $this->assertSame(1, $DB->count_records('exelearning_tracking_events', ['exelearningid' => $instance->id]));
-
         // Without the reset flag it is a no-op.
         $this->assertSame([], exelearning_reset_userdata((object) ['courseid' => $course->id]));
         $this->assertSame(1, $DB->count_records('exelearning_attempt', ['exelearningid' => $instance->id]));
-        $this->assertSame(1, $DB->count_records('exelearning_tracking_events', ['exelearningid' => $instance->id]));
 
         // With the flag, attempts are cleared.
         $status = exelearning_reset_userdata((object) ['courseid' => $course->id, 'reset_exelearning' => 1]);
         $this->assertNotEmpty($status);
         $this->assertSame(0, $DB->count_records('exelearning_attempt', ['exelearningid' => $instance->id]));
-        $this->assertSame(0, $DB->count_records('exelearning_tracking_events', ['exelearningid' => $instance->id]));
     }
 
     /**

@@ -239,12 +239,7 @@ final class lib_test extends advanced_testcase {
     }
 
     /**
-     * Deleting an instance wipes all of its rows across the four tables.
-     *
-     * Includes the retained xAPI-era audit log (DEC-122-01): nothing writes to it
-     * any more, but the rows an existing site already holds are learner-linked, and
-     * the privacy API reaches them by joining through {exelearning}. Leaving them
-     * behind when the instance goes would strand personal data out of reach.
+     * Deleting an instance wipes all of its rows across the three tables.
      */
     public function test_delete_instance(): void {
         global $DB;
@@ -266,18 +261,6 @@ final class lib_test extends advanced_testcase {
             'timemodified'  => time(),
         ]);
 
-        // Seed a legacy tracking event to prove the retained table is cleaned too.
-        $DB->insert_record('exelearning_tracking_events', (object) [
-            'exelearningid' => $instance->id,
-            'userid'        => 2,
-            'statementid'   => 'b7f1c0de-0000-4000-8000-000000000001',
-            'verb'          => 'answered',
-            'objectid'      => 'idev-1',
-            'registration'  => 'reg-1',
-            'scaled'        => 0.5,
-            'timecreated'   => time(),
-        ]);
-
         $this->assertTrue(exelearning_delete_instance($instance->id));
 
         $this->assertFalse($DB->record_exists('exelearning', ['id' => $instance->id]));
@@ -287,10 +270,6 @@ final class lib_test extends advanced_testcase {
         ));
         $this->assertSame(0, $DB->count_records(
             'exelearning_attempt',
-            ['exelearningid' => $instance->id]
-        ));
-        $this->assertSame(0, $DB->count_records(
-            'exelearning_tracking_events',
             ['exelearningid' => $instance->id]
         ));
     }

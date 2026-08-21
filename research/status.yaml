@@ -213,14 +213,14 @@ decisiones_bloqueantes:
       (media no ponderada 50 frente a la ponderada 25 que recompone SCORM en servidor, par
       25/75); intentos, finalización, libro y eventos ya eran código compartido. Se elimina
       todo el canal (ingestor, normalizador, config_injector, xapi_track.php, listener,
-      ajustes y cadenas) y también el flag disableTracking del shim. Se CONSERVA la tabla
-      exelearning_tracking_events, inerte: v4.0.2 y v4.0.3 son releases PÚBLICAS que la llevan
-      en install.xml junto a un xapi_track.php funcional que escribe en ella, así que hay
-      sitios en campo que pueden tener filas y borrarlas sería una migración destructiva de
-      datos personales sin camino de restauración (ausente de backup/moodle2). Se arregla aquí
-      el hueco que sí era real: delete_instance y reset_userdata ahora la limpian (antes
-      dejaban filas huérfanas). Queda con vistas a retirarla en una release futura, cuando
-      haya historia de migración para las filas existentes. Los paquetes antiguos siguen
+      ajustes y cadenas) y también el flag disableTracking del shim. Se ELIMINA la tabla
+      exelearning_tracking_events aun habiendo release pública (v4.0.2 y v4.0.3 la llevan con
+      escritor activo, y no está en backup/moodle2): se asume el borrado porque lo que se
+      pierde es auditoría y no calificación, la ventana de exposición es muy breve, y
+      conservarla habría exigido limpiarla en delete_instance/reset_userdata, cosa que nunca
+      se hizo (filas huérfanas latentes e inalcanzables). La etapa 19 se deja intacta
+      (historial append-only) y una nueva etapa 2026082100 la borra donde exista; el borrado
+      se anuncia en CHANGELOG bajo Removed. Los paquetes antiguos siguen
       emitiendo postMessage sin oyente: inocuo (fire-and-forget, sin acuse ni reintento).
   DEC-18-01:
     titulo: "Actualización de contenido: reemplazo del .elpx y origen por URL con sincronización"

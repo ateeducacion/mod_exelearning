@@ -577,5 +577,18 @@ function xmldb_exelearning_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026072400, 'exelearning');
     }
 
+    // Stage 21 (2026082100): drop exelearning_tracking_events. It was the audit/idempotency
+    // log of the xAPI ingestion channel created in stage 19; that channel has been retired
+    // (DEC-122-01) and no code writes to or reads this table any more. Stage 19 is left
+    // untouched — upgrade history is append-only, so a site that installed a dev build
+    // still creates the table on its way through and drops it here.
+    if ($oldversion < 2026082100) {
+        $table = new xmldb_table('exelearning_tracking_events');
+        if ($dbman->table_exists($table)) {
+            $dbman->drop_table($table);
+        }
+        upgrade_mod_savepoint(true, 2026082100, 'exelearning');
+    }
+
     return true;
 }

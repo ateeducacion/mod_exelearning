@@ -86,27 +86,25 @@ retry, no error path — so a message nothing listens for is simply discarded by
 Its LRS transport (`_postToLrs`) stays inert unless the package is launched with xAPI launch
 parameters, which this plugin never supplies.
 
-**The `exelearning_tracking_events` table is deliberately kept**, inert, along with its
-`db/install.xml` definition and its `classes/privacy/provider.php` declarations. Nothing writes
-to it any more; export and deletion keep working.
+**The `exelearning_tracking_events` table is dropped.** It was the channel's
+audit/idempotency log, so with the channel gone nothing writes to or reads it. Its
+`db/install.xml` definition, its `classes/privacy/provider.php` declarations and the eight
+language strings that translated them are removed, and upgrade stage `2026082100` drops the
+table wherever it exists. Stage 19, which created it, is left untouched: upgrade history is
+append-only and has to keep working for a site that has the table.
 
-It is kept because sites in the field can hold rows in it. `v4.0.2` (7 Jul 2026) and `v4.0.3`
-are public releases, and both ship the table in `db/install.xml` alongside a working
-`xapi_track.php` that writes to it — verify with `git show v4.0.2:db/install.xml`. Dropping the
-table on upgrade would therefore be a destructive migration of personal data: audit data, but
-learner-linked all the same, and absent from `backup/moodle2`, so there would be no restore
-path. An intermediate revision of this change dropped the table on the premise that the plugin
-had never been published; that premise was wrong.
-
-What that revision got right is that the retention was never wired up: neither
-`exelearning_delete_instance()` nor `exelearning_reset_userdata()` cleaned the table, so
-deleting an activity or resetting a course left learner-linked rows behind — and out of reach,
-since the privacy API locates them by joining through `{exelearning}`, the very instance that
-had just been deleted. **Both paths now delete its rows**, covered by tests.
-
-The table stays inert **with a view to removing it in a future release**, once there is a
-migration story for the rows existing sites already hold — exporting, archiving or purging them
-with notice. Deleting learner data is a change that gets planned and announced on its own.
+**This does delete data, and that is a deliberate call.** `v4.0.2` and `v4.0.3` are public
+releases and both ship the table plus a working writer, so a site that used the xAPI channel can
+hold rows, and the table is absent from `backup/moodle2`. It is dropped anyway: what is lost is
+the raw statement and its `statement.id` deduplication — audit trail, never a grade, since
+grades, attempts and reports live in `exelearning_grade_item` and `exelearning_attempt` and are
+untouched. The exposure window is short (v4.0.2 is from 2026-07-07, in a plugin still in early
+deployment, with the channel switchable off), and keeping an inert table would have meant fixing
+and then maintaining two cleanup paths that never worked: neither `exelearning_delete_instance()`
+nor `exelearning_reset_userdata()` ever cleaned it, so deleting an activity or resetting a course
+orphaned those rows — unreachably, since the privacy API finds them by joining through the
+`{exelearning}` row just deleted. `CHANGELOG.md` announces the removal under *Removed*, so an
+administrator who wants those rows can dump them before upgrading. Recorded in `DEC-122-01` §4.
 
 **Upgrading with a page open.** A learner holding an xAPI-era page when the upgrade lands keeps,
 *in that tab only*, an inert SCORM shim (`disableTracking`, as it was served) and a listener
