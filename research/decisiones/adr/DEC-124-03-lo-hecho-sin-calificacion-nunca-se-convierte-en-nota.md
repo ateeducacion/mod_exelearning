@@ -105,6 +105,11 @@ la opción conservadora: preserva las notas que un sitio ya hubiera publicado.
   único que no hace es contar para una nota.
 - El campo se declara a la API de privacidad, se exporta con `transform::yesno()` y lleva
   su cadena en los cinco idiomas.
+- **El informe de intentos no distingue todavía esas filas**, y es una omisión consciente:
+  `report.php` las lista con su puntuación como cualquier otra, de modo que un profesor
+  puede ver ahí un 95 que el libro de calificaciones no recoge. Marcarlas en la interfaz es
+  un cambio de presentación, con sus cadenas y su columna, y no pertenece a un PR cuyo
+  asunto es retirar un canal de tracking. Queda anotado como seguimiento.
 - [[DEC-124-01]] sigue cumpliéndose para lo que sí era historial calificable: apagar y
   volver a encender recupera las notas anteriores al apagado. Lo que no recupera es lo que
   nunca fue una nota.
