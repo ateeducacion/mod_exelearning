@@ -12,7 +12,7 @@ User-visible changes per release. Each version matches a [GitHub release](https:
 
 - Deleting a student attempt asks for confirmation, so a stray click or a link prefetch can no longer discard grades
 - Uploading a style package no longer reports internal server details when it fails
-- The help text for "Graded activity" no longer claims that turning it off stops attempt tracking. Attempts keep being recorded, which is what lets re-enabling it recover the grades
+- The help text for "Graded activity" no longer claims that turning it off stops attempt tracking, which it never did
 
 ### Removed
 
