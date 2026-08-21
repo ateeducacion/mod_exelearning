@@ -139,6 +139,14 @@ class restore_exelearning_activity_structure_step extends restore_activity_struc
         $data->timecreated = $this->apply_date_offset($data->timecreated);
         $data->timemodified = $this->apply_date_offset($data->timemodified);
 
+        // A backup taken before DEC-124-03 carries no 'gradable' element. Default it to
+        // gradable, for the same reason the upgrade step defaults existing rows to 1:
+        // those rows were written by an ingest() that made no such distinction, and
+        // assuming gradable preserves grades the source site had published. Set it
+        // explicitly rather than leaning on the column default, so the intent is
+        // readable here and survives any future change to install.xml.
+        $data->gradable = isset($data->gradable) ? (int) $data->gradable : 1;
+
         $newitemid = $DB->insert_record('exelearning_attempt', $data);
         $this->set_mapping('exelearning_attempt', $oldid, $newitemid);
     }

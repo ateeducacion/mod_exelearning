@@ -48,13 +48,11 @@ Reglas operativas de investigación: [`research/AGENTS.md`](./research/AGENTS.md
    `create_file_from_url` + gating por `contenthash` + `curl_security_helper` + admin
    `allowexternalurl` opt-in) + botón "Actualizar ahora" (Fase 1); `updatefreq` + `db/tasks.php`
    + token REST eXe v4 (Fase 2 opcional). El reemplazo YA funciona vía `update_instance`.
-2. **TAREA-015 / DEC-17-01** _(Propuesta → impl)_: ingesta xAPI dual (listener AMD + endpoint +
-   normalizador) reutilizando la tubería existente; gated a que el PR upstream #1867 congele el contrato.
-3. **Auditorías de cumplimiento**: licencias, privacidad y accesibilidad.
-4. **TAREA-013 / RIE-001 (M8)**: investigar sandboxing de JS en cliente (ShadowRealm, SES/
+2. **Auditorías de cumplimiento**: licencias, privacidad y accesibilidad.
+3. **TAREA-013 / RIE-001 (M8)**: investigar sandboxing de JS en cliente (ShadowRealm, SES/
    Compartments, Web Worker + DOM proxy, QuickJS-WASM, librerías tipo `sandboxjs`) como
    mitigación que mantiene el servido same-origin. Ver DEC-0-16 (M8).
-5. _(Futuro, documentado, sin priorizar)_ **RIE-001** hardening del `.elpx`: roadmap en
+4. _(Futuro, documentado, sin priorizar)_ **RIE-001** hardening del `.elpx`: roadmap en
    DEC-0-16 — Tier 1 (Permissions-Policy + CSP estricto-con-toggle + quitar
    `allow-popups-to-escape-sandbox`) → Tier 2 (bridge `postMessage` → origen opaco/subdominio).
 
@@ -173,7 +171,7 @@ y el mapa de identificadores retirados en
 | DEC-13-07 | **Aceptada** (2026-06-03) | Interruptor 'Calificable' por actividad (`gradeenabled`) → issue #13 |
 | DEC-13-08 | **Superseded** by DEC-111-01 | Versión 'sentinela' (`9999999999`/dev) en main; la real la inyectaba `make package` |
 | DEC-13-09 | **Aceptada** (2026-06-03) | Separar el formulario en 'Grading' y 'Attempts management' → issue #13 |
-| DEC-17-01 | **Propuesta** (2026-06-04) | Ingesta dual de tracking: shim SCORM 1.2 + xAPI (`exe_xapi.js`) sobre tubería común → TAREA-015 |
+| DEC-17-01 | **Superseded** by DEC-122-01 | Ingesta dual de tracking: shim SCORM 1.2 + xAPI (`exe_xapi.js`) sobre tubería común → TAREA-015 |
 | DEC-18-01 | **Propuesta** (2026-06-04) | Actualización de contenido: reemplazo del `.elpx` + origen por URL con sincronización (patrón `mod_scorm`) → TAREA-016 |
 | DEC-19-01 | **Aceptada** (2026-06-04) | Selector de categoría de calificación (`gradecat`) aplicado a todos los grade items vía `grade_item::set_parent` (`grade_update` ignora `categoryid`) → petición usabilidad INTEF #1 |
 | DEC-19-02 | **Aceptada** (2026-06-04) | Coherencia profesor/alumno en `peritem`: excluir la nota overall oculta de la agregación (`grade_grade::set_excluded`) para que Moodle no vacíe el total del alumno → petición usabilidad INTEF #2 |
@@ -192,7 +190,7 @@ y el mapa de identificadores retirados en
 | DEC-66-01 | **Aceptada** (2026-06-12) | Estrategia de cobertura de tests: mockear la red con `\curl::mock_response()` + mock parcial de `download_to_temp()` en vez de excluir; no excluir del scope código testeable (`excludelistfiles` vacío); xdebug/Codecov es la medida autoritativa (pcov local subacredita llamadas anidadas — artefacto, no límite); gate `codecov project: target: auto` (trinquete). Cobertura honesta 85.71%→87.2% (PR #65) |
 | DEC-67-01 | **Aceptada** (2026-06-12) | Auditoría estándar de repositorio (2026-06-11, tras DEC-4-01/DEC-34-01): 9 mejoras P1–P3 implementadas (PRs #46–#54: hardening XML de estilos, thirdpartylibs en el ZIP, fidelidad backup/restore, lock de intentos, participación vs grademethod, recálculo de notas en lote, `zip_utils`, descarga del informe, Behat) + registro de **hallazgos descartados** y opciones de dirección para no re-auditar |
 | DEC-13-12 | **Aceptada** (2026-06-12) | La herramienta de migración exeweb/exescorm vive en `mod_exelearning` (destino, dueño de los internals); orígenes como fuentes legacy de solo lectura tras `source_interface`. Endurecimiento de la rama issue #13: fix `mod_exeweb` itemid=revision (antes leía 0 → todo `nosource`); clasificación `mod_exescorm` (`.elpx` directo / 1 embebido / 0=nosource / >1=ambiguous / external+aiccurl+localsync=unsupported, `localsync` excluido por sincronización aunque tenga snapshot local); limpieza compensatoria con `course_delete_module` ante fallo parcial (sin transacción, caveat recycle bin); preservación de metadatos del cm (idnumber **nunca** se copia); validación post-extracción anti shell-vacío (`migrateextractfailed`); eventos (started/migrated/skipped/failed, patrón DEC-26-03); columnas `userid`/`timemodified` (upgrade 2026061201); preflight + `\core\progress\display`. Refactor a `classes/local/migration/` (elimina `import_service`). CLI diferido |
-| (resto, 2026-06-12 → 2026-07-24) | (varias) | **Ver índice completo en `research/docs/indices/adrs.yaml`.** Resumen: DEC-68-01 eventos selectivos · DEC-69-01 completion por estado · DEC-70-01 búsqueda global · DEC-71-01 refactor `lib.php` (extracción a clases) · DEC-72-01 auditoría post-refactor · DEC-74-01 tests JS (Vitest) · DEC-77-01 extracción no-destructiva (BETA→STABLE) · DEC-78-01 fijar tag del editor en release · DEC-0-18 validación canónica del endpoint xAPI + política de versión (1.0.3 tolerante a 2.0) · DEC-85-01 implementación ingesta xAPI · DEC-106-01 editor solo empaquetado en release (sin instalador runtime) · DEC-108-01 interruptor global del editor (modo reproductor puro) · DEC-110-01 página de estilos solo-endpoint (cierra UX-01) · DEC-111-01 versión real y monótona en main (supersede DEC-13-08; empaquetado valida, no muta). *(La rama `feature/secure-iframe-scorm-bridge` (PR #80) lleva más decisiones aún no fusionadas; migra sus propios identificadores en su rama.)* |
+| (resto, 2026-06-12 → 2026-07-24) | (varias) | **Ver índice completo en `research/docs/indices/adrs.yaml`.** Resumen: DEC-68-01 eventos selectivos · DEC-69-01 completion por estado · DEC-70-01 búsqueda global · DEC-71-01 refactor `lib.php` (extracción a clases) · DEC-72-01 auditoría post-refactor · DEC-74-01 tests JS (Vitest) · DEC-77-01 extracción no-destructiva (BETA→STABLE) · DEC-78-01 fijar tag del editor en release · DEC-0-18 validación canónica del endpoint xAPI (**Superseded** por DEC-122-01) · DEC-85-01 implementación ingesta xAPI (**Superseded** por DEC-122-01) · DEC-122-01 retirada del canal de ingesta xAPI (SCORM 1.2 canal único) · DEC-106-01 editor solo empaquetado en release (sin instalador runtime) · DEC-108-01 interruptor global del editor (modo reproductor puro) · DEC-110-01 página de estilos solo-endpoint (cierra UX-01) · DEC-111-01 versión real y monótona en main (supersede DEC-13-08; empaquetado valida, no muta). *(La rama `feature/secure-iframe-scorm-bridge` (PR #80) lleva más decisiones aún no fusionadas; migra sus propios identificadores en su rama.)* |
 
 ## Restricciones inmutables
 
@@ -269,7 +267,7 @@ mod_exelearning/
 ├── view.php                   # iframe + SCORM 1.2 shim (autocommit 500ms)
 ├── track.php                  # AJAX endpoint (sesskey + mode preview/grading)
 ├── mod_form.php
-├── settings.php               # Estilos + xAPI (el editor no se gestiona en runtime, DEC-106-01)
+├── settings.php               # Estilos (el editor no se gestiona en runtime, DEC-106-01)
 ├── editor/index.php           # Página bootstrap del editor embebido por actividad
 ├── classes/
 │   ├── grades/gradeitems.php  # itemnumber_mapping (MAX 100)

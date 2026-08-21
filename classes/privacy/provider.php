@@ -54,23 +54,10 @@ class provider implements
             'maxscore'     => 'privacy:metadata:exelearning_attempt:maxscore',
             'scaledscore'  => 'privacy:metadata:exelearning_attempt:scaledscore',
             'status'       => 'privacy:metadata:exelearning_attempt:status',
+            'gradable'     => 'privacy:metadata:exelearning_attempt:gradable',
             'timecreated'  => 'privacy:metadata:exelearning_attempt:timecreated',
             'timemodified' => 'privacy:metadata:exelearning_attempt:timemodified',
         ], 'privacy:metadata:exelearning_attempt');
-
-        // The xAPI ingestion audit/idempotency log (DEC-85-01): one row per processed
-        // statement.id, attributed to the authenticated user (the client actor is
-        // always ignored). The statements carry no PII; the personal datum is the link
-        // between this user and the activity interactions.
-        $collection->add_database_table('exelearning_tracking_events', [
-            'userid'       => 'privacy:metadata:exelearning_tracking_events:userid',
-            'statementid'  => 'privacy:metadata:exelearning_tracking_events:statementid',
-            'verb'         => 'privacy:metadata:exelearning_tracking_events:verb',
-            'objectid'     => 'privacy:metadata:exelearning_tracking_events:objectid',
-            'registration' => 'privacy:metadata:exelearning_tracking_events:registration',
-            'scaled'       => 'privacy:metadata:exelearning_tracking_events:scaled',
-            'timecreated'  => 'privacy:metadata:exelearning_tracking_events:timecreated',
-        ], 'privacy:metadata:exelearning_tracking_events');
 
         // The instance row records which user last edited the activity settings.
         $collection->add_database_table('exelearning', [
@@ -145,21 +132,6 @@ class provider implements
             'userid'   => $userid,
         ]);
 
-        // The xAPI audit log can hold rows for a user even without an attempt (e.g. a
-        // lifecycle statement or an ungraded activity), so surface its contexts too.
-        $eventsql = "SELECT ctx.id
-                       FROM {exelearning_tracking_events} te
-                       JOIN {exelearning} e ON e.id = te.exelearningid
-                       JOIN {course_modules} cm ON cm.instance = e.id
-                       JOIN {modules} m ON m.id = cm.module AND m.name = :modname
-                       JOIN {context} ctx ON ctx.instanceid = cm.id AND ctx.contextlevel = :modlevel
-                      WHERE te.userid = :userid";
-        $contextlist->add_from_sql($eventsql, [
-            'modname'  => 'exelearning',
-            'modlevel' => CONTEXT_MODULE,
-            'userid'   => $userid,
-        ]);
-
         // The migration audit table is a system-level record of which manager ran each
         // migration; surface the system context when the user appears there (idiom: core_tag).
         $contextlist->add_from_sql(
@@ -206,17 +178,6 @@ class provider implements
             'modname' => 'exelearning',
             'cmid'    => $context->instanceid,
         ]);
-
-        $eventsql = "SELECT te.userid
-                       FROM {exelearning_tracking_events} te
-                       JOIN {exelearning} e ON e.id = te.exelearningid
-                       JOIN {course_modules} cm ON cm.instance = e.id
-                       JOIN {modules} m ON m.id = cm.module AND m.name = :modname
-                      WHERE cm.id = :cmid";
-        $userlist->add_from_sql('userid', $eventsql, [
-            'modname' => 'exelearning',
-            'cmid'    => $context->instanceid,
-        ]);
     }
 
     /**
@@ -251,12 +212,7 @@ class provider implements
                 ['exelearningid' => $cm->instance, 'userid' => $user->id],
                 'attempt ASC, itemnumber ASC'
             );
-            $events = $DB->get_records(
-                'exelearning_tracking_events',
-                ['exelearningid' => $cm->instance, 'userid' => $user->id],
-                'timecreated ASC'
-            );
-            if (!$attempts && !$events) {
+            if (!$attempts) {
                 continue;
             }
 
@@ -269,27 +225,14 @@ class provider implements
                     'maxscore'     => $a->maxscore,
                     'scaledscore'  => $a->scaledscore,
                     'status'       => $a->status,
+                    'gradable'     => \core_privacy\local\request\transform::yesno($a->gradable),
                     'timecreated'  => \core_privacy\local\request\transform::datetime($a->timecreated),
                     'timemodified' => \core_privacy\local\request\transform::datetime($a->timemodified),
                 ];
             }
-            $eventdata = [];
-            foreach ($events as $ev) {
-                $eventdata[] = [
-                    'statementid'  => $ev->statementid,
-                    'verb'         => $ev->verb,
-                    'objectid'     => $ev->objectid,
-                    'registration' => $ev->registration,
-                    'scaled'       => $ev->scaled,
-                    'timecreated'  => \core_privacy\local\request\transform::datetime($ev->timecreated),
-                ];
-            }
 
             $contextdata = helper::get_context_data($context, $user);
-            $contextdata = (object) array_merge(
-                (array) $contextdata,
-                ['attempts' => $data, 'xapi_events' => $eventdata]
-            );
+            $contextdata = (object) array_merge((array) $contextdata, ['attempts' => $data]);
             writer::with_context($context)->export_data([], $contextdata);
         }
     }
@@ -355,7 +298,6 @@ class provider implements
             [$cm->instance]
         );
         $DB->delete_records('exelearning_attempt', ['exelearningid' => $cm->instance]);
-        $DB->delete_records('exelearning_tracking_events', ['exelearningid' => $cm->instance]);
         self::clear_grades_for_users((int) $cm->instance, $userids);
     }
 
@@ -384,10 +326,6 @@ class provider implements
             }
             $DB->delete_records(
                 'exelearning_attempt',
-                ['exelearningid' => $cm->instance, 'userid' => $user->id]
-            );
-            $DB->delete_records(
-                'exelearning_tracking_events',
                 ['exelearningid' => $cm->instance, 'userid' => $user->id]
             );
             self::clear_grades_for_users((int) $cm->instance, [(int) $user->id]);
@@ -431,11 +369,6 @@ class provider implements
         $params = array_merge(['exelearningid' => $cm->instance], $inparams);
         $DB->delete_records_select(
             'exelearning_attempt',
-            "exelearningid = :exelearningid AND userid $insql",
-            $params
-        );
-        $DB->delete_records_select(
-            'exelearning_tracking_events',
             "exelearningid = :exelearningid AND userid $insql",
             $params
         );

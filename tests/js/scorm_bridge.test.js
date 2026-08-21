@@ -296,31 +296,6 @@ describe('relay createRelay (message handling)', () => {
         expect(beaconCalls[0].url).toBe('/track.php?id=42');
     });
 
-    it('xAPI-primary (disableTracking): a valid track message is accepted but POSTs nothing, while ready still handshakes', () => {
-        const cw = { postMessage: vi.fn() };
-        const iframe = { contentWindow: cw };
-        const doc = { getElementById: (id) => (id === 'exelearningobject' ? iframe : null) };
-        const fetchCalls = [];
-        const beaconCalls = [];
-        const r = relay.createRelay(
-            { iframeid: 'exelearningobject', cmid: 42, trackurl: '/track.php?id=42', session: 'tok', nonce: 'N', disableTracking: true },
-            {
-                document: doc,
-                window: { addEventListener: () => {} },
-                fetch: (url, opts) => { fetchCalls.push({ url, opts }); return { catch: () => {} }; },
-                sendBeacon: (url, blob) => { beaconCalls.push({ url, blob }); return true; },
-            }
-        );
-        // A perfectly valid, authenticated SCORM score is dropped: the package is graded via xAPI.
-        r.onMessage({ source: cw, data: { type: 'scorm', action: 'track', exelearningBridge: 'N', cmi: { 'cmi.core.score.raw': '100' }, itemscores: {} } });
-        expect(fetchCalls).toHaveLength(0);
-        // The handshake still runs, so window.API exists and the iDevices can emit xAPI.
-        r.onMessage({ source: cw, data: { type: 'scorm', action: 'ready' } });
-        expect(cw.postMessage).toHaveBeenCalledTimes(1);
-        // And the unload beacon has nothing to flush (no score was ever buffered).
-        r.flushBeacon();
-        expect(beaconCalls).toHaveLength(0);
-    });
 });
 
 describe('relay watchdog (no silent legacy fallback)', () => {

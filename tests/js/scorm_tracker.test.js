@@ -108,14 +108,66 @@ describe('captureItemScores', () => {
         const parsed = parseSuspend('1. "Quiz"; score: 60%; weighted: 30%.');
         const { delta, prev } = captureItemScores(parsed, {}, objmap);
         expect(delta).toEqual({ 'ide-aaa': { scorepct: 60, weighted: 30, title: 'Quiz' } });
-        expect(prev).toBe(parsed);
+        // The next-call baseline is keyed by objectid, never by the page-local N.
+        expect(prev).toEqual({ 'ide-aaa': { scorepct: 60, weighted: 30, title: 'Quiz' } });
     });
 
     it('emits only the entry that changed since the previous parse', () => {
-        const prevParsed = parseSuspend('1. "Quiz"; score: 60%; weighted: 30%.');
+        const first = captureItemScores(parseSuspend('1. "Quiz"; score: 60%; weighted: 30%.'), {}, objmap);
         const newParsed = parseSuspend('1. "Quiz"; score: 60%; weighted: 30%.\t2. "Essay"; score: 80%; weighted: 40%.');
-        const { delta } = captureItemScores(newParsed, prevParsed, objmap);
+        const { delta } = captureItemScores(newParsed, first.prev, objmap);
         expect(Object.keys(delta)).toEqual(['ide-bbb']);
+    });
+
+    it('emits a page-2 iDevice landing on a slot whose page-1 occupant scored identically', () => {
+        // The legacy suspend_data format reuses the page-local slot N across pages.
+        // Page 1: its iDevice at N=1 scores 60/30. Page 2: a DIFFERENT iDevice also
+        // sits at N=1 and happens to score the same 60/30. An N-keyed baseline
+        // compares the two as equal and silently drops the page-2 answer, whose
+        // gradebook column is then never written.
+        const page1 = captureItemScores(
+            parseSuspend('1. "Quiz"; score: 60%; weighted: 30%.'),
+            {},
+            { 1: 'ide-aaa' },
+        );
+
+        const page2 = captureItemScores(
+            parseSuspend('1. "OtherQuiz"; score: 60%; weighted: 30%.'),
+            page1.prev,
+            { 1: 'ide-bbb' },
+        );
+
+        expect(page2.delta).toEqual({ 'ide-bbb': { scorepct: 60, weighted: 30, title: 'OtherQuiz' } });
+    });
+
+    it('does not re-emit unchanged scores when the learner returns to a page', () => {
+        // The baseline carries entries for pages not currently loaded, so navigating
+        // back does not flood the endpoint with already-persisted scores.
+        const page1 = captureItemScores(
+            parseSuspend('1. "Quiz"; score: 60%; weighted: 30%.'),
+            {},
+            { 1: 'ide-aaa' },
+        );
+        const page2 = captureItemScores(
+            parseSuspend('1. "Essay"; score: 80%; weighted: 40%.'),
+            page1.prev,
+            { 1: 'ide-bbb' },
+        );
+
+        const backOnPage1 = captureItemScores(
+            parseSuspend('1. "Quiz"; score: 60%; weighted: 30%.'),
+            page2.prev,
+            { 1: 'ide-aaa' },
+        );
+
+        expect(backOnPage1.delta).toEqual({});
+        // And a NEW score there is still caught against the carried-forward baseline.
+        const rescored = captureItemScores(
+            parseSuspend('1. "Quiz"; score: 90%; weighted: 30%.'),
+            backOnPage1.prev,
+            { 1: 'ide-aaa' },
+        );
+        expect(rescored.delta).toEqual({ 'ide-aaa': { scorepct: 90, weighted: 30, title: 'Quiz' } });
     });
 
     it('drops stale cross-page entries that do not resolve in the current DOM (multi-page fix)', () => {
@@ -259,18 +311,6 @@ describe('createScormApi state machine', () => {
         expect(body.itemscores).toEqual({ 'ide-aaa': { scorepct: 60, weighted: 30, title: 'Quiz' } });
     });
 
-    it('disableTracking keeps window.API alive but POSTs nothing (xAPI-primary, DEC-85-01)', () => {
-        const xhr = makeXhr(200);
-        const { api } = createScormApi(baseConfig({ disableTracking: true, xhrFactory: () => xhr }));
-        // The SCORM contract still answers so pipwerks/iDevices run normally...
-        expect(api.LMSInitialize()).toBe('true');
-        api.LMSSetValue('cmi.core.score.raw', '80');
-        expect(api.LMSCommit()).toBe('true');
-        api.LMSFinish();
-        if (typeof scheduled === 'function') { scheduled(); }
-        // ...but no request is ever made: grading flows through the xAPI listener.
-        expect(xhr.calls.length).toBe(0);
-    });
 });
 
 describe('createScormApi transport (bridge mode)', () => {

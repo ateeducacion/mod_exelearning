@@ -1,7 +1,8 @@
 # SCORM 1.2 shim — current tracking flow
 
 > Status: **describes the code as shipped today**. Tracking in `mod_exelearning` is
-> currently **100% SCORM 1.2 shim**; there is no xAPI path yet.
+> **100% SCORM 1.2 shim** (plus the mobile web service); the xAPI channel that briefly
+> ran alongside it was removed in DEC-122-01.
 > Decision trail (Spanish): `research/decisiones/adr/` — DEC-0-03 (SCORM 1.2 standard),
 > DEC-0-06 (preview/grading), DEC-0-07 (attempts), DEC-0-08 (grade model), DEC-0-10
 > (completion), DEC-5-01 (objectid routing), DEC-6-01 (overall recompute), DEC-13-07
@@ -92,5 +93,4 @@ note in the root `AGENTS.md`.
 The package is **not** trusted to assert identity or ownership: the endpoint uses the
 authenticated Moodle session/`$USER`, requires `sesskey` + capability, routes only to
 objectids that already exist in `exelearning_grade_item` for that instance, and clamps the
-score to the configured range. This same posture is what the xAPI path must preserve — see
-`xapi-integration-plan.md` and `tracking-architecture.md`.
+score to the configured range. See `tracking-architecture.md` for the whole picture.

@@ -171,6 +171,46 @@ final class external_test extends advanced_testcase {
         $this->assertEqualsWithDelta(75.0, $result['attempts'][0]['scorepercent'], 0.0001);
     }
 
+    /**
+     * The service tells a client which attempts count towards the grade, and how many the
+     * server actually charges against maxattempt (DEC-124-03).
+     *
+     * The attempts list is deliberately unfiltered — a learner's history is their history
+     * — so a client cannot derive the cap from its length. Without both fields the Moodle
+     * App would show "Attempt 1 - 95%" for work the gradebook does not carry, and would
+     * render "2 of 1 attempts used" for a learner the server will still accept.
+     */
+    public function test_get_user_attempts_exposes_gradable_and_the_enforced_count(): void {
+        \mod_exelearning\local\attempts::record_item(
+            $this->instance->id,
+            $this->student->id,
+            1,
+            0,
+            95.0,
+            100.0,
+            'completed',
+            'sungraded',
+            false
+        );
+        $this->record_overall_attempt($this->student->id, 2, 0.6, 'completed');
+        $this->setUser($this->student);
+
+        $result = get_user_attempts::execute($this->instance->id);
+        $result = external_api::clean_returnvalue(get_user_attempts::execute_returns(), $result);
+
+        // Both attempts are returned; only one of them counts.
+        $this->assertCount(2, $result['attempts']);
+        $bygradable = [];
+        foreach ($result['attempts'] as $a) {
+            $bygradable[(int) $a['attempt']] = (int) $a['gradable'];
+        }
+        $this->assertSame(0, $bygradable[1]);
+        $this->assertSame(1, $bygradable[2]);
+
+        // The count the cap is enforced against excludes the ungraded-period attempt.
+        $this->assertSame(1, $result['usedattempts']);
+    }
+
     public function test_get_user_attempts_other_user_requires_viewreport(): void {
         $this->record_overall_attempt($this->other->id, 1, 0.5, 'completed');
 

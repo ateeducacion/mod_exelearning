@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="mod/exelearning/db" VERSION="20260617" COMMENT="XMLDB file for mod_exelearning"
+<XMLDB PATH="mod/exelearning/db" VERSION="20260821" COMMENT="XMLDB file for mod_exelearning"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -78,6 +78,7 @@
         <FIELD NAME="maxscore"       TYPE="number" LENGTH="10" DECIMALS="5" NOTNULL="true" DEFAULT="100" SEQUENCE="false"/>
         <FIELD NAME="scaledscore"    TYPE="number" LENGTH="10" DECIMALS="5" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="rawscore/maxscore in 0..1."/>
         <FIELD NAME="status"         TYPE="char" LENGTH="20"  NOTNULL="true" DEFAULT="completed" SEQUENCE="false" COMMENT="completed|passed|failed|incomplete."/>
+        <FIELD NAME="gradable"       TYPE="int"  LENGTH="1"   NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="0 when the row was recorded while the activity was not graded (gradeenabled=0): kept for completion and the attempts report, but never aggregated into a gradebook grade (DEC-124-03)."/>
         <FIELD NAME="sessiontoken"   TYPE="char" LENGTH="40"  NOTNULL="false" SEQUENCE="false" COMMENT="Per page-load token so multiple auto-commits map to the same attempt."/>
         <FIELD NAME="timecreated"    TYPE="int"  LENGTH="10"  NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="timemodified"   TYPE="int"  LENGTH="10"  NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
@@ -109,29 +110,6 @@
       </KEYS>
       <INDEXES>
         <INDEX NAME="sourcecomponent_sourcecmid" UNIQUE="true" FIELDS="sourcecomponent, sourcecmid"/>
-      </INDEXES>
-    </TABLE>
-
-    <TABLE NAME="exelearning_tracking_events" COMMENT="Audit/idempotency log of ingested xAPI statements. One row per processed statement.id; the grade/UI never depend on it, the flat exelearning_attempt table does.">
-      <FIELDS>
-        <FIELD NAME="id"            TYPE="int"  LENGTH="10"  NOTNULL="true" SEQUENCE="true"/>
-        <FIELD NAME="exelearningid" TYPE="int"  LENGTH="10"  NOTNULL="true" SEQUENCE="false"/>
-        <FIELD NAME="userid"        TYPE="int"  LENGTH="10"  NOTNULL="true" SEQUENCE="false" COMMENT="The Moodle user the statement was attributed to ($USER); the client actor is always ignored."/>
-        <FIELD NAME="statementid"   TYPE="char" LENGTH="36"  NOTNULL="true" SEQUENCE="false" COMMENT="The xAPI statement.id (UUID). UNIQUE: a repeated id is not re-applied (LRS idempotency)."/>
-        <FIELD NAME="verb"          TYPE="char" LENGTH="32"  NOTNULL="true" SEQUENCE="false" COMMENT="The statement verb display key: answered|completed|passed|failed|initialized|terminated."/>
-        <FIELD NAME="objectid"      TYPE="char" LENGTH="191" NOTNULL="false" SEQUENCE="false" COMMENT="For an answered statement, the stable iDevice objectid it routed to (matches exelearning_grade_item.objectid); NULL for package/lifecycle verbs."/>
-        <FIELD NAME="registration"  TYPE="char" LENGTH="40"  NOTNULL="false" SEQUENCE="false" COMMENT="Attempt-grouping token (the xAPI registration), used as the attempt sessiontoken."/>
-        <FIELD NAME="scaled"        TYPE="number" LENGTH="10" DECIMALS="5" NOTNULL="false" SEQUENCE="false" COMMENT="result.score.scaled (0..1) as accepted server-side; NULL for statements without a result."/>
-        <FIELD NAME="timecreated"   TYPE="int"  LENGTH="10"  NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
-      </FIELDS>
-      <KEYS>
-        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
-        <KEY NAME="exelearningid_fk" TYPE="foreign" FIELDS="exelearningid" REFTABLE="exelearning" REFFIELDS="id"/>
-        <KEY NAME="userid_fk" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
-      </KEYS>
-      <INDEXES>
-        <INDEX NAME="statementid" UNIQUE="true" FIELDS="statementid"/>
-        <INDEX NAME="exelearningid_userid" UNIQUE="false" FIELDS="exelearningid, userid"/>
       </INDEXES>
     </TABLE>
 

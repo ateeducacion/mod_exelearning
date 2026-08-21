@@ -178,7 +178,7 @@ decisiones_bloqueantes:
       sin parche local por decisión (erseco).
   DEC-17-01:
     titulo: "Ingesta dual de tracking: shim SCORM 1.2 + xAPI sobre una tubería común"
-    estado: Propuesta
+    estado: Superseded
     ruta: decisiones/adr/DEC-17-01-ingesta-dual-scorm-xapi.md
     fecha: 2026-06-04
     relacionados: [DEC-0-14, DEC-0-03, DEC-0-07, DEC-5-01, DEC-13-07]
@@ -188,7 +188,7 @@ decisiones_bloqueantes:
       cabecera/detalle (respeta DEC-0-07). Implementación en TAREA-015.
   DEC-0-18:
     titulo: "Reglas de validación canónica del endpoint xAPI y política de versión (1.0.3 con tolerancia a 2.0)"
-    estado: Propuesta
+    estado: Superseded
     ruta: decisiones/adr/DEC-0-18-validacion-canonica-endpoint-xapi-y-version.md
     fecha: 2026-06-17
     relacionados: [DEC-17-01, DEC-0-14, DEC-0-03, DEC-5-01, DEC-0-07, DEC-13-07]
@@ -201,6 +201,28 @@ decisiones_bloqueantes:
       permisivamente (acepta 1.0.x y 2.0.0, nunca rechaza por header). Fuentes nuevas:
       FTE-015 (xAPI 1.0.3 canónica), FTE-017 (xAPI 2.0 = IEEE 9274.1.1, NO obliga: no somos LRS),
       AN-014 (síntesis ecosistema ADL). Descarta State/Profile/Signed/cmi5/LRS externo.
+  DEC-122-01:
+    titulo: "Retirada del canal de ingesta xAPI: SCORM 1.2 canal único de calificación"
+    estado: Aceptada
+    ruta: decisiones/adr/DEC-122-01-retirada-canal-ingesta-xapi.md
+    fecha: 2026-08-21
+    relacionados: [DEC-85-01, DEC-17-01, DEC-0-18, DEC-0-03, DEC-6-01, DEC-13-07, DEC-69-01]
+    notas: >-
+      Supersede DEC-85-01, DEC-17-01 y DEC-0-18. Medido de punta a punta: la nota por iDevice
+      es idéntica en ambos canales (coextensión de sendScoreNew) y el overall xAPI era PEOR
+      (media no ponderada 50 frente a la ponderada 25 que recompone SCORM en servidor, par
+      25/75); intentos, finalización, libro y eventos ya eran código compartido. Se elimina
+      todo el canal (ingestor, normalizador, config_injector, xapi_track.php, listener,
+      ajustes y cadenas) y también el flag disableTracking del shim. Se ELIMINA la tabla
+      exelearning_tracking_events aun habiendo release pública (v4.0.2 y v4.0.3 la llevan con
+      escritor activo, y no está en backup/moodle2): se asume el borrado porque lo que se
+      pierde es auditoría y no calificación, la ventana de exposición es muy breve, y
+      conservarla habría exigido limpiarla en delete_instance/reset_userdata, cosa que nunca
+      se hizo (filas huérfanas latentes e inalcanzables). La etapa 19 se deja intacta
+      (historial append-only) y una nueva etapa 2026082100 la borra donde exista, junto con el
+      valor persistido de xapiprimaryenabled (unset_config, mismo patrón que la etapa 20); el
+      borrado se anuncia en CHANGELOG bajo Removed. Los paquetes antiguos siguen
+      emitiendo postMessage sin oyente: inocuo (fire-and-forget, sin acuse ni reintento).
   DEC-18-01:
     titulo: "Actualización de contenido: reemplazo del .elpx y origen por URL con sincronización"
     estado: Propuesta
@@ -610,7 +632,7 @@ tareas:
   TAREA-015:
     fecha: 2026-06-04
     titulo: "Implementar la ingesta xAPI dual (listener + endpoint + normalizador)"
-    estado: Pending
+    estado: Cancelled
     agente: pendiente
     relacionados:
       - DEC-17-01

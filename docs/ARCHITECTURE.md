@@ -80,8 +80,9 @@ The package HTML is mutated at extraction to inject the SCORM wrapper
 (`local\scorm\scorm_injector`) and hide the teacher-mode toggle
 (`local\ui\teacher_mode_hider`). This couples the plugin to eXeLearning v4
 internals. It is recognised as the main debt and has a documented exit:
-serve-time transform ([[DEC-34-02]], deferred) → upstream option ([[DEC-36-01]]) → xAPI
-([[DEC-17-01]]). The SCORM 1.2 shim in `view.php` is **not** debt.
+serve-time transform ([[DEC-34-02]], deferred) → upstream option ([[DEC-36-01]]). The exit
+via an xAPI channel was tried and retired ([[DEC-122-01]]). The SCORM 1.2 shim in `view.php`
+is **not** debt.
 
 ## Functional classification
 

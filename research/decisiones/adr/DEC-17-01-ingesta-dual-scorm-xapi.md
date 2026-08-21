@@ -1,7 +1,8 @@
 ---
 id: DEC-17-01
 title: "Ingesta dual de tracking: shim SCORM 1.2 + xAPI (exe_xapi.js) sobre una tubería común"
-status: Proposed
+status: Superseded
+superseded_by: DEC-122-01
 date: 2026-06-04
 tracking_issue: 17
 legacy_id: DEC-0032

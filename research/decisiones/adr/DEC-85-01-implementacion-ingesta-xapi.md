@@ -1,7 +1,8 @@
 ---
 id: DEC-85-01
 title: "Implementación de la ingesta xAPI (TAREA-015): xAPI-primary para paquetes nuevos, SCORM inerte, overall desde el statement de paquete, siempre activo"
-status: Accepted
+status: Superseded
+superseded_by: DEC-122-01
 date: 2026-06-18
 tracking_issue: 85
 legacy_id: DEC-0064

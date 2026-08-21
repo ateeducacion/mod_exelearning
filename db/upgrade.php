@@ -577,5 +577,50 @@ function xmldb_exelearning_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026072400, 'exelearning');
     }
 
+    // Stage 21 (2026082100): retire the xAPI ingestion channel (DEC-122-01). Drop its
+    // audit/idempotency log, created in stage 19, and the site setting that switched the
+    // channel on — no code writes to or reads either one any more.
+    //
+    // This IS a destructive migration, knowingly: v4.0.2 and v4.0.3 are public releases
+    // that shipped the table together with a writer, so a site that used the channel may
+    // hold rows, and the table is absent from backup/moodle2. What goes is audit metadata
+    // — statement id, verb, objectid, registration and scaled score — never a grade:
+    // grades, attempts and reports live in exelearning_grade_item and exelearning_attempt
+    // and are untouched. DEC-122-01 section 4 records the trade-off, and the CHANGELOG
+    // announces it so an administrator can dump the rows before upgrading.
+    //
+    // Stage 19 is left untouched — upgrade history is append-only, so a site older than it
+    // still creates the table on its way through and drops it here.
+    //
+    // unset_config mirrors stage 20: leaving the value behind would let a future setting
+    // that happened to reuse the name inherit a stale one.
+    if ($oldversion < 2026082100) {
+        $table = new xmldb_table('exelearning_tracking_events');
+        if ($dbman->table_exists($table)) {
+            $dbman->drop_table($table);
+        }
+        unset_config('xapiprimaryenabled', 'exelearning');
+        upgrade_mod_savepoint(true, 2026082100, 'exelearning');
+    }
+
+    // Stage 22 (2026082101): mark attempts recorded while the activity was not graded
+    // (DEC-124-03). ingest() keeps writing the itemnumber=0 row with gradeenabled off,
+    // because completion by status needs it (DEC-69-01), but its score was never
+    // recomputed server-side — there are no registered objectids to recompute from — so
+    // it must never be aggregated into a gradebook grade when grading comes back on.
+    //
+    // Existing rows default to 1: everything recorded before this stage was written by
+    // an ingest() that had no such distinction, and the only path that produced rows
+    // with grading off is the one this stage exists to fix. Assuming gradable is the
+    // conservative choice — it preserves grades sites already published.
+    if ($oldversion < 2026082101) {
+        $table = new xmldb_table('exelearning_attempt');
+        $field = new xmldb_field('gradable', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '1', 'status');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+        upgrade_mod_savepoint(true, 2026082101, 'exelearning');
+    }
+
     return true;
 }
