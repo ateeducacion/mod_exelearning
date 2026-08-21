@@ -9,6 +9,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
+
 /* ==== exe-scorm12-client.js ==== */
 /**
  * eXeLearning SCORM 1.2 runtime — client layer.
@@ -23,9 +24,15 @@
  *   never bind to a SCORM 2004 API_1484_11 instance).
  * - LMSInitialize / LMSGetValue / LMSSetValue / LMSCommit / LMSFinish with
  *   explicit error reporting via LMSGetLastError / LMSGetErrorString.
- * - Idempotent termination: repeated finish calls are no-ops and any call
- *   after termination is rejected locally, never forwarded to the LMS.
- * - cmi.core.session_time formatting (CMITimespan, HHHH:MM:SS.SS).
+ * - An explicit session state machine (idle → active → finish_attempted →
+ *   finished | finish_failed) so a failed termination stays observably failed
+ *   and no call is ever forwarded to the LMS after a finish attempt.
+ * - Refuse locally the calls SCORM 1.2 forbids: reading a write-only element
+ *   and writing a read-only one. Legacy compatibility getters read the local
+ *   write cache instead of issuing an invalid LMSGetValue.
+ * - A session clock that survives being paused (back/forward cache) without
+ *   double counting, and cmi.core.session_time formatting (CMITimespan,
+ *   HHHH:MM:SS.SS).
  *
  * This layer holds no completion policy; see exe-scorm12-policy.js.
  * Error reports never include learner data (element names and LMS error
@@ -52,6 +59,54 @@
     // Largest CMITimespan value this formatter emits (see formatSessionTime).
     var MAX_SESSION_TIME = '9999:59:59.99';
 
+    /**
+     * Session states. `finish_attempted` exists so that a termination that is
+     * in flight, or that failed, can never be mistaken for a completed one:
+     * the SCORM 1.2 API adapter is gone after LMSFinish either way, so no
+     * further call may be forwarded, but only `finished` means the LMS
+     * acknowledged it.
+     */
+    var STATE = {
+        IDLE: 'idle',
+        ACTIVE: 'active',
+        FINISH_ATTEMPTED: 'finish_attempted',
+        FINISHED: 'finished',
+        FINISH_FAILED: 'finish_failed',
+    };
+
+    /**
+     * Elements SCORM 1.2 defines as write-only. Reading one is error 404, so
+     * the runtime answers legacy getters from its own write cache instead of
+     * issuing the invalid call.
+     */
+    var WRITE_ONLY_ELEMENTS = ['cmi.core.exit', 'cmi.core.session_time'];
+
+    /**
+     * Prefixes whose leaf elements are write-only in SCORM 1.2. The whole
+     * cmi.interactions collection is reported by the SCO and never read back;
+     * only its `_count` / `_children` keywords are readable.
+     */
+    var WRITE_ONLY_PREFIXES = ['cmi.interactions.'];
+
+    /** Elements SCORM 1.2 defines as read-only (writing one is error 403). */
+    var READ_ONLY_ELEMENTS = [
+        'cmi._version',
+        'cmi.core.student_id',
+        'cmi.core.student_name',
+        'cmi.core.credit',
+        'cmi.core.entry',
+        'cmi.core.total_time',
+        'cmi.core.lesson_mode',
+        'cmi.launch_data',
+        'cmi.comments_from_lms',
+    ];
+
+    /** Prefixes whose leaf elements are read-only in SCORM 1.2. */
+    var READ_ONLY_PREFIXES = ['cmi.student_data.'];
+
+    /** Keyword suffixes: always readable, never writable. */
+    var KEYWORD_SUFFIXES = ['._children', '._count'];
+
     var defaultDeps = {
         getPipwerks: function () {
             return global.pipwerks;
@@ -73,11 +128,28 @@
 
     var deps = defaultDeps;
 
-    var state = {
-        initialized: false,
-        terminated: false,
-        sessionStartMs: null,
-    };
+    function initialState() {
+        return {
+            status: STATE.IDLE,
+            // Result and diagnostics of the single finish attempt.
+            finishResult: null,
+            finishError: null,
+            terminationSource: null,
+            // Session clock.
+            clockStartMs: null,
+            accumulatedMs: 0,
+            clockRunning: false,
+            // Last value this runtime wrote per element, used to answer legacy
+            // getters for write-only elements without an invalid LMS call.
+            writeCache: {},
+            // Per-step outcome of the single termination (commit and finish
+            // are separate LMS calls with separate results).
+            finishSteps: null,
+            externalTerminationReported: false,
+        };
+    }
+
+    var state = initialState();
 
     /**
      * Left-pad a non-negative integer with zeros.
@@ -92,6 +164,85 @@
             text = '0' + text;
         }
         return text;
+    }
+
+    /**
+     * @param {string} text - Text to inspect.
+     * @param {string} suffix - Suffix to look for.
+     * @returns {boolean} True when text ends with suffix (ES5-safe).
+     */
+    function endsWith(text, suffix) {
+        return text.length >= suffix.length && text.slice(text.length - suffix.length) === suffix;
+    }
+
+    /**
+     * @param {string} element - cmi element name.
+     * @returns {boolean} True when the name ends in a data model keyword.
+     */
+    function isKeyword(element) {
+        for (var index = 0; index < KEYWORD_SUFFIXES.length; index += 1) {
+            if (endsWith(element, KEYWORD_SUFFIXES[index])) {
+                return true;
+            }
+        }
+        return element === 'cmi._version';
+    }
+
+    /**
+     * @param {string} element - cmi element name.
+     * @returns {boolean} True when SCORM 1.2 makes the element write-only.
+     */
+    function isWriteOnly(element) {
+        if (isKeyword(element)) {
+            return false;
+        }
+        if (WRITE_ONLY_ELEMENTS.indexOf(element) !== -1) {
+            return true;
+        }
+        for (var index = 0; index < WRITE_ONLY_PREFIXES.length; index += 1) {
+            if (element.indexOf(WRITE_ONLY_PREFIXES[index]) === 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @param {string} element - cmi element name.
+     * @returns {boolean} True when SCORM 1.2 makes the element read-only.
+     */
+    function isReadOnly(element) {
+        if (isKeyword(element)) {
+            return true;
+        }
+        if (READ_ONLY_ELEMENTS.indexOf(element) !== -1) {
+            return true;
+        }
+        for (var index = 0; index < READ_ONLY_PREFIXES.length; index += 1) {
+            if (element.indexOf(READ_ONLY_PREFIXES[index]) === 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Decide whether SCORM 1.2 forbids writing an element, without asking the
+     * LMS. Returns the error the LMS itself would have raised so callers can
+     * report the real reason.
+     *
+     * @param {string} element - cmi element name.
+     * @returns {{code: number, message: string}|null} The rejection, or null
+     * when the write is legal.
+     */
+    function writeRejection(element) {
+        if (isKeyword(element)) {
+            return { code: 402, message: 'Invalid set value, element is a keyword' };
+        }
+        if (isReadOnly(element)) {
+            return { code: 403, message: 'Element is read only' };
+        }
+        return null;
     }
 
     /**
@@ -120,9 +271,12 @@
      *
      * @param {string} operation - The SCORM API call that failed.
      * @param {string} [element] - The cmi element involved, if any.
+     * @param {{code: number, message: string}} [preRead] - The LMS error, when
+     * the caller already read it; read from the LMS otherwise.
+     * @returns {{code: number, message: string}} The LMS error that was read.
      */
-    function reportLmsError(operation, element) {
-        var lastError = getLastError();
+    function reportLmsError(operation, element, preRead) {
+        var lastError = preRead || getLastError();
         var target = element ? " for '" + element + "'" : '';
         deps.error(
             '[exe-scorm12] ' +
@@ -133,6 +287,7 @@
                 ': ' +
                 lastError.message,
         );
+        return lastError;
     }
 
     /**
@@ -144,7 +299,84 @@
         deps.warn('[exe-scorm12] ' + message);
     }
 
+    /**
+     * Detect a termination performed outside this state machine — legacy
+     * content that calls pipwerks.SCORM.quit() or connection.terminate()
+     * directly closes the same connection this layer owns. The adapter wraps
+     * those entry points, but a page can still hold a reference captured
+     * before the wrap, so the state is reconciled defensively on every access.
+     */
+    function reconcileExternalTermination() {
+        if (state.status !== STATE.ACTIVE) {
+            return;
+        }
+        var pipwerks = deps.getPipwerks();
+        if (!pipwerks || !pipwerks.SCORM || pipwerks.SCORM.connection.isActive) {
+            return;
+        }
+        state.status = STATE.FINISHED;
+        state.finishResult = true;
+        state.terminationSource = 'external';
+        if (!state.externalTerminationReported) {
+            state.externalTerminationReported = true;
+            reportRejected('the SCORM connection was closed outside the runtime; the session is now treated as ended.');
+        }
+    }
+
+    /**
+     * Shared implementation of the two LMSSetValue entry points.
+     *
+     * @param {string} element - cmi element name.
+     * @param {string|number} value - Value to write.
+     * @param {boolean} optionalElement - True when the SCORM 1.2 data model
+     * declares the element optional: LMS error 401 ("not implemented") is
+     * then a conforming answer and is returned without an error report.
+     * @returns {{success: boolean, errorCode: number, errorMessage: string,
+     * forwarded: boolean}} What happened.
+     */
+    function writeValueDetailed(element, value, optionalElement) {
+        var rejection = writeRejection(element);
+        if (rejection !== null) {
+            reportRejected("setValue('" + element + "') rejected: " + rejection.message + ' in SCORM 1.2.');
+            return {
+                success: false,
+                errorCode: rejection.code,
+                errorMessage: rejection.message,
+                forwarded: false,
+            };
+        }
+        if (!client.isActive()) {
+            reportRejected("setValue('" + element + "') rejected: no active SCORM session.");
+            return { success: false, errorCode: 301, errorMessage: 'Not initialized', forwarded: false };
+        }
+        var pipwerks = deps.getPipwerks();
+        var text = String(value);
+        var success = false;
+        try {
+            success = pipwerks.SCORM.data.set(element, text);
+        } catch (error) {
+            deps.error("[exe-scorm12] LMSSetValue for '" + element + "' failed: " + error);
+            return { success: false, errorCode: 101, errorMessage: String(error), forwarded: true };
+        }
+        if (!success) {
+            var lastError = getLastError();
+            if (!(optionalElement && lastError.code === 401)) {
+                reportLmsError('LMSSetValue', element, lastError);
+            }
+            return {
+                success: false,
+                errorCode: lastError.code,
+                errorMessage: lastError.message,
+                forwarded: true,
+            };
+        }
+        state.writeCache[element] = text;
+        return { success: true, errorCode: 0, errorMessage: 'No error', forwarded: true };
+    }
+
     var client = {
+        STATE: STATE,
+
         /**
          * Override dependencies (tests only).
          *
@@ -163,26 +395,25 @@
         /** Restore default dependencies and reset session state (tests only). */
         resetDependencies: function () {
             deps = defaultDeps;
-            state.initialized = false;
-            state.terminated = false;
-            state.sessionStartMs = null;
+            state = initialState();
         },
 
         /**
-         * Open the SCORM 1.2 session. Idempotent: once initialized, further
-         * calls return true without touching the LMS. Pins the wrapper to
-         * SCORM 1.2 and disables its automatic status/exit handling before
-         * the first API discovery, so all policy lives in the project layers.
+         * Open the SCORM 1.2 session. Idempotent: once active, further calls
+         * return true without touching the LMS. Pins the wrapper to SCORM 1.2
+         * and disables its automatic status/exit handling before the first API
+         * discovery, so all policy lives in the project layers.
          *
          * @returns {boolean} True when the session is (already) active.
          */
         initialize: function () {
-            if (state.terminated) {
+            reconcileExternalTermination();
+            if (state.status !== STATE.IDLE) {
+                if (state.status === STATE.ACTIVE) {
+                    return true;
+                }
                 reportRejected('initialize() rejected: the session was already terminated.');
                 return false;
-            }
-            if (state.initialized) {
-                return true;
             }
             var pipwerks = deps.getPipwerks();
             if (!pipwerks || !pipwerks.SCORM) {
@@ -192,6 +423,17 @@
             pipwerks.SCORM.version = '1.2';
             pipwerks.SCORM.handleCompletionStatus = false;
             pipwerks.SCORM.handleExitMode = false;
+            // Adopt a connection another party already opened (contract §4). A host
+            // can legitimately initialize before the content does — the Moodle plugin
+            // injector force-calls pipwerks.SCORM.init() on a poller and usually wins
+            // the race — and upstream pipwerks connection.initialize() returns FALSE
+            // on an already-active connection, which would fail the iDevices'
+            // `scorm.init()` gate and silently break manual score saves.
+            if (pipwerks.SCORM.connection && pipwerks.SCORM.connection.isActive === true) {
+                state.status = STATE.ACTIVE;
+                client.startClock();
+                return true;
+            }
             var success = false;
             try {
                 success = pipwerks.SCORM.connection.initialize();
@@ -205,36 +447,83 @@
                 reportLmsError('LMSInitialize');
                 return false;
             }
-            state.initialized = true;
-            state.sessionStartMs = deps.now();
+            state.status = STATE.ACTIVE;
+            client.startClock();
             return true;
         },
 
+        /** @returns {string} The current session state (see client.STATE). */
+        getState: function () {
+            reconcileExternalTermination();
+            return state.status;
+        },
+
         /**
-         * @returns {boolean} True while the session is open (initialized and
-         * not terminated).
+         * @returns {boolean} True while the session may still receive LMS
+         * calls (initialized, and no finish has been attempted).
          */
         isActive: function () {
-            return state.initialized && !state.terminated;
+            reconcileExternalTermination();
+            return state.status === STATE.ACTIVE;
         },
 
         /** @returns {boolean} True once initialize() succeeded. */
         isInitialized: function () {
-            return state.initialized;
+            return state.status !== STATE.IDLE;
         },
 
-        /** @returns {boolean} True once terminate() ran. */
+        /**
+         * @returns {boolean} True once a finish was attempted, whatever its
+         * outcome. No LMS call may be made from this point on.
+         */
         isTerminated: function () {
-            return state.terminated;
+            reconcileExternalTermination();
+            return (
+                state.status === STATE.FINISH_ATTEMPTED ||
+                state.status === STATE.FINISHED ||
+                state.status === STATE.FINISH_FAILED
+            );
+        },
+
+        /**
+         * @returns {{attempted: boolean, result: boolean|null, error: object|null,
+         * source: string|null, commitAttempted: boolean, commitSucceeded: boolean,
+         * finishAttempted: boolean, finishSucceeded: boolean}} Everything
+         * recorded about the single termination. Commit and finish are
+         * reported separately: a `result` of false may mean the commit failed
+         * and LMSFinish was never attempted at all. `error` preserves the
+         * original failure even after later calls.
+         */
+        getFinishReport: function () {
+            var steps = state.finishSteps || {};
+            return {
+                attempted: client.isTerminated(),
+                result: state.finishResult,
+                error: state.finishError,
+                source: state.terminationSource,
+                commitAttempted: steps.commitAttempted === true,
+                commitSucceeded: steps.commitSucceeded === true,
+                finishAttempted: steps.finishAttempted === true,
+                finishSucceeded: steps.finishSucceeded === true,
+            };
         },
 
         /**
          * Read a data model element (LMSGetValue).
          *
+         * Reading a write-only element is error 404 in SCORM 1.2, so the value
+         * is answered from the local write cache and no LMS call is made.
+         *
          * @param {string} element - cmi element name.
          * @returns {string} The element value, or '' on error (reported).
          */
         getValue: function (element) {
+            if (isWriteOnly(element)) {
+                // Documented compatibility value: what this runtime last wrote.
+                return Object.prototype.hasOwnProperty.call(state.writeCache, element)
+                    ? state.writeCache[element]
+                    : '';
+            }
             if (!client.isActive()) {
                 reportRejected("getValue('" + element + "') rejected: no active SCORM session.");
                 return '';
@@ -260,30 +549,96 @@
         },
 
         /**
-         * Write a data model element (LMSSetValue). Values are always sent
-         * as strings, as SCORM 1.2 requires.
+         * Read an element the LMS is allowed not to implement.
+         *
+         * SCORM 1.2 makes several elements optional, and a SCO is expected to
+         * probe for them; an LMS answering 401 "not implemented" is a normal
+         * answer, not a failure, so it is reported as `supported: false`
+         * instead of being logged as an error. Every other failure is still
+         * reported through the usual path.
+         *
+         * @param {string} element - cmi element name.
+         * @returns {{value: string, supported: boolean, errorCode: number}}
+         * The value and whether the LMS implements the element.
+         */
+        getOptionalValue: function (element) {
+            if (!client.isActive()) {
+                reportRejected("getValue('" + element + "') rejected: no active SCORM session.");
+                return { value: '', supported: false, errorCode: 301 };
+            }
+            var pipwerks = deps.getPipwerks();
+            var value;
+            try {
+                value = pipwerks.SCORM.data.get(element);
+            } catch (error) {
+                deps.error("[exe-scorm12] LMSGetValue for '" + element + "' failed: " + error);
+                return { value: '', supported: false, errorCode: 101 };
+            }
+            if (value === 'null' || value === 'undefined') {
+                value = '';
+            }
+            var lastError = getLastError();
+            if (lastError.code === 0) {
+                return { value: value, supported: true, errorCode: 0 };
+            }
+            if (lastError.code !== 401) {
+                reportLmsError('LMSGetValue', element);
+            }
+            return { value: '', supported: false, errorCode: lastError.code };
+        },
+
+        /**
+         * Write a data model element (LMSSetValue) and report the outcome in
+         * full. Values are always sent as strings, as SCORM 1.2 requires.
+         *
+         * Writing a read-only element is error 403 in SCORM 1.2; the call is
+         * refused locally instead of being forwarded.
+         *
+         * @param {string} element - cmi element name.
+         * @param {string|number} value - Value to write.
+         * @returns {{success: boolean, errorCode: number, errorMessage: string,
+         * forwarded: boolean}} Outcome of the write. `forwarded` is false when
+         * the runtime refused the call without contacting the LMS.
+         */
+        setValueDetailed: function (element, value) {
+            return writeValueDetailed(element, value, false);
+        },
+
+        /**
+         * Write an element the SCORM 1.2 data model declares optional
+         * (cmi.core.score.min / cmi.core.score.max). Identical to
+         * setValueDetailed, except that LMS error 401 ("not implemented") is
+         * returned without an error report — an LMS that skips an optional
+         * element is conforming, not failing ([CR] §2.1.1.3a). The
+         * write-side mirror of getOptionalValue().
+         *
+         * @param {string} element - cmi element name.
+         * @param {string|number} value - Value to write.
+         * @returns {{success: boolean, errorCode: number,
+         * errorMessage: string, forwarded: boolean}} What happened.
+         */
+        setOptionalValueDetailed: function (element, value) {
+            return writeValueDetailed(element, value, true);
+        },
+
+        /**
+         * Write a data model element (LMSSetValue).
          *
          * @param {string} element - cmi element name.
          * @param {string|number} value - Value to write.
          * @returns {boolean} True when the LMS accepted the value.
          */
         setValue: function (element, value) {
-            if (!client.isActive()) {
-                reportRejected("setValue('" + element + "') rejected: no active SCORM session.");
-                return false;
-            }
-            var pipwerks = deps.getPipwerks();
-            var success = false;
-            try {
-                success = pipwerks.SCORM.data.set(element, String(value));
-            } catch (error) {
-                deps.error("[exe-scorm12] LMSSetValue for '" + element + "' failed: " + error);
-                return false;
-            }
-            if (!success) {
-                reportLmsError('LMSSetValue', element);
-            }
-            return success;
+            return client.setValueDetailed(element, value).success;
+        },
+
+        /**
+         * @param {string} element - cmi element name.
+         * @returns {string} The last value this runtime wrote for the element
+         * ('' when it never wrote one). Local cache — no LMS traffic.
+         */
+        getCachedValue: function (element) {
+            return Object.prototype.hasOwnProperty.call(state.writeCache, element) ? state.writeCache[element] : '';
         },
 
         /**
@@ -311,38 +666,117 @@
         },
 
         /**
-         * Close the session (LMSFinish). Idempotent: the first call ends the
-         * session — success or not — and every later call is a no-op that
-         * returns true. The wrapper commits (LMSCommit) before LMSFinish, so
-         * terminating always persists pending data first.
+         * Close the session: LMSCommit(""), then LMSFinish(""). Attempted at
+         * most once for the whole page lifetime: the first call moves the
+         * state machine through `finish_attempted` to `finished` or
+         * `finish_failed`, and every later call replays the recorded result
+         * without touching the LMS. A failed termination therefore stays
+         * failed — retrying during page teardown cannot succeed and must not
+         * loop — and any attempt, successful or not, clears the wrapper's
+         * connection.isActive flag so direct pipwerks consumers see the same
+         * closed session the state machine enforces.
          *
-         * @returns {boolean} True when the session ended (or already had).
+         * The two calls are issued separately (not through the wrapper's
+         * connection.terminate, which folds both into one boolean), so
+         * getFinishReport() can always say whether the commit or the finish
+         * failed. SCORM 1.2 requires pending data to be persisted before the
+         * session ends ([CR] 6.7); when the commit fails, LMSFinish is
+         * deliberately not attempted — finishing anyway would close an
+         * attempt whose stored state is unknown.
+         *
+         * @returns {boolean} True when the LMS acknowledged the termination.
          */
         terminate: function () {
-            if (state.terminated) {
-                return true;
+            reconcileExternalTermination();
+            if (client.isTerminated()) {
+                return state.finishResult === true;
             }
-            if (!state.initialized) {
+            if (state.status !== STATE.ACTIVE) {
                 reportRejected('terminate() rejected: the session was never initialized.');
                 return false;
             }
+            // Marked before any LMS traffic so a re-entrant termination (a
+            // listener fired by the LMS mid-call) cannot start a second one.
+            state.status = STATE.FINISH_ATTEMPTED;
+            state.terminationSource = 'runtime';
+            var steps = { commitAttempted: false, commitSucceeded: false, finishAttempted: false, finishSucceeded: false };
+            state.finishSteps = steps;
             var pipwerks = deps.getPipwerks();
-            var success = false;
-            var failure = null;
+
+            // No-retry policy: after any termination attempt — successful or
+            // not — the session is over for this page. The state machine
+            // refuses further SCO calls, and the wrapper's connection flag
+            // mirrors that so a direct scorm.connection.isActive consumer
+            // fails fast instead of writing into a session whose stored
+            // state is unknown.
+            function closeWrapperConnection() {
+                pipwerks.SCORM.connection.isActive = false;
+            }
+
+            steps.commitAttempted = true;
             try {
-                success = pipwerks.SCORM.connection.terminate();
+                steps.commitSucceeded = pipwerks.SCORM.data.save() === true;
             } catch (error) {
-                failure = error;
+                state.status = STATE.FINISH_FAILED;
+                state.finishResult = false;
+                state.finishError = { code: 101, message: String(error) };
+                closeWrapperConnection();
+                deps.error('[exe-scorm12] LMSCommit failed during termination: ' + error);
+                return false;
             }
-            // Mark the session closed even when LMSFinish failed: retrying
-            // during page teardown cannot succeed and must not loop.
-            state.terminated = true;
-            if (failure !== null) {
-                deps.error('[exe-scorm12] LMSFinish failed: ' + failure);
-            } else if (!success) {
-                reportLmsError('LMSFinish');
+            if (!steps.commitSucceeded) {
+                state.status = STATE.FINISH_FAILED;
+                state.finishResult = false;
+                state.finishError = reportLmsError('LMSCommit');
+                closeWrapperConnection();
+                return false;
             }
-            return success;
+
+            // The API handle directly: the adapter layer shims the wrapper's
+            // connection.terminate to route legacy callers through the
+            // lifecycle, so this layer must not depend on that binding.
+            var api = null;
+            try {
+                api = pipwerks.SCORM.API.getHandle();
+            } catch (error) {
+                api = null;
+            }
+            if (!api) {
+                state.status = STATE.FINISH_FAILED;
+                state.finishResult = false;
+                state.finishError = { code: -1, message: 'SCORM API not available' };
+                closeWrapperConnection();
+                deps.error('[exe-scorm12] LMSFinish failed: SCORM API not available.');
+                return false;
+            }
+            steps.finishAttempted = true;
+            var result = null;
+            var thrown = null;
+            try {
+                result = String(api.LMSFinish(''));
+            } catch (error) {
+                thrown = error;
+            }
+            if (thrown !== null) {
+                state.status = STATE.FINISH_FAILED;
+                state.finishResult = false;
+                state.finishError = { code: 101, message: String(thrown) };
+                closeWrapperConnection();
+                deps.error('[exe-scorm12] LMSFinish failed: ' + thrown);
+                return false;
+            }
+            steps.finishSucceeded = result === 'true';
+            if (!steps.finishSucceeded) {
+                state.status = STATE.FINISH_FAILED;
+                state.finishResult = false;
+                state.finishError = reportLmsError('LMSFinish');
+                closeWrapperConnection();
+                return false;
+            }
+            closeWrapperConnection();
+            state.status = STATE.FINISHED;
+            state.finishResult = true;
+            return true;
         },
 
         /**
@@ -370,25 +804,77 @@
             );
         },
 
-        /** (Re)start the session clock used for cmi.core.session_time. */
+        /**
+         * (Re)start the session clock used for cmi.core.session_time, dropping
+         * any time already accumulated. This is the legacy `startTimer()`
+         * semantics; pause/resume is what the lifecycle layer uses.
+         */
         markSessionStart: function () {
-            state.sessionStartMs = deps.now();
+            state.accumulatedMs = 0;
+            client.startClock();
+        },
+
+        /** Start (or restart) the running segment of the session clock. */
+        startClock: function () {
+            state.clockStartMs = deps.now();
+            state.clockRunning = true;
         },
 
         /**
-         * @returns {number} Milliseconds elapsed since the session clock
-         * started (0 when it never started).
+         * Bank the running segment and stop the clock. Used when the page is
+         * frozen into the back/forward cache: frozen time is not learning
+         * time. Idempotent — pausing twice banks the segment once.
          */
-        getElapsedMs: function () {
-            if (state.sessionStartMs === null) {
+        pauseClock: function () {
+            if (!state.clockRunning) {
+                return;
+            }
+            state.accumulatedMs += client.currentSegmentMs();
+            state.clockRunning = false;
+            state.clockStartMs = null;
+        },
+
+        /**
+         * Resume the clock after a pause. Idempotent — resuming a running
+         * clock keeps the current segment instead of restarting it, so
+         * repeated lifecycle events cannot double count.
+         */
+        resumeClock: function () {
+            if (state.clockRunning) {
+                return;
+            }
+            client.startClock();
+        },
+
+        /** @returns {boolean} True while the session clock is running. */
+        isClockRunning: function () {
+            return state.clockRunning;
+        },
+
+        /** @returns {number} Milliseconds in the current running segment. */
+        currentSegmentMs: function () {
+            if (!state.clockRunning || state.clockStartMs === null) {
                 return 0;
             }
-            var elapsed = deps.now() - state.sessionStartMs;
+            var elapsed = deps.now() - state.clockStartMs;
             return elapsed > 0 ? elapsed : 0;
         },
 
         /**
+         * @returns {number} Total milliseconds of this session: the banked
+         * segments plus the one currently running.
+         */
+        getElapsedMs: function () {
+            return state.accumulatedMs + client.currentSegmentMs();
+        },
+
+        /**
          * Write the elapsed session time to cmi.core.session_time.
+         *
+         * SCORM 1.2 treats cmi.core.session_time as the total duration of the
+         * current session, not a delta, so writing it repeatedly (on every
+         * visibility change, say) overwrites rather than accumulates — the
+         * value can never be double counted.
          *
          * @returns {boolean} True when the LMS accepted the value.
          */
@@ -397,6 +883,8 @@
         },
 
         getLastError: getLastError,
+        isWriteOnlyElement: isWriteOnly,
+        isReadOnlyElement: isReadOnly,
     };
 
     var exeScorm12 = (global.exeScorm12 = global.exeScorm12 || {});
@@ -412,20 +900,25 @@
 /**
  * eXeLearning SCORM 1.2 runtime — completion policy layer.
  *
- * eXeLearning-specific status and score policy for SCORM 1.2 packages, on top
- * of the client layer (exe-scorm12-client.js). SCORM 1.2 only:
- * cmi.core.lesson_status is the single status element — there is no
- * completion/success separation in this layer.
+ * Turns the activity registry's summary (exe-scorm12-activities.js) into
+ * SCORM 1.2 data model writes through the client layer
+ * (exe-scorm12-client.js). SCORM 1.2 has a single status element,
+ * cmi.core.lesson_status, so this layer is where eXeLearning's separate
+ * notions of *completion* and *success* collapse onto one vocabulary.
  *
- * Policy (see doc/development/scorm12-runtime-contract.md and ADR-2209-01,
- * both in exelearning/exelearning):
- * - Entry: an empty or "not attempted" status becomes "incomplete";
- *   any other stored status is preserved — a status is never downgraded.
- * - Exit: when the page recorded no terminal status ("completed", "passed",
- *   "failed"), a page without scored activities is marked "completed" by
- *   viewing it, a page with scored activities is marked "incomplete".
- *   cmi.core.exit is "suspend" while the attempt is resumable and "" once a
- *   terminal status is recorded.
+ * Which rules come from where:
+ *
+ * - SCORM 1.2 requirement: the lesson_status vocabulary; the LMS refuses
+ *   "not attempted" from a SCO ([CR] 1.6.5); cmi.core.score.raw is mandatory
+ *   while .min/.max are optional ([CR] §2.1.1.3a); cmi.core.exit is
+ *   "suspend" for a resumable attempt.
+ * - eXeLearning policy: an empty/"not attempted" status becomes "incomplete"
+ *   on entry; a page with no required evaluable activity is "completed" by
+ *   being viewed; the success threshold and its default; presentation-only
+ *   activities never block completion; scores are validated to 0-100 before
+ *   being sent.
+ *
+ * Both are spelled out in doc/development/scorm12-runtime-contract.md.
  *
  * Copyright (C) 2026 The eXeLearning project contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
@@ -444,7 +937,12 @@
 
     var LESSON_STATUS = 'cmi.core.lesson_status';
     var LESSON_MODE = 'cmi.core.lesson_mode';
+    var MASTERY_SCORE = 'cmi.student_data.mastery_score';
     var EXIT = 'cmi.core.exit';
+    var SCORE_RAW = 'cmi.core.score.raw';
+    var SCORE_MIN = 'cmi.core.score.min';
+    var SCORE_MAX = 'cmi.core.score.max';
+    var SUSPEND_DATA = 'cmi.suspend_data';
 
     // SCORM 1.2 cmi.core.lesson_status vocabulary.
     var STATUS = {
@@ -463,12 +961,34 @@
         STATUS.BROWSED,
         STATUS.NOT_ATTEMPTED,
     ];
+    /**
+     * The subset a SCO may write. "not attempted" is LMS-only: SCORM 1.2
+     * requires the LMS to reject it from a SCO, so sending it would be an
+     * invalid call, not a downgrade.
+     */
+    var WRITABLE_STATUSES = [
+        STATUS.PASSED,
+        STATUS.COMPLETED,
+        STATUS.FAILED,
+        STATUS.INCOMPLETE,
+        STATUS.BROWSED,
+    ];
     // Statuses that end the attempt: never overwritten by this policy.
     var TERMINAL_STATUSES = [STATUS.PASSED, STATUS.COMPLETED, STATUS.FAILED];
+
+    /**
+     * eXeLearning default success threshold, as a percentage of the aggregate
+     * score. Used when the LMS publishes no cmi.student_data.mastery_score.
+     * Matches the threshold eXeLearning game iDevices have always applied.
+     */
+    var DEFAULT_SUCCESS_THRESHOLD = 50;
 
     var defaultDeps = {
         getClient: function () {
             return global.exeScorm12 && global.exeScorm12.client;
+        },
+        getActivities: function () {
+            return global.exeScorm12 && global.exeScorm12.activities;
         },
         warn: function (message) {
             if (global.console && global.console.warn) {
@@ -479,9 +999,25 @@
 
     var deps = defaultDeps;
 
-    var state = {
-        hasScoredActivities: false,
-    };
+    function initialState() {
+        return {
+            // Fallback signal for pages whose iDevices do not register with
+            // the activity registry (previously the only completion input).
+            pageHasScoredActivities: false,
+            successThreshold: DEFAULT_SUCCESS_THRESHOLD,
+            thresholdResolved: false,
+            // Last status this policy itself wrote during this session. A
+            // terminal status the policy owns may be corrected when a
+            // required activity registers late; one restored from a previous
+            // attempt or written explicitly by content never is.
+            policySessionStatus: null,
+            // True after applyEntryPolicy() has restored suspend_data. Game
+            // iDevices register on jQuery ready, which is before loadPage().
+            entryApplied: false,
+        };
+    }
+
+    var state = initialState();
 
     /**
      * Coerce a score input to a finite number, accepting numeric strings.
@@ -503,15 +1039,71 @@
     /**
      * Write a validated status value to cmi.core.lesson_status.
      *
-     * @param {string} status - A valid SCORM 1.2 lesson_status value.
+     * @param {string} status - A SCO-writable SCORM 1.2 lesson_status value.
      * @returns {boolean} True when the LMS accepted the value.
      */
     function writeStatus(status) {
         return deps.getClient().setValue(LESSON_STATUS, status);
     }
 
+    /**
+     * Write a lesson_status on behalf of content (the explicit setters and
+     * doContinue). Content's verdict belongs to content, not to the policy:
+     * the session claim is cleared even when the value repeats what the
+     * policy last wrote, so the late-registration correction can never
+     * downgrade a status content set explicitly.
+     *
+     * @param {string} status - A SCO-writable SCORM 1.2 lesson_status value.
+     * @returns {boolean} True when the LMS accepted the value.
+     */
+    function writeContentStatus(status) {
+        var written = writeStatus(status);
+        if (written) {
+            state.policySessionStatus = null;
+        }
+        return written;
+    }
+
+    /**
+     * Aggregate the registry, falling back to the page-level scored-activities
+     * flag when no iDevice registered.
+     *
+     * @returns {{hasRequired: boolean, allRequiredComplete: boolean,
+     * score: number|null, source: string}} The completion inputs.
+     */
+    function completionInputs() {
+        var activities = deps.getActivities();
+        var summary = activities ? activities.summary() : null;
+        if (summary && summary.total > 0) {
+            // The page scan said there are scored iDevices, but none of them
+            // have registered as required yet (presentation inits first).
+            if (state.pageHasScoredActivities && !summary.hasRequired) {
+                return {
+                    hasRequired: true,
+                    allRequiredComplete: false,
+                    score: summary.score,
+                    source: 'page-flag-pending-registry',
+                };
+            }
+            return {
+                hasRequired: summary.hasRequired,
+                allRequiredComplete: summary.allRequiredComplete,
+                score: summary.score,
+                source: 'registry',
+            };
+        }
+        return {
+            hasRequired: state.pageHasScoredActivities,
+            // Nothing reported progress, so a scored page cannot be complete.
+            allRequiredComplete: !state.pageHasScoredActivities,
+            score: null,
+            source: 'page-flag',
+        };
+    }
+
     var policy = {
         STATUS: STATUS,
+        DEFAULT_SUCCESS_THRESHOLD: DEFAULT_SUCCESS_THRESHOLD,
 
         /**
          * Override dependencies (tests only).
@@ -531,7 +1123,7 @@
         /** Restore default dependencies and reset state (tests only). */
         resetDependencies: function () {
             deps = defaultDeps;
-            state.hasScoredActivities = false;
+            state = initialState();
         },
 
         /**
@@ -540,6 +1132,14 @@
          */
         isValidStatus: function (status) {
             return VALID_STATUSES.indexOf(status) !== -1;
+        },
+
+        /**
+         * @param {string} status - Candidate status value.
+         * @returns {boolean} True when a SCO is allowed to write the value.
+         */
+        isWritableStatus: function (status) {
+            return WRITABLE_STATUSES.indexOf(status) !== -1;
         },
 
         /**
@@ -553,102 +1153,474 @@
         /**
          * Entry policy, applied once after LMSInitialize: promote an empty or
          * "not attempted" status to "incomplete" (the learner is attempting
-         * the SCO now); preserve every other stored status.
+         * the SCO now); preserve every other stored status. Restores the
+         * activity registry from cmi.suspend_data and adopts the LMS mastery
+         * score as the success threshold when the LMS publishes one.
          */
         applyEntryPolicy: function () {
-            var status = deps.getClient().getValue(LESSON_STATUS);
+            var client = deps.getClient();
+            var status = client.getValue(LESSON_STATUS);
             if (status === '' || status === STATUS.NOT_ATTEMPTED) {
                 writeStatus(STATUS.INCOMPLETE);
+            }
+            policy.resolveSuccessThreshold();
+            var activities = deps.getActivities();
+            if (activities) {
+                activities.load(client.getValue(SUSPEND_DATA));
+            }
+            state.entryApplied = true;
+            var summary = activities ? activities.summary() : null;
+            if (summary && summary.score !== null) {
+                policy.setScoreDetailed(summary.score, 0, 100);
             }
         },
 
         /**
+         * @returns {boolean} True after applyEntryPolicy() restored suspend_data.
+         */
+        hasAppliedEntry: function () {
+            return state.entryApplied === true;
+        },
+
+        /**
+         * Adopt cmi.student_data.mastery_score as the success threshold when
+         * the LMS publishes one. The element is optional in SCORM 1.2, so a
+         * minimal LMS answering "not implemented" simply leaves the
+         * eXeLearning default in place — that is not an error.
+         *
+         * @returns {number|null} The threshold now in force.
+         */
+        resolveSuccessThreshold: function () {
+            state.thresholdResolved = true;
+            var mastery = toFiniteNumber(deps.getClient().getOptionalValue(MASTERY_SCORE).value);
+            if (mastery !== null && mastery >= 0 && mastery <= 100) {
+                state.successThreshold = mastery;
+            }
+            return state.successThreshold;
+        },
+
+        /**
+         * Override the success threshold.
+         *
+         * @param {number|null} threshold - Percentage in 0-100, or null to
+         * drop the pass/fail distinction (completion only).
+         */
+        setSuccessThreshold: function (threshold) {
+            if (threshold === null) {
+                state.successThreshold = null;
+                return;
+            }
+            var numeric = toFiniteNumber(threshold);
+            if (numeric === null || numeric < 0 || numeric > 100) {
+                deps.warn('[exe-scorm12] Ignored an out-of-range success threshold (expected 0-100 or null).');
+                return;
+            }
+            state.successThreshold = numeric;
+        },
+
+        /** @returns {number|null} The success threshold currently in force. */
+        getSuccessThreshold: function () {
+            return state.successThreshold;
+        },
+
+        /**
          * Record whether the current page contains activities that save a
-         * SCORM score. Drives the exit completion policy.
+         * SCORM score. Fallback signal for pages whose iDevices never register
+         * with the activity registry.
          *
          * @param {boolean} hasScoredActivities - True when at least one
          * activity on the page reports SCORM score saving.
          */
         setHasScoredActivities: function (hasScoredActivities) {
-            state.hasScoredActivities = hasScoredActivities === true;
+            state.pageHasScoredActivities = hasScoredActivities === true;
         },
 
         /** @returns {boolean} Current scored-activities flag (tests). */
         getHasScoredActivities: function () {
-            return state.hasScoredActivities;
+            return state.pageHasScoredActivities;
+        },
+
+        /**
+         * Decide the lesson status the page has earned, from the activity
+         * registry alone (no LMS traffic). eXeLearning policy:
+         *
+         * | Registry state                                     | Status     |
+         * |----------------------------------------------------|------------|
+         * | no required evaluable activity                      | completed  |
+         * | at least one required activity still incomplete     | incomplete |
+         * | all required complete, no threshold in force        | completed  |
+         * | all required complete, aggregate >= threshold       | passed     |
+         * | all required complete, aggregate < threshold        | failed     |
+         *
+         * Presentation-only and exploration activities register with
+         * `completionRequired: false`, so they never hold a page at
+         * "incomplete" — they are not evaluable and nothing is inferred from
+         * whether they happen to expose a game-over state.
+         *
+         * @param {number} [aggregateScore] - Aggregate score override, 0-100.
+         * Normally omitted: the registry's summary() owns the historical
+         * weighting algorithm, so every caller reads the same aggregate.
+         * @returns {{status: string, reason: string, score: number|null}} The
+         * decision and why it was taken.
+         */
+        decideStatus: function (aggregateScore) {
+            var inputs = completionInputs();
+            var score = aggregateScore === undefined ? inputs.score : toFiniteNumber(aggregateScore);
+            if (!inputs.hasRequired) {
+                return { status: STATUS.COMPLETED, reason: 'no-required-activities', score: score };
+            }
+            if (!inputs.allRequiredComplete) {
+                return { status: STATUS.INCOMPLETE, reason: 'required-activities-pending', score: score };
+            }
+            var threshold = state.successThreshold;
+            if (threshold === null || score === null) {
+                return { status: STATUS.COMPLETED, reason: 'no-success-threshold', score: score };
+            }
+            return {
+                status: score >= threshold ? STATUS.PASSED : STATUS.FAILED,
+                reason: 'threshold-evaluated',
+                score: score,
+            };
+        },
+
+        /**
+         * Re-evaluate the status during the session, after activity progress
+         * changed. Same semantics as applyDecidedStatus.
+         *
+         * @param {number} [aggregateScore] - See decideStatus.
+         * @returns {{status: string, written: boolean, reason: string,
+         * effective: string}} What happened.
+         */
+        recordActivityOutcome: function (aggregateScore) {
+            return policy.applyDecidedStatus(aggregateScore);
+        },
+
+        /**
+         * Targeted reconciliation for activities that register after a status
+         * was already written: when the registry says a required activity is
+         * still pending, re-run the status decision so a stale terminal
+         * verdict this policy wrote earlier in the session is corrected back
+         * to "incomplete" (applyDecidedStatus's ownership rules decide
+         * whether the downgrade is allowed). Any other decision is left to
+         * the moments that normally write status — activity outcomes and the
+         * exit policy — so a partially registered page never receives a
+         * transient passed/failed verdict from a registration event.
+         *
+         * Called when an activity registers (common.js reportActivity) and
+         * before every mid-session persist (the lifecycle layer), so the LMS
+         * never keeps a stale terminal verdict alongside a pending registry.
+         *
+         * @returns {{status: string, written: boolean, reason: string,
+         * effective: string}|null} applyDecidedStatus's report, or null when
+         * no required activity was pending.
+         */
+        reconcilePendingActivities: function () {
+            if (policy.decideStatus().reason !== 'required-activities-pending') {
+                return null;
+            }
+            return policy.applyDecidedStatus();
+        },
+
+        /**
+         * Apply the decided status to cmi.core.lesson_status.
+         *
+         * A terminal status already recorded is preserved — with one
+         * exception: when the policy itself wrote that terminal status during
+         * this session and a required activity registered afterwards, the
+         * page demonstrably is not finished, so the policy corrects its own
+         * verdict back to "incomplete". A terminal status restored from a
+         * previous attempt, or written explicitly by content, is never
+         * downgraded. Movement *between* terminal statuses (a retried failed
+         * activity now passing) is always allowed.
+         *
+         * `effective` is the status actually in force at the LMS after the
+         * call — when a write is rejected it is the previously stored value,
+         * so callers (the exit policy) never act on a status the LMS refused.
+         *
+         * @param {number} [aggregateScore] - See decideStatus.
+         * @returns {{status: string, written: boolean, reason: string,
+         * effective: string}} What happened.
+         */
+        applyDecidedStatus: function (aggregateScore) {
+            var current = deps.getClient().getValue(LESSON_STATUS);
+            var decision = policy.decideStatus(aggregateScore);
+            if (policy.isTerminalStatus(current) && !policy.isTerminalStatus(decision.status)) {
+                var policyOwned = current === state.policySessionStatus;
+                var lateRegistration = decision.reason === 'required-activities-pending';
+                if (!policyOwned || !lateRegistration) {
+                    return {
+                        status: current,
+                        written: false,
+                        reason: 'terminal-status-preserved',
+                        effective: current,
+                    };
+                }
+            }
+            if (decision.status === current) {
+                // Deliberately NOT claimed as policy-owned: the stored value
+                // may have been restored from a previous attempt or written
+                // by content — agreeing with it is not the same as having
+                // written it, and only a status this policy wrote may later
+                // be downgraded.
+                return { status: current, written: true, reason: decision.reason, effective: current };
+            }
+            var written = writeStatus(decision.status);
+            if (written) {
+                state.policySessionStatus = decision.status;
+            }
+            return {
+                status: decision.status,
+                written: written,
+                reason: decision.reason,
+                effective: written ? decision.status : current,
+            };
+        },
+
+        /**
+         * Persist the activity registry into cmi.suspend_data.
+         *
+         * @returns {boolean} True when the LMS accepted the value (also true
+         * when there is nothing to persist).
+         */
+        persistActivities: function () {
+            var activities = deps.getActivities();
+            if (!activities) {
+                return true;
+            }
+            if (activities.list().length === 0 && activities.pendingLegacy() === 0) {
+                return true;
+            }
+            return deps.getClient().setValue(SUSPEND_DATA, activities.serialize());
         },
 
         /**
          * Exit policy, applied once when the session ends.
          *
          * With the completion rule (unloadPage and the pagehide safety net —
-         * the legacy unload sites): when no terminal status was recorded, a
-         * page without scored activities is marked "completed" by viewing
-         * it and a page with scored activities stays "incomplete". Without
-         * it (doQuit/doBack/doContinue/scorm.quit — legacy parity), the
-         * stored status is left untouched.
+         * the legacy unload sites), the status decided from the activity
+         * registry is written unless a terminal status is already recorded.
+         * Without it (doQuit/doBack/doContinue/scorm.quit — legacy parity),
+         * the stored status is left untouched.
          *
          * In both cases cmi.core.exit is then set to "" (normal end) for a
          * terminal status or "suspend" (resumable attempt) otherwise.
          *
          * @param {boolean} [applyCompletionRule] - Apply the completion rule
          * (default true).
+         * @returns {{status: string, exit: string}} What was recorded.
          */
         applyExitPolicy: function (applyCompletionRule) {
             var client = deps.getClient();
-            var status = client.getValue(LESSON_STATUS);
-            if (applyCompletionRule !== false && !policy.isTerminalStatus(status)) {
-                status = state.hasScoredActivities ? STATUS.INCOMPLETE : STATUS.COMPLETED;
-                writeStatus(status);
+            policy.persistActivities();
+            var status;
+            if (applyCompletionRule !== false) {
+                // `effective` rather than the decision: if the LMS rejected
+                // the status write, cmi.core.exit must describe the attempt
+                // the LMS actually stored — reporting a normal end ("") for a
+                // still-incomplete attempt would close it prematurely.
+                status = policy.applyDecidedStatus().effective;
+            } else {
+                status = client.getValue(LESSON_STATUS);
             }
-            client.setValue(EXIT, policy.isTerminalStatus(status) ? '' : 'suspend');
+            var exit = policy.isTerminalStatus(status) ? '' : 'suspend';
+            client.setValue(EXIT, exit);
+            return { status: status, exit: exit };
         },
 
         /**
          * Legacy doContinue(status) semantics: outside review/browse mode,
-         * store the given status when it is valid SCORM 1.2 vocabulary.
+         * store the given status when a SCO may write it.
+         *
+         * Suppressing the write in review/browse mode is eXeLearning policy,
+         * not a SCORM 1.2 rule — the specification only makes the LMS ignore
+         * status changes when cmi.core.credit is "no-credit".
          *
          * @param {string} status - Requested lesson_status value.
          * @returns {boolean} True when a status was written.
          */
         setStatusForContinue: function (status) {
             var client = deps.getClient();
-            var mode = client.getValue(LESSON_MODE);
+            var modeRead = client.getOptionalValue(LESSON_MODE);
+            var mode = modeRead.supported && modeRead.value !== '' ? modeRead.value : 'normal';
             if (mode === 'review' || mode === 'browse') {
                 return false;
             }
-            if (!policy.isValidStatus(status)) {
+            if (!policy.isWritableStatus(status)) {
                 deps.warn("[exe-scorm12] Ignored invalid lesson_status value '" + status + "'.");
                 return false;
             }
-            return writeStatus(status);
+            return writeContentStatus(status);
         },
 
         /** @returns {boolean} True when the LMS accepted the value. */
         setCompleted: function () {
-            return writeStatus(STATUS.COMPLETED);
+            return writeContentStatus(STATUS.COMPLETED);
         },
 
         /** @returns {boolean} True when the LMS accepted the value. */
         setIncomplete: function () {
-            return writeStatus(STATUS.INCOMPLETE);
+            return writeContentStatus(STATUS.INCOMPLETE);
         },
 
         /** @returns {boolean} True when the LMS accepted the value. */
         setPassed: function () {
-            return writeStatus(STATUS.PASSED);
+            return writeContentStatus(STATUS.PASSED);
         },
 
         /** @returns {boolean} True when the LMS accepted the value. */
         setFailed: function () {
-            return writeStatus(STATUS.FAILED);
+            return writeContentStatus(STATUS.FAILED);
         },
 
         /**
-         * Write the score to cmi.core.score.raw (and .min/.max when given) as
-         * strings. SCORM 1.2 constrains raw/min/max to the 0-100 CMIDecimal
-         * range; invalid or inconsistent input is rejected and nothing is
-         * written.
+         * Write a lesson_status on behalf of content through a generic entry
+         * point (SetCompletionStatus, scorm.set). Validates the SCO-writable
+         * vocabulary locally — forwarding "not attempted" or a foreign value
+         * would be an invalid LMS call — and releases the policy's session
+         * claim on success, exactly like the named setters above: whatever
+         * path content uses to write a status, the result is content's
+         * verdict and is never downgraded.
+         *
+         * @param {string} status - Requested lesson_status value.
+         * @returns {boolean} True when the LMS accepted the value.
+         */
+        setContentStatus: function (status) {
+            if (!policy.isWritableStatus(status)) {
+                return false;
+            }
+            return writeContentStatus(status);
+        },
+
+        /**
+         * Validate a raw/min/max score triplet without writing anything.
+         *
+         * SCORM 1.2 constrains all three to the 0-100 CMIDecimal range.
+         * Requiring min <= raw <= max on top of that is eXeLearning policy: an
+         * inconsistent triplet is a content bug, and sending it would record a
+         * meaningless score.
+         *
+         * @param {number|string} raw - Raw score.
+         * @param {number|string} [min] - Minimum score.
+         * @param {number|string} [max] - Maximum score.
+         * @returns {{valid: boolean, raw: number|null, min: number|null,
+         * max: number|null, problem: string|null}} The validation result.
+         */
+        validateScore: function (raw, min, max) {
+            var rawNumber = toFiniteNumber(raw);
+            var minGiven = min !== undefined && min !== null;
+            var maxGiven = max !== undefined && max !== null;
+            var minNumber = minGiven ? toFiniteNumber(min) : null;
+            var maxNumber = maxGiven ? toFiniteNumber(max) : null;
+            var problem = null;
+            if (rawNumber === null) {
+                problem = 'raw-not-numeric';
+            } else if (rawNumber < 0 || rawNumber > 100) {
+                problem = 'raw-out-of-range';
+            } else if (minGiven && minNumber === null) {
+                problem = 'min-not-numeric';
+            } else if (maxGiven && maxNumber === null) {
+                problem = 'max-not-numeric';
+            } else if (minNumber !== null && (minNumber < 0 || minNumber > 100)) {
+                problem = 'min-out-of-range';
+            } else if (maxNumber !== null && (maxNumber < 0 || maxNumber > 100)) {
+                problem = 'max-out-of-range';
+            } else if (minNumber !== null && minNumber > rawNumber) {
+                // min > raw and max < raw together cover min > max, because
+                // reaching this point already implies min <= raw <= max.
+                problem = 'min-above-raw';
+            } else if (maxNumber !== null && maxNumber < rawNumber) {
+                problem = 'max-below-raw';
+            }
+            return {
+                valid: problem === null,
+                raw: rawNumber,
+                min: minNumber,
+                max: maxNumber,
+                problem: problem,
+            };
+        },
+
+        /**
+         * Write the score to cmi.core.score.raw (and .min/.max when given).
+         *
+         * cmi.core.score.raw is mandatory in SCORM 1.2 while .min and .max are
+         * optional, so an LMS may accept the raw score and answer "not
+         * implemented" (401) for the bounds. That must not be reported as a
+         * failed score write, and it must not stop the caller from committing
+         * a score the LMS did record.
+         *
+         * @param {number|string} raw - Raw score, 0-100.
+         * @param {number|string} [min] - Minimum score, 0-100.
+         * @param {number|string} [max] - Maximum score, 0-100.
+         * @returns {{valid: boolean, problem: string|null,
+         * required: {element: string, attempted: boolean, written: boolean,
+         *            errorCode: number}|null,
+         * optional: Array<{element: string, written: boolean,
+         *                  unsupported: boolean, errorCode: number}>,
+         * requiredWritten: boolean, optionalFailures: string[],
+         * ok: boolean}} Structured outcome. `ok` is the legacy boolean: every
+         * attempted write succeeded.
+         */
+        setScoreDetailed: function (raw, min, max) {
+            var client = deps.getClient();
+            var validation = policy.validateScore(raw, min, max);
+            var result = {
+                valid: validation.valid,
+                problem: validation.problem,
+                required: null,
+                optional: [],
+                requiredWritten: false,
+                optionalFailures: [],
+                ok: false,
+            };
+            if (!validation.valid) {
+                deps.warn('[exe-scorm12] Ignored invalid score (raw/min/max must be numbers within 0-100).');
+                return result;
+            }
+            var rawWrite = client.setValueDetailed(SCORE_RAW, String(validation.raw));
+            result.required = {
+                element: SCORE_RAW,
+                attempted: true,
+                written: rawWrite.success,
+                errorCode: rawWrite.errorCode,
+            };
+            result.requiredWritten = rawWrite.success;
+
+            var bounds = [
+                { element: SCORE_MIN, value: validation.min },
+                { element: SCORE_MAX, value: validation.max },
+            ];
+            for (var index = 0; index < bounds.length; index += 1) {
+                if (bounds[index].value === null) {
+                    continue;
+                }
+                // Optional-element write: a 401 answer is a conforming LMS
+                // skipping score.min/max, so nothing is logged for it.
+                var write = client.setOptionalValueDetailed(bounds[index].element, String(bounds[index].value));
+                var unsupported = !write.success && write.errorCode === 401;
+                result.optional.push({
+                    element: bounds[index].element,
+                    written: write.success,
+                    unsupported: unsupported,
+                    errorCode: write.errorCode,
+                });
+                if (!write.success) {
+                    result.optionalFailures.push(bounds[index].element);
+                }
+            }
+            result.ok =
+                result.requiredWritten &&
+                result.optional.every(function (entry) {
+                    return entry.written;
+                });
+            return result;
+        },
+
+        /**
+         * Write the score, reporting only whether every attempted element was
+         * accepted. Kept for the documented boolean contract; callers that
+         * need to know whether the *required* raw score landed should use
+         * setScoreDetailed().
          *
          * @param {number|string} raw - Raw score, 0-100.
          * @param {number|string} [min] - Minimum score, 0-100.
@@ -656,31 +1628,7 @@
          * @returns {boolean} True when every provided element was accepted.
          */
         setScore: function (raw, min, max) {
-            var client = deps.getClient();
-            var rawNumber = toFiniteNumber(raw);
-            var minNumber = min === undefined || min === null ? null : toFiniteNumber(min);
-            var maxNumber = max === undefined || max === null ? null : toFiniteNumber(max);
-            var rejected =
-                rawNumber === null ||
-                rawNumber < 0 ||
-                rawNumber > 100 ||
-                (min !== undefined && min !== null && minNumber === null) ||
-                (max !== undefined && max !== null && maxNumber === null) ||
-                (minNumber !== null && (minNumber < 0 || minNumber > 100 || minNumber > rawNumber)) ||
-                (maxNumber !== null && (maxNumber < 0 || maxNumber > 100 || maxNumber < rawNumber)) ||
-                (minNumber !== null && maxNumber !== null && minNumber > maxNumber);
-            if (rejected) {
-                deps.warn('[exe-scorm12] Ignored invalid score (raw/min/max must be numbers within 0-100).');
-                return false;
-            }
-            var success = client.setValue('cmi.core.score.raw', String(rawNumber));
-            if (minNumber !== null) {
-                success = client.setValue('cmi.core.score.min', String(minNumber)) && success;
-            }
-            if (maxNumber !== null) {
-                success = client.setValue('cmi.core.score.max', String(maxNumber)) && success;
-            }
-            return success;
+            return policy.setScoreDetailed(raw, min, max).ok;
         },
     };
 
@@ -697,15 +1645,33 @@
 /**
  * eXeLearning SCORM 1.2 runtime — browser lifecycle layer.
  *
- * Owns end-of-session handling for SCORM 1.2 packages. Deliberately uses no
- * unload/onunload/beforeunload handlers (unreliable, and they break
- * back/forward cache):
+ * Owns end-of-session handling for SCORM 1.2 packages, and is the single
+ * place that may terminate the session: every legacy entry point
+ * (unloadPage, doQuit, doBack, doContinue, scorm.quit, pipwerks.SCORM.quit)
+ * funnels through `finish()`.
  *
- * - pagehide: end the session once (exit policy + session time + commit +
- *   LMSFinish). This is the safety net; controlled navigation and explicit
- *   activity completion remain the primary persistence path.
- * - visibilitychange to hidden: LMSCommit only. The session stays usable —
- *   the learner may come back to the tab.
+ * Deliberately uses no unload/onunload/beforeunload handlers. Those events are
+ * unreliable on mobile, and registering one makes the page ineligible for the
+ * back/forward cache, which would trade a real reliability gain for an
+ * imaginary one. The events used instead:
+ *
+ * - `visibilitychange` to hidden — the last moment guaranteed to run on
+ *   mobile. Writes cmi.core.session_time and commits. The session stays open:
+ *   the learner may come back to the tab, and SCORM 1.2 has no concept of a
+ *   hidden SCO.
+ * - `pagehide` with `event.persisted === false` — the page is really going
+ *   away. Runs the full end-of-session sequence and terminates.
+ * - `pagehide` with `event.persisted === true` — the page is being frozen
+ *   into the back/forward cache. It may be restored intact, so the session is
+ *   persisted (session time + commit) but **not** terminated; the session
+ *   clock is paused because frozen time is not learning time.
+ * - `pageshow` with `event.persisted === true` — restored from the cache.
+ *   Resumes the clock. Nothing is re-initialized: the LMS session was never
+ *   closed.
+ *
+ * A page frozen into the cache can still be discarded later without firing
+ * any further event, so the data written on a persisted `pagehide` is the last
+ * word — which is exactly why it commits rather than deferring.
  *
  * Copyright (C) 2026 The eXeLearning project contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
@@ -739,13 +1705,72 @@
 
     var deps = defaultDeps;
 
-    var state = {
-        installed: false,
-        finished: false,
-    };
+    function initialState() {
+        return {
+            installed: false,
+            // Set as soon as a finalization starts, so two lifecycle paths
+            // racing each other cannot both run the end-of-session sequence.
+            finalizing: false,
+            finished: false,
+            // Recorded outcome of the single finalization.
+            report: null,
+            // True while the page is frozen in the back/forward cache.
+            frozen: false,
+        };
+    }
 
-    function onPageHide() {
+    var state = initialState();
+
+    /**
+     * Persist the current session without ending it: reconcile the lesson
+     * status against the registry, write the activity state and the elapsed
+     * session time, then commit. Every step is reported — a caller must be
+     * able to tell a full commit from one whose suspend_data write failed.
+     *
+     * @returns {{activitiesWritten: boolean, sessionTimeWritten: boolean,
+     * committed: boolean}} What the LMS accepted.
+     */
+    function persist() {
+        var client = deps.getClient();
+        if (state.finalizing || !client.isActive()) {
+            return { activitiesWritten: false, sessionTimeWritten: false, committed: false };
+        }
+        var policy = deps.getPolicy();
+        // A required activity may have registered after the last status
+        // write: reconcile before committing, so a page killed right after
+        // this commit (mobile app switch, bfcache eviction) never leaves the
+        // LMS holding a stale terminal verdict alongside a pending registry.
+        policy.reconcilePendingActivities();
+        // Activity state next: that same killed page must be able to restore
+        // its activities, not only its session time.
+        var activitiesWritten = policy.persistActivities();
+        var sessionTimeWritten = client.writeSessionTime();
+        return {
+            activitiesWritten: activitiesWritten === true,
+            sessionTimeWritten: sessionTimeWritten,
+            committed: client.commit(),
+        };
+    }
+
+    function onPageHide(event) {
+        if (event && event.persisted === true) {
+            // Frozen into the back/forward cache: persist, do not terminate.
+            persist();
+            deps.getClient().pauseClock();
+            state.frozen = true;
+            return;
+        }
         lifecycle.finish();
+    }
+
+    function onPageShow(event) {
+        if (!event || event.persisted !== true) {
+            // A normal load also fires pageshow; there is nothing to resume.
+            return;
+        }
+        state.frozen = false;
+        // The LMS session was never closed, so nothing is re-initialized.
+        deps.getClient().resumeClock();
     }
 
     function onVisibilityChange() {
@@ -753,10 +1778,7 @@
         if (!documentRef || documentRef.visibilityState !== 'hidden') {
             return;
         }
-        var client = deps.getClient();
-        if (!state.finished && client.isActive()) {
-            client.commit();
-        }
+        persist();
     }
 
     var lifecycle = {
@@ -781,24 +1803,27 @@
             var documentRef = deps.getDocument();
             if (state.installed && windowRef && windowRef.removeEventListener) {
                 windowRef.removeEventListener('pagehide', onPageHide);
+                windowRef.removeEventListener('pageshow', onPageShow);
             }
             if (state.installed && documentRef && documentRef.removeEventListener) {
                 documentRef.removeEventListener('visibilitychange', onVisibilityChange);
             }
             deps = defaultDeps;
-            state.installed = false;
-            state.finished = false;
+            state = initialState();
         },
 
         /**
-         * Attach the pagehide and visibilitychange listeners. Idempotent.
+         * Attach the pagehide, pageshow and visibilitychange listeners.
+         * Idempotent.
          */
         install: function () {
             if (state.installed) {
                 return;
             }
             state.installed = true;
-            deps.getWindow().addEventListener('pagehide', onPageHide);
+            var windowRef = deps.getWindow();
+            windowRef.addEventListener('pagehide', onPageHide);
+            windowRef.addEventListener('pageshow', onPageShow);
             var documentRef = deps.getDocument();
             if (documentRef) {
                 documentRef.addEventListener('visibilitychange', onVisibilityChange);
@@ -810,10 +1835,39 @@
             return state.finished;
         },
 
+        /** @returns {boolean} True while the page sits in the bfcache. */
+        isFrozen: function () {
+            return state.frozen;
+        },
+
+        /**
+         * @returns {{finished: boolean, committed: boolean, terminated: boolean,
+         * status: string|null, exit: string|null, state: string}|null} The
+         * recorded outcome of the single finalization, or null before one ran.
+         */
+        getReport: function () {
+            return state.report;
+        },
+
+        /**
+         * Persist the session without ending it (session time + commit).
+         * Public so that content can force a save at a meaningful moment.
+         *
+         * @returns {{written: boolean, committed: boolean}} What the LMS took.
+         */
+        persist: persist,
+
         /**
          * End the SCORM session exactly once: apply the exit policy, write
          * cmi.core.session_time, then terminate (the client commits before
-         * LMSFinish). Later calls are no-ops.
+         * LMSFinish; a failed commit aborts the termination — LMSFinish is
+         * not attempted — and is recorded as a failed termination, never
+         * retried).
+         *
+         * The `finalizing` guard is raised before any LMS traffic, so a second
+         * lifecycle path entering while the first is still running — a
+         * pagehide firing during doQuit, say — replays the recorded result
+         * instead of starting a second termination.
          *
          * @param {boolean} [applyCompletionRule] - Apply the completion rule
          * of the exit policy (default true; doQuit/doBack/doContinue pass
@@ -822,17 +1876,52 @@
          * already ended, or was never active).
          */
         finish: function (applyCompletionRule) {
-            if (state.finished) {
-                return true;
+            if (state.finalizing) {
+                return state.report === null ? true : state.report.terminated;
             }
-            state.finished = true;
             var client = deps.getClient();
             if (!client.isActive()) {
+                if (!client.isInitialized()) {
+                    // Nothing has been opened yet: legacy content calling
+                    // doQuit() before the body onload handler runs must not
+                    // consume the one-shot latch, or the real end of session
+                    // would later be silenced.
+                    return true;
+                }
+                state.finalizing = true;
+                state.finished = true;
+                state.report = {
+                    finished: true,
+                    committed: false,
+                    terminated: true,
+                    status: null,
+                    exit: null,
+                    state: client.getState(),
+                    reason: 'no-active-session',
+                };
                 return true;
             }
-            deps.getPolicy().applyExitPolicy(applyCompletionRule !== false);
+            // Raised before any LMS traffic, so a second lifecycle path
+            // entering while this one runs replays the recorded result.
+            state.finalizing = true;
+            var exitResult = deps.getPolicy().applyExitPolicy(applyCompletionRule !== false);
             client.writeSessionTime();
-            return client.terminate();
+            var terminated = client.terminate();
+            var finishReport = client.getFinishReport();
+            state.finished = true;
+            state.report = {
+                finished: true,
+                // Commit and finish separately: a failed termination may mean
+                // the commit failed and LMSFinish was never attempted.
+                committed: finishReport.commitSucceeded,
+                terminated: terminated,
+                finishAttempted: finishReport.finishAttempted,
+                status: exitResult.status,
+                exit: exitResult.exit,
+                state: client.getState(),
+                reason: 'session-ended',
+            };
+            return terminated;
         },
     };
 
@@ -852,7 +1941,7 @@
  * The only file in the SCORM 1.2 runtime that creates globals. It defines
  * exactly the public contract recorded in
  * doc/development/scorm12-runtime-contract.md and delegates everything to the
- * client/policy/lifecycle layers:
+ * client/activities/policy/lifecycle layers:
  *
  * - Page lifecycle globals called by exported pages and legacy content:
  *   loadPage, unloadPage, doQuit, doContinue, doBack, startTimer,
@@ -861,6 +1950,19 @@
  * - Additive extension methods on pipwerks.SCORM (verified callers invoke
  *   them on the pipwerks object directly). The vendored wrapper file itself
  *   is never modified.
+ * - A wrap of the wrapper's own termination entry points, so legacy content
+ *   calling pipwerks.SCORM.quit() reaches the central lifecycle instead of
+ *   closing the session behind the state machine's back.
+ *
+ * Compatibility methods fall into four documented kinds, marked per method
+ * below and tabulated in the runtime contract:
+ *
+ *   LMS call        — a legal SCORM 1.2 data model operation.
+ *   local cache     — answered from what this runtime last wrote, because the
+ *                     element is write-only and reading it would be error 404.
+ *   no-op           — the element is read-only, or the concept does not exist
+ *                     in SCORM 1.2; the method stays callable and reports.
+ *   central         — routed through the lifecycle layer.
  *
  * Copyright (C) 2026 The eXeLearning project contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
@@ -880,7 +1982,20 @@
     var exeScorm12 = global.exeScorm12;
     var pipwerks = global.pipwerks;
 
-    if (!exeScorm12 || !exeScorm12.client || !exeScorm12.policy || !exeScorm12.lifecycle || !pipwerks) {
+    // `activities` is deliberately NOT required. This adapter only binds and
+    // re-exports the registry, never calls it, and `policy` already degrades to
+    // its page-level fallback when the registry is absent. Requiring it here
+    // made the layer set non-composable: a host that ships the runtime WITHOUT
+    // the registry — the Moodle plugin does, so that its packages keep writing
+    // the legacy cmi.suspend_data format its parsers understand — got no
+    // runtime at all instead of one without the registry.
+    if (
+        !exeScorm12 ||
+        !exeScorm12.client ||
+        !exeScorm12.policy ||
+        !exeScorm12.lifecycle ||
+        !pipwerks
+    ) {
         if (global.console && global.console.error) {
             global.console.error(
                 '[exe-scorm12] Runtime layers or the pipwerks wrapper are missing; SCORM tracking is disabled.',
@@ -889,7 +2004,17 @@
         return;
     }
 
+    // Upstream pipwerks ships with debug tracing ON, and its trace() writes every
+    // data-model get and set to console.log — including the learner's name and the
+    // whole suspend_data. The wrapper is vendored byte-identical (its provenance is
+    // pinned by checksum), so this is configured here rather than patched there.
+    // The runtime reports its own problems through console.warn/error.
+    if (pipwerks.debug) {
+        pipwerks.debug.isActive = false;
+    }
+
     var client = exeScorm12.client;
+    var activities = exeScorm12.activities;
     var policy = exeScorm12.policy;
     var lifecycle = exeScorm12.lifecycle;
 
@@ -912,7 +2037,9 @@
 
     /**
      * Record whether the current page contains SCORM score-saving activities.
-     * Called by exe_export.js instead of registering an unload handler.
+     * Called by exe_export.js instead of registering an unload handler. This
+     * is the fallback completion signal for pages whose iDevices do not
+     * register with the activity registry.
      *
      * @param {boolean} hasScoredActivities - Flag computed from the page's
      * iDevices.
@@ -933,8 +2060,11 @@
         if (state.loadPageRan) {
             return;
         }
-        state.loadPageRan = true;
         if (client.initialize()) {
+            // Only a successful initialize consumes the latch: a transient
+            // failure (the LMS API not attached yet) must stay retryable —
+            // exe_export.js calls loadPage() again after the body onload.
+            state.loadPageRan = true;
             policy.applyEntryPolicy();
             lifecycle.install();
         }
@@ -973,7 +2103,7 @@
         lifecycle.finish(false);
     };
 
-    /** (Re)start the session-time clock. */
+    /** (Re)start the session-time clock, dropping the time already counted. */
     global.startTimer = function () {
         client.markSessionStart();
     };
@@ -1011,12 +2141,16 @@
     /**
      * Write the score and commit. Keeps the legacy fallback argument order.
      *
+     * Commits whenever the *required* cmi.core.score.raw was accepted, even
+     * when the LMS does not implement the optional bounds — a score the LMS
+     * recorded must not be lost because an optional element is missing.
+     *
      * @param {number|string} score - Raw score (0-100).
      * @param {number|string} [maxScore] - Maximum score.
      * @param {number|string} [minScore] - Minimum score.
      */
     global.setScore = function (score, maxScore, minScore) {
-        if (policy.setScore(score, minScore, maxScore)) {
+        if (policy.setScoreDetailed(score, minScore, maxScore).requiredWritten) {
             client.commit();
         }
     };
@@ -1026,48 +2160,62 @@
     // ------------------------------------------------------------------ //
 
     var extensions = {
-        /** @returns {boolean} Always true (legacy Flash handshake). */
+        /** no-op — always true (legacy Flash handshake). @returns {boolean} */
         isAvailable: function () {
             return true;
         },
-        /** @returns {string} cmi._version. */
+        /** LMS call. @returns {string} cmi._version. */
         GetDataModelVersion: function () {
             return client.getValue('cmi._version');
         },
-        /** @returns {string} cmi.core.lesson_status. */
+        /** LMS call. @returns {string} cmi.core.lesson_status. */
         GetCompletionStatus: function () {
             return client.getValue('cmi.core.lesson_status');
         },
         /**
-         * Write cmi.core.lesson_status. Only valid SCORM 1.2 vocabulary is
-         * accepted; in particular the SCORM 2004 value "unknown" is rejected
-         * instead of being downgraded to "not attempted" (the legacy
-         * behavior that erased progress).
+         * LMS call. Write cmi.core.lesson_status.
+         *
+         * Only values a SCO may write are forwarded: SCORM 1.2 requires the
+         * LMS to refuse "not attempted" from a SCO, and the SCORM 2004 value
+         * "unknown" is not 1.2 vocabulary at all (the legacy runtime mapped it
+         * to "not attempted", which erased progress).
+         *
+         * Routed through the policy's content entry point so the write also
+         * releases the policy's session claim — a status content set through
+         * this method is content's verdict and is never downgraded by the
+         * late-registration correction.
          *
          * @param {string} status - lesson_status value.
          */
         SetCompletionStatus: function (status) {
-            if (policy.isValidStatus(status)) {
-                client.setValue('cmi.core.lesson_status', status);
+            if (policy.isWritableStatus(status)) {
+                policy.setContentStatus(status);
             } else {
-                warn("SetCompletionStatus ignored invalid status '" + status + "'.");
+                warn("SetCompletionStatus ignored status '" + status + "' (not writable by a SCO in SCORM 1.2).");
             }
         },
         /**
-         * Legacy activity-completion helper (writes lesson_status in 1.2).
+         * LMS call. Legacy activity-completion helper (writes lesson_status
+         * in 1.2).
          *
          * @param {string} status - lesson_status value.
          */
         SetCompletionScormActivity: function (status) {
             extensions.SetCompletionStatus(status);
         },
-        /** @returns {string} cmi.core.exit (write-only in 1.2; LMS-dependent). */
+        /**
+         * local cache — cmi.core.exit is write-only in SCORM 1.2, so reading
+         * it from the LMS would be error 404. Returns what this runtime last
+         * wrote ('' when it never wrote one).
+         *
+         * @returns {string} The cached cmi.core.exit value.
+         */
         GetExit: function () {
-            return client.getValue('cmi.core.exit');
+            return client.getCachedValue('cmi.core.exit');
         },
         /**
-         * Write cmi.core.exit ("time-out", "suspend", "logout" or "";
-         * the SCORM 2004 value "normal" maps to "").
+         * LMS call. Write cmi.core.exit ("time-out", "suspend", "logout" or
+         * ""; the SCORM 2004 value "normal" maps to "").
          *
          * @param {string} exitValue - cmi.core.exit value.
          */
@@ -1080,6 +2228,11 @@
             }
         },
         /**
+         * local cache for interaction leaves — every cmi.interactions.n.*
+         * element is write-only in SCORM 1.2 (reading one is error 404), so
+         * the value comes from this runtime's write cache. The readable
+         * keywords (cmi.interactions._count / ._children) still reach the LMS.
+         *
          * @param {string} key - cmi.interactions element (1.2 notation).
          * @returns {string} The element value.
          */
@@ -1087,81 +2240,114 @@
             return client.getValue(key);
         },
         /**
+         * LMS call.
+         *
          * @param {string} key - cmi.interactions element (1.2 notation).
          * @param {string} value - Value to write.
          */
         SetInteractionValue: function (key, value) {
             client.setValue(key, value);
         },
-        /** @returns {string} cmi.core.student_id. */
+        /** LMS call. @returns {string} cmi.core.student_id. */
         GetLearnerId: function () {
             return client.getValue('cmi.core.student_id');
         },
-        /** @returns {string} cmi.core.student_name. */
+        /** LMS call. @returns {string} cmi.core.student_name. */
         GetLearnerName: function () {
             return client.getValue('cmi.core.student_name');
         },
-        /** @returns {string} cmi.core.lesson_mode. */
+        /**
+         * LMS call. cmi.core.lesson_mode is optional in SCORM 1.2; a SCO must
+         * assume "normal" when the LMS does not implement it.
+         *
+         * @returns {string} cmi.core.lesson_mode.
+         */
         GetMode: function () {
-            return client.getValue('cmi.core.lesson_mode');
+            var read = client.getOptionalValue('cmi.core.lesson_mode');
+            return read.supported && read.value !== '' ? read.value : 'normal';
         },
         /**
-         * Legacy mode setter (cmi.core.lesson_mode is read-only in SCORM 1.2;
-         * the LMS rejection is reported by the client layer).
+         * no-op — cmi.core.lesson_mode is read-only in SCORM 1.2, so the
+         * legacy setter can only ever have produced error 403. The method
+         * stays callable and reports instead of issuing an invalid call.
          *
          * @param {string} mode - "browse", "normal" or "review".
          */
         SetMode: function (mode) {
-            if (mode === 'browse' || mode === 'normal' || mode === 'review') {
-                client.setValue('cmi.core.lesson_mode', mode);
-            } else {
-                warn("SetMode ignored invalid mode '" + mode + "'.");
-            }
+            warn(
+                "SetMode('" +
+                    mode +
+                    "') is a no-op: cmi.core.lesson_mode is read-only in SCORM 1.2 and is set by the LMS.",
+            );
         },
-        /** @returns {string} cmi.core.score.max. */
+        /**
+         * LMS call. cmi.core.score.max is optional in SCORM 1.2.
+         *
+         * @returns {string} cmi.core.score.max ('' when unsupported).
+         */
         GetScoreMax: function () {
-            return client.getValue('cmi.core.score.max');
+            return client.getOptionalValue('cmi.core.score.max').value;
         },
-        /** @param {number|string} maxScore - cmi.core.score.max value. */
+        /**
+         * LMS call. @param {number|string} maxScore - cmi.core.score.max value.
+         * @returns {boolean} True when the LMS accepted it (false also means
+         * "optional element not implemented", which is not an error).
+         */
         SetScoreMax: function (maxScore) {
-            client.setValue('cmi.core.score.max', maxScore);
+            return client.setOptionalValueDetailed('cmi.core.score.max', maxScore).success;
         },
-        /** @returns {string} cmi.core.score.min. */
+        /**
+         * LMS call. cmi.core.score.min is optional in SCORM 1.2.
+         *
+         * @returns {string} cmi.core.score.min ('' when unsupported).
+         */
         GetScoreMin: function () {
-            return client.getValue('cmi.core.score.min');
+            return client.getOptionalValue('cmi.core.score.min').value;
         },
-        /** @param {number|string} minScore - cmi.core.score.min value. */
+        /**
+         * LMS call. @param {number|string} minScore - cmi.core.score.min value.
+         * @returns {boolean} True when the LMS accepted it.
+         */
         SetScoreMin: function (minScore) {
-            client.setValue('cmi.core.score.min', minScore);
+            return client.setOptionalValueDetailed('cmi.core.score.min', minScore).success;
         },
-        /** @returns {string} cmi.core.score.raw. */
+        /** LMS call. @returns {string} cmi.core.score.raw. */
         GetScoreRaw: function () {
             return client.getValue('cmi.core.score.raw');
         },
-        /** @param {number|string} score - cmi.core.score.raw value. */
+        /**
+         * LMS call. @param {number|string} score - cmi.core.score.raw value.
+         * @returns {boolean} True when the LMS accepted it.
+         */
         SetScoreRaw: function (score) {
-            client.setValue('cmi.core.score.raw', score);
+            return client.setValue('cmi.core.score.raw', score);
         },
-        /** SCORM 2004 concept; no scaled score exists in 1.2. */
+        /** no-op — SCORM 2004 concept; no scaled score exists in 1.2. */
         SetScoreScaled: function () {
             // Intentional no-op (parity with the legacy wrapper in 1.2).
         },
-        /** @returns {string} cmi.core.session_time (write-only in 1.2). */
+        /**
+         * local cache — cmi.core.session_time is write-only in SCORM 1.2, so
+         * reading it from the LMS would be error 404.
+         *
+         * @returns {string} The cached cmi.core.session_time value.
+         */
         GetSessionTime: function () {
-            return client.getValue('cmi.core.session_time');
+            return client.getCachedValue('cmi.core.session_time');
         },
-        /** @param {string} time - CMITimespan value (HHHH:MM:SS.SS). */
+        /** LMS call. @param {string} time - CMITimespan value (HHHH:MM:SS.SS). */
         SetSessionTime: function (time) {
             client.setValue('cmi.core.session_time', time);
         },
-        /** @returns {string} cmi.core.lesson_status (single status in 1.2). */
+        /** LMS call. @returns {string} cmi.core.lesson_status (single status in 1.2). */
         GetSuccessStatus: function () {
             return client.getValue('cmi.core.lesson_status');
         },
         /**
-         * Success/completion separation does not exist in SCORM 1.2;
-         * validated no-op for parity with the legacy wrapper (which never
-         * wrote success status in 1.2 either).
+         * no-op — success/completion separation does not exist in SCORM 1.2,
+         * where cmi.core.lesson_status is the single status element. Parity
+         * with the legacy wrapper, which never wrote a success status in 1.2
+         * either. Use SetCompletionStatus('passed'|'failed') to record success.
          *
          * @param {string} status - "passed", "failed" or "unknown".
          */
@@ -1204,6 +2390,14 @@
          * @returns {boolean} True when the LMS accepted the value.
          */
         set: function (element, value) {
+            if (element === 'cmi.core.lesson_status') {
+                // Content writing the status through the generic facade is
+                // still content writing a status: validate the SCO-writable
+                // vocabulary locally (forwarding "not attempted" would be an
+                // invalid LMS call) and release the policy's session claim,
+                // exactly like SetCompletionStatus().
+                return policy.setContentStatus(value);
+            }
             return client.setValue(element, value);
         },
         /** @returns {boolean} True when the LMS accepted the commit. */
@@ -1211,14 +2405,17 @@
             return client.commit();
         },
         /**
-         * End the session (exit status + session time + commit + finish)
-         * without applying the completion rule (legacy parity). Idempotent.
+         * central — end the session through the lifecycle layer (exit status
+         * + session time + commit + finish) without applying the completion
+         * rule (legacy parity). Idempotent.
          *
          * @returns {boolean} True when the session ended (or already had).
          */
         quit: function () {
             return lifecycle.finish(false);
         },
+        /** The activity registry, so iDevices can report completion. */
+        activities: activities,
     };
 
     var name;
@@ -1234,6 +2431,55 @@
             pipwerks.SCORM[name] = extensions[name];
         }
     }
+
+    // Centralize termination: legacy content that calls the wrapper's own
+    // quit()/connection.terminate() must go through the lifecycle layer, so
+    // the session is finalized once and the state machine stays coherent.
+    // The client layer never uses this binding (it commits and finishes
+    // through the API handle directly), and the vendored file itself is never
+    // modified — only this runtime object binding is. The original
+    // implementation is kept on the shim for diagnostics; if the runtime is
+    // ever evaluated twice, the tag is carried over instead of pointing at
+    // the first shim.
+    var existingTerminate = pipwerks.SCORM.connection.terminate;
+    var centralizedTerminate = function () {
+        return lifecycle.finish(false);
+    };
+    centralizedTerminate.exeScorm12Native = (existingTerminate && existingTerminate.exeScorm12Native) || existingTerminate;
+    pipwerks.SCORM.connection.terminate = centralizedTerminate;
+    pipwerks.SCORM.quit = centralizedTerminate;
+
+    // Centralize content status writes the same way: the wrapper's own
+    // public helpers can write cmi.core.lesson_status directly
+    // (pipwerks.SCORM.set is the wrapper's alias of data.set, and
+    // pipwerks.SCORM.status('set', …) targets the status element by name).
+    // Without these bindings, a status content wrote through them would
+    // still look like the policy's own and could be downgraded by the
+    // late-registration correction. Only the runtime object's bindings
+    // change — the vendored file is untouched — and pipwerks.SCORM.data.set
+    // stays native: it is the wrapper's internal engine (this runtime's
+    // client writes through it), below the supported surface.
+    var existingSet = pipwerks.SCORM.set;
+    var nativeSet = (existingSet && existingSet.exeScorm12Native) || existingSet;
+    var routedSet = function (element, value) {
+        if (element === 'cmi.core.lesson_status') {
+            return policy.setContentStatus(value);
+        }
+        return nativeSet(element, value);
+    };
+    routedSet.exeScorm12Native = nativeSet;
+    pipwerks.SCORM.set = routedSet;
+
+    var existingStatus = pipwerks.SCORM.status;
+    var nativeStatus = (existingStatus && existingStatus.exeScorm12Native) || existingStatus;
+    var routedStatus = function (action, status) {
+        if (action === 'set') {
+            return policy.setContentStatus(status);
+        }
+        return nativeStatus(action, status);
+    };
+    routedStatus.exeScorm12Native = nativeStatus;
+    pipwerks.SCORM.status = routedStatus;
 
     global.scorm = facade;
 })(typeof window !== 'undefined' ? window : globalThis);
