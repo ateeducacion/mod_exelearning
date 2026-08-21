@@ -402,12 +402,6 @@
             return fr && fr.contentDocument;
         };
         var bindUnload = config.bindUnload !== false;
-        // Inert mode for xAPI-primary packages (DEC-85-01): window.API still answers
-        // findAPI()/LMSInitialize so pipwerks reports connected and the iDevices run
-        // (and thus emit their xAPI statements), but no score is ever POSTed to
-        // track.php — grading flows through the xAPI listener instead. The legacy
-        // (SCORM-graded) path leaves this false and is byte-for-byte unchanged.
-        var disableTracking = config.disableTracking === true;
 
         var errCode = '0', cmi = {}, dirty = false, autoTimer = null;
         // Everything banked so far from cmi.suspend_data, keyed by objectid (both
@@ -416,8 +410,6 @@
         var itemScores = {};    // objectid => { scorepct, weighted, title }.
 
         function send(sync) {
-            // xAPI-primary packages keep window.API alive but never POST (DEC-85-01).
-            if (disableTracking) { dirty = false; return true; }
             if (!dirty) { return true; }
             var snapshot = JSON.stringify(cmi);
             var payload = buildPayload(cmid, session, cmi, itemScores, sesskey);

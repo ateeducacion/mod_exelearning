@@ -117,23 +117,4 @@ if ($ADMIN->fulltree) {
         get_string('stylesblockimport_desc', 'mod_exelearning'),
         0
     ));
-
-    // Settings for the xAPI ingestion channel (DEC-85-01).
-    $settings->add(new admin_setting_heading(
-        'mod_exelearning/xapiheading',
-        get_string('xapisettings', 'mod_exelearning'),
-        get_string('xapisettings_desc', 'mod_exelearning')
-    ));
-
-    // Master switch for the xAPI-primary grading channel. On (default): a package that
-    // bundles the eXeLearning xAPI emitter grades via xAPI and the SCORM shim is kept
-    // inert. Off: those packages fall back to SCORM grading — a kill switch that needs no
-    // code change. Legacy packages without the emitter always use SCORM. This is NOT cmi5
-    // and NOT an external-LRS integration; SCORM 1.2 stays the compatibility path.
-    $settings->add(new admin_setting_configcheckbox(
-        'exelearning/xapiprimaryenabled',
-        get_string('xapiprimaryenabled', 'mod_exelearning'),
-        get_string('xapiprimaryenabled_desc', 'mod_exelearning'),
-        1
-    ));
 }

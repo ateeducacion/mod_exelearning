@@ -293,6 +293,7 @@ if (!$mainfile) {
                 (object) [
                         'attempted' => $summary['attempted'],
                         'total'     => $summary['total'],
+                        'graded'    => $summary['graded'],
                         'mean'      => format_float($summary['meanpercent'], 1),
                 ]
             );
@@ -313,7 +314,12 @@ if (!$mainfile) {
             'userid'        => $USER->id,
             'itemnumber'    => 0,
         ], 'attempt ASC');
-        $used = count($myattempts);
+        // Count through the same function that ENFORCES the cap, not by counting the
+        // list above: count_user_attempts() excludes ungraded-period attempts
+        // (DEC-124-03), so counting rows here would show the learner "1 of 1 used" while
+        // the server still lets them attempt. $myattempts stays unfiltered for the review
+        // list below, which legitimately shows every attempt they made.
+        $used = \mod_exelearning\local\attempts::count_user_attempts($exelearning->id, $USER->id);
         $maxattempt = (int) ($exelearning->maxattempt ?? 0);
         if ($used > 0 || $maxattempt > 0) {
             $label = ($maxattempt > 0)
@@ -393,17 +399,9 @@ if (!$mainfile) {
     // If not found, the iDevice shows "This page is not part of a SCORM package".
     // Minimal viable implementation: buffers CMI pairs and sends them to
     // track.php on LMSCommit/LMSFinish.
-    // One page-load token groups all of this view's commits into a single attempt,
-    // shared by whichever channel grades (DEC-0-07).
+    // One page-load token groups all of this view's commits into a single attempt
+    // (DEC-0-07).
     $sessiontoken = random_string(20);
-    // Channel choice (DEC-85-01): a package that bundles the upstream xAPI emitter grades
-    // via xAPI; the SCORM shim stays alive (so pipwerks finds window.API and the iDevices
-    // still run and emit their statements) but inert (it never POSTs to track.php). A
-    // legacy package without the emitter keeps SCORM grading exactly as before. The
-    // site-wide master switch (exelearning_xapi_primary_enabled) can force every package
-    // back onto SCORM without a code change.
-    $emitsxapi = exelearning_xapi_primary_enabled()
-            && exelearning_package_emits_xapi($context->id, (int) $exelearning->revision);
 
     // The tracker logic is a single source of truth in js/scorm_tracker.js, also
     // unit-tested with Vitest (tests/js/scorm_tracker.test.js). It is injected inline
@@ -416,36 +414,13 @@ if (!$mainfile) {
         \mod_exelearning\local\tracking_endpoint::scorm_config(
             (int) $cm->id,
             $mode,
-            $sessiontoken,
-            // Inert SCORM shim for xAPI-primary packages (DEC-85-01).
-            $emitsxapi
+            $sessiontoken
         ),
         JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
     );
     $trackerjs = file_get_contents(__DIR__ . '/js/scorm_tracker.js');
     $bootjs = "\n(function () { window.API = window.exeScormTracker.createScormApi($scormcfg).api; })();";
     echo html_writer::tag('script', $trackerjs . $bootjs);
-
-    // The xAPI listener (DEC-85-01): for an xAPI-capable package, receive the emitter's
-    // exe-xapi-statement postMessages in this parent page, validate the origin and
-    // forward each to xapi_track.php. Same inline single-source-of-truth pattern as the
-    // SCORM tracker (js/xapi_listener.js, Vitest-tested). It shares $sessiontoken as the
-    // xAPI registration so every statement of this view maps to the same attempt.
-    if ($emitsxapi) {
-        $hostorigin = preg_replace('~^(https?://[^/]+).*~', '$1', $CFG->wwwroot);
-        $xapicfg = json_encode(
-            \mod_exelearning\local\tracking_endpoint::xapi_config(
-                (int) $cm->id,
-                $mode,
-                $sessiontoken,
-                $hostorigin
-            ),
-            JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
-        );
-        $listenerjs = file_get_contents(__DIR__ . '/js/xapi_listener.js');
-        $listenerboot = "\n(function () { window.exeXapiListener.createListener($xapicfg).start(); })();";
-        echo html_writer::tag('script', $listenerjs . $listenerboot);
-    }
 
     // Fullscreen control (issue #13 #6, DEC-13-03): a right-aligned button above the
     // player. The iframe already advertises allow="fullscreen"; amd/src/fullscreen.js
@@ -469,8 +444,7 @@ if (!$mainfile) {
 
     // Package iframe. Sandbox policy documented in AN-008:
     // allow-scripts: eXeLearning v4 uses jQuery + iDevice JS.
-    // allow-same-origin: relative paths to pluginfile.php/.../content/<rev>/
-    // and future postMessage to the xAPI endpoint.
+    // allow-same-origin: relative paths to pluginfile.php/.../content/<rev>/.
     // allow-popups: interactive-video, hidden-image, etc.
     // allow-forms: quick-questions, form, scrambled-list, etc.
     // allow-popups-to-escape-sandbox: popups load without restrictions.

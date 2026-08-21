@@ -69,9 +69,13 @@ class backup_exelearning_activity_structure_step extends backup_activity_structu
 
         $attempts = new backup_nested_element('attempts');
 
+        // The gradable flag is part of the row's academic meaning, not bookkeeping: a row
+        // recorded while the activity was not graded must stay completion-only across a
+        // backup/restore (DEC-124-03). Omitting it here would let the column default
+        // (1) silently promote that history into gradable history on restore.
         $attempt = new backup_nested_element('attempt', ['id'], [
             'userid', 'attempt', 'itemnumber', 'rawscore', 'maxscore',
-            'scaledscore', 'status', 'sessiontoken', 'timecreated', 'timemodified',
+            'scaledscore', 'status', 'gradable', 'sessiontoken', 'timecreated', 'timemodified',
         ]);
 
         // Build the tree.

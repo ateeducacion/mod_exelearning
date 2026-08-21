@@ -211,6 +211,12 @@ if ($download !== '' && $attempts) {
         'rawscore'     => get_string('report_score', 'mod_exelearning'),
         'maxscore'     => get_string('grademax', 'core_grades'),
         'status'       => get_string('report_status', 'mod_exelearning'),
+        // A completion-only row (DEC-124-03) carries a score that the gradebook does not,
+        // because the activity was not a graded one when the learner produced it. The
+        // on-screen table does not distinguish them yet, but the machine-readable export
+        // must: without this column a downloaded CSV cannot be reconciled against the
+        // gradebook at all.
+        'gradable'     => get_string('report_gradable', 'mod_exelearning'),
         'timemodified' => get_string('report_date', 'mod_exelearning'),
     ];
     // Mirror the table loop: same grademodel row filtering plus the
@@ -230,6 +236,7 @@ if ($download !== '' && $attempts) {
             'rawscore'     => (float) $a->rawscore,
             'maxscore'     => (float) $a->maxscore,
             'status'       => $a->status,
+            'gradable'     => empty($a->gradable) ? get_string('no') : get_string('yes'),
             'timemodified' => userdate($a->timemodified),
         ];
     }

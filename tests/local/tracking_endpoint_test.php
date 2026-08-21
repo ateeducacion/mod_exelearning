@@ -22,9 +22,9 @@ use moodle_exception;
 /**
  * Unit tests for the tracking endpoints' web contract (SEC-04).
  *
- * The security invariant under test: the session key reaches track.php and
- * xapi_track.php in the POST body and never in the query string, where access
- * logs, reverse proxies and diagnostic tooling would record it verbatim.
+ * The security invariant under test: the session key reaches track.php in the
+ * POST body and never in the query string, where access logs, reverse proxies
+ * and diagnostic tooling would record it verbatim.
  *
  * @package    mod_exelearning
  * @category   test
@@ -74,32 +74,18 @@ final class tracking_endpoint_test extends advanced_testcase {
     }
 
     public function test_the_scorm_tracker_config_keeps_the_sesskey_out_of_the_url(): void {
-        $config = tracking_endpoint::scorm_config(42, 'grading', 'sessiontoken', false);
+        $config = tracking_endpoint::scorm_config(42, 'grading', 'sessiontoken');
 
         $this->assertStringContainsString('/mod/exelearning/track.php', $config['trackurl']);
         $this->assertStringNotContainsString('sesskey', $config['trackurl']);
         $this->assertSame(sesskey(), $config['sesskey']);
         $this->assertSame(42, $config['cmid']);
         $this->assertSame('sessiontoken', $config['session']);
-        $this->assertFalse($config['disableTracking']);
     }
 
-    public function test_the_scorm_tracker_config_carries_the_mode_and_the_inert_flag(): void {
-        $config = tracking_endpoint::scorm_config(7, 'preview', 'tok', true);
+    public function test_the_scorm_tracker_config_carries_the_mode(): void {
+        $config = tracking_endpoint::scorm_config(7, 'preview', 'tok');
 
         $this->assertStringContainsString('mode=preview', $config['trackurl']);
-        $this->assertTrue($config['disableTracking']);
-    }
-
-    public function test_the_xapi_listener_config_keeps_the_sesskey_out_of_the_url(): void {
-        $config = tracking_endpoint::xapi_config(42, 'grading', 'sessiontoken', 'https://moodle.example');
-
-        $this->assertStringContainsString('/mod/exelearning/xapi_track.php', $config['trackurl']);
-        $this->assertStringNotContainsString('sesskey', $config['trackurl']);
-        $this->assertSame(sesskey(), $config['sesskey']);
-        $this->assertSame(42, $config['cmid']);
-        $this->assertSame('sessiontoken', $config['registration']);
-        $this->assertSame('grading', $config['mode']);
-        $this->assertSame('https://moodle.example', $config['allowedOrigin']);
     }
 }

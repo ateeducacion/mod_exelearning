@@ -157,6 +157,73 @@ final class backup_restore_test extends advanced_testcase {
     }
 
     /**
+     * A completion-only attempt (gradable=0, DEC-124-03) must stay completion-only
+     * across a backup/restore.
+     *
+     * Exactly the defect the test below records for gradeenabled, one column later: a
+     * field that carries meaning was missing from the backup element list, so the
+     * restored row fell back to the install.xml default — here gradable=1. That silently
+     * converts work done while the activity was NOT an assessment into gradable history,
+     * which the next switch-on would publish as a mark. A backup/restore must not be able
+     * to change the academic meaning of a learner's history.
+     */
+    public function test_backup_restore_preserves_gradable_off(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $course = $this->getDataGenerator()->create_course();
+        $instance = $this->getDataGenerator()
+            ->get_plugin_generator('mod_exelearning')
+            ->create_instance(['course' => $course->id]);
+        $student = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($student->id, $course->id, 'student');
+
+        // One gradable attempt and one completion-only attempt, so the test proves the
+        // value round-trips rather than that everything ends up with the same constant.
+        \mod_exelearning\local\attempts::record_item(
+            $instance->id,
+            $student->id,
+            1,
+            0,
+            70.0,
+            100.0,
+            'completed',
+            'sgraded',
+            true
+        );
+        \mod_exelearning\local\attempts::record_item(
+            $instance->id,
+            $student->id,
+            2,
+            0,
+            95.0,
+            100.0,
+            'completed',
+            'sungraded',
+            false
+        );
+
+        $newcourseid = $this->backup_and_restore($course);
+
+        $restored = $DB->get_records('exelearning', ['course' => $newcourseid]);
+        $this->assertCount(1, $restored);
+        $restoredinstance = reset($restored);
+
+        $rows = $DB->get_records('exelearning_attempt', [
+            'exelearningid' => $restoredinstance->id,
+            'userid'        => $student->id,
+        ], 'attempt ASC');
+        $this->assertCount(2, $rows);
+        $byattempt = [];
+        foreach ($rows as $row) {
+            $byattempt[(int) $row->attempt] = (int) $row->gradable;
+        }
+        $this->assertSame(1, $byattempt[1], 'The gradable attempt must stay gradable');
+        $this->assertSame(0, $byattempt[2], 'The completion-only attempt must stay completion-only');
+    }
+
+    /**
      * A deliberately ungraded activity (gradeenabled=0, DEC-13-07) must stay
      * ungraded after a backup/restore. The master grading switch and the grade
      * category were missing from the backup field list, so the restored copy fell
