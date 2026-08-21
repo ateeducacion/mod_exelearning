@@ -82,6 +82,14 @@ Una fila de `exelearning_attempt` escrita con la calificación apagada queda mar
   `attempts::aggregate_scaled()`, `attempts::fetch_scaled_by_user_item()` y la media de
   participación del resumen. Si una sola no filtrara, la asimetría volvería por ahí.
 
+**Lo que deliberadamente NO filtra**, que es la otra mitad de la decisión: las consultas
+que *cuentan* o *asignan* siguen viendo todas las filas. El `COUNT(DISTINCT attempt)` que
+aplica `maxattempt`, el `COUNT(DISTINCT userid)` de participación y el `MAX(attempt)` que
+asigna el siguiente número de intento no llevan el filtro. Un alumno que gastó intentos
+mientras la actividad no calificaba los gastó igualmente, y participó igualmente; y filtrar
+en el `MAX(attempt)` haría que se reutilizaran números de intento, corrompiendo el
+historial. La regla es: **la agregación de nota filtra, el recuento y la asignación no.**
+
 Las filas preexistentes toman el valor por defecto `1`. Todo lo registrado antes de esta
 etapa lo escribió un `ingest()` que no hacía esta distinción, y suponerlas calificables es
 la opción conservadora: preserva las notas que un sitio ya hubiera publicado.
