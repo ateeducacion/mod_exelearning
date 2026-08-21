@@ -75,8 +75,13 @@ final class zip_utils_test extends advanced_testcase {
 
         $dir = make_request_directory();
         file_put_contents($dir . '/index.html', 'x');
-        // A link pointing outside the extraction root must be rejected.
-        symlink('/etc', $dir . '/escape');
+        // A link pointing outside the extraction root must be rejected. The target is
+        // deliberately a path that does not exist: assert_extraction_contained() throws
+        // on isLink() before it resolves the target, so a dangling link exercises the
+        // same branch — and Moodle deletes this request directory on shutdown with
+        // remove_dir(), which branches on is_dir() and therefore FOLLOWS symlinks. A
+        // link to a real directory would have its target's contents unlinked.
+        symlink($dir . '/../not-a-real-target', $dir . '/escape');
 
         $this->expectException(\moodle_exception::class);
         zip_utils::assert_extraction_contained($dir, 'stylesupload_unsafe');
