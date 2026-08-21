@@ -236,6 +236,8 @@ class attempts {
      * @param float $maxscore
      * @param string $status completed|passed|failed|incomplete
      * @param string $sessiontoken
+     * @param bool $gradable False when the activity was not graded at the time (DEC-124-03):
+     *        the row still feeds completion and the report, but the aggregation ignores it.
      */
     public static function record_item(
         int $exelearningid,
