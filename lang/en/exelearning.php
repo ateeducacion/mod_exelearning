@@ -254,6 +254,7 @@ $string['privacy:metadata:exelearning'] = 'eXeLearning activity instances.';
 $string['privacy:metadata:exelearning:usermodified'] = 'The user who last modified the activity settings.';
 $string['privacy:metadata:exelearning_attempt'] = 'Attempt records for each submission a user makes on an eXeLearning gradable item.';
 $string['privacy:metadata:exelearning_attempt:attempt'] = 'The sequential attempt number.';
+$string['privacy:metadata:exelearning_attempt:gradable'] = 'Whether the attempt counts towards the grade. No for attempts recorded while the activity was not a graded one.';
 $string['privacy:metadata:exelearning_attempt:itemnumber'] = 'The gradable item (0 = overall, >0 = a specific iDevice).';
 $string['privacy:metadata:exelearning_attempt:maxscore'] = 'The maximum score available for the attempt.';
 $string['privacy:metadata:exelearning_attempt:rawscore'] = 'The raw score obtained in the attempt.';

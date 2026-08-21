@@ -258,6 +258,7 @@ $string['privacy:metadata:exelearning'] = '~eXeLearning jarduera-instantziak.';
 $string['privacy:metadata:exelearning:usermodified'] = '~Jardueraren ezarpenak azkenekoz aldatu zituen erabiltzailea.';
 $string['privacy:metadata:exelearning_attempt'] = '~Erabiltzaile batek eXeLearning elementu kalifikagarri batean egiten duen bidalketa bakoitzaren saialdi-erregistroak.';
 $string['privacy:metadata:exelearning_attempt:attempt'] = '~Saialdi-zenbaki sekuentziala.';
+$string['privacy:metadata:exelearning_attempt:gradable'] = '~Saialdiak kalifikaziorako balio duen. Ez, jarduera kalifikagarria ez zen bitartean erregistratutako saialdietan.';
 $string['privacy:metadata:exelearning_attempt:itemnumber'] = '~Elementu kalifikagarria (0 = orokorra, >0 = iDevice zehatz bat).';
 $string['privacy:metadata:exelearning_attempt:maxscore'] = '~Saialdirako eskuragarri dagoen gehienezko puntuazioa.';
 $string['privacy:metadata:exelearning_attempt:rawscore'] = '~Saialdian lortutako puntuazio gordina.';

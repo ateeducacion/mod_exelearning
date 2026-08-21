@@ -258,6 +258,7 @@ $string['privacy:metadata:exelearning'] = '~Instancias de actividades eXeLearnin
 $string['privacy:metadata:exelearning:usermodified'] = '~El usuario que modificó por última vez la configuración de la actividad.';
 $string['privacy:metadata:exelearning_attempt'] = '~Registros de intentos por cada envío que un usuario realiza en un elemento calificable de eXeLearning.';
 $string['privacy:metadata:exelearning_attempt:attempt'] = '~El número de intento secuencial.';
+$string['privacy:metadata:exelearning_attempt:gradable'] = '~Si el intento cuenta para la calificación. No, en los intentos registrados mientras la actividad no era calificable.';
 $string['privacy:metadata:exelearning_attempt:itemnumber'] = '~El elemento calificable (0 = global, >0 = un iDevice concreto).';
 $string['privacy:metadata:exelearning_attempt:maxscore'] = '~La puntuación máxima disponible para el intento.';
 $string['privacy:metadata:exelearning_attempt:rawscore'] = '~La puntuación bruta obtenida en el intento.';

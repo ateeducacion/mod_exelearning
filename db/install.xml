@@ -78,6 +78,7 @@
         <FIELD NAME="maxscore"       TYPE="number" LENGTH="10" DECIMALS="5" NOTNULL="true" DEFAULT="100" SEQUENCE="false"/>
         <FIELD NAME="scaledscore"    TYPE="number" LENGTH="10" DECIMALS="5" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="rawscore/maxscore in 0..1."/>
         <FIELD NAME="status"         TYPE="char" LENGTH="20"  NOTNULL="true" DEFAULT="completed" SEQUENCE="false" COMMENT="completed|passed|failed|incomplete."/>
+        <FIELD NAME="gradable"       TYPE="int"  LENGTH="1"   NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="0 when the row was recorded while the activity was not graded (gradeenabled=0): kept for completion and the attempts report, but never aggregated into a gradebook grade (DEC-124-03)."/>
         <FIELD NAME="sessiontoken"   TYPE="char" LENGTH="40"  NOTNULL="false" SEQUENCE="false" COMMENT="Per page-load token so multiple auto-commits map to the same attempt."/>
         <FIELD NAME="timecreated"    TYPE="int"  LENGTH="10"  NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="timemodified"   TYPE="int"  LENGTH="10"  NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>

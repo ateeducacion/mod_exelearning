@@ -149,6 +149,7 @@ class attempts {
             "SELECT id, userid, scaledscore
                    FROM {exelearning_attempt}
                   WHERE exelearningid = :exeid2 AND itemnumber = 0 AND userid $insql2
+                        AND gradable = 1
                ORDER BY userid ASC, attempt ASC",
             $params2
         );
@@ -244,12 +245,18 @@ class attempts {
         float $rawscore,
         float $maxscore,
         string $status,
-        string $sessiontoken
+        string $sessiontoken,
+        bool $gradable = true
     ): void {
         global $DB;
 
         $now = time();
         $scaled = ($maxscore > 0) ? max(0.0, min(1.0, $rawscore / $maxscore)) : 0.0;
+        // A row written while the activity was not graded is completion-only
+        // (DEC-124-03): it stays in the report and feeds completion by status, but the
+        // aggregation queries below exclude it, so re-enabling grading never turns work
+        // done during the ungraded period into a mark.
+        $gradableflag = $gradable ? 1 : 0;
 
         $existing = $DB->get_record('exelearning_attempt', [
             'exelearningid' => $exelearningid,
@@ -263,6 +270,7 @@ class attempts {
             $existing->maxscore     = $maxscore;
             $existing->scaledscore  = $scaled;
             $existing->status       = $status;
+            $existing->gradable     = $gradableflag;
             $existing->sessiontoken = $sessiontoken;
             $existing->timemodified = $now;
             $DB->update_record('exelearning_attempt', $existing);
@@ -276,6 +284,7 @@ class attempts {
                 'maxscore'      => $maxscore,
                 'scaledscore'   => $scaled,
                 'status'        => $status,
+                'gradable'      => $gradableflag,
                 'sessiontoken'  => $sessiontoken,
                 'timecreated'   => $now,
                 'timemodified'  => $now,
@@ -302,7 +311,7 @@ class attempts {
 
         $scaled = $DB->get_fieldset_sql(
             "SELECT scaledscore FROM {exelearning_attempt}
-                  WHERE exelearningid = ? AND userid = ? AND itemnumber = ?
+                  WHERE exelearningid = ? AND userid = ? AND itemnumber = ? AND gradable = 1
                ORDER BY attempt ASC",
             [$exelearningid, $userid, $itemnumber]
         );
@@ -365,7 +374,7 @@ class attempts {
 
         $rs = $DB->get_recordset_sql(
             "SELECT id, userid, itemnumber, scaledscore FROM {exelearning_attempt}
-                  WHERE exelearningid = :exeid AND userid $insql
+                  WHERE exelearningid = :exeid AND userid $insql AND gradable = 1
                ORDER BY userid, itemnumber, attempt ASC",
             $params
         );

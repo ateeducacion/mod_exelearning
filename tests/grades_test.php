@@ -146,6 +146,102 @@ final class grades_test extends advanced_testcase {
     }
 
     /**
+     * Work done while the activity was NOT graded never becomes a mark, in either grade
+     * model (DEC-124-03).
+     *
+     * The OFF -> ON test above covers recovering history recorded while the activity WAS
+     * graded. This is the other interval, and before this change the two grade models
+     * disagreed about it. With grading off there are no registered objectids, so:
+     *
+     *  - PERITEM wrote no itemnumber>0 rows at all — nothing to resurrect;
+     *  - OVERALL wrote the itemnumber=0 row that completion by status needs, carrying a
+     *    score that had NOT been recomputed server-side because there was nothing to
+     *    recompute from. Re-enabling grading then published that browser-reported value.
+     *
+     * The switch is now a statement about assessment, not a pause button: what a learner
+     * did while the activity was a plain resource is kept for completion and for the
+     * report, and is never retroactively converted into a grade. Both models obey it.
+     *
+     * @param int $grademodel The grade model to exercise.
+     * @dataProvider ungraded_interval_models_provider
+     */
+    public function test_work_done_while_ungraded_never_becomes_a_grade(int $grademodel): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $course = $this->getDataGenerator()->create_course();
+        /** @var \mod_exelearning_generator $generator */
+        $generator = $this->getDataGenerator()->get_plugin_generator('mod_exelearning');
+        $instance = $generator->create_instance([
+            'course'       => $course->id,
+            'grademodel'   => $grademodel,
+            'gradeenabled' => 0,
+        ]);
+        $student = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($student->id, $course->id, 'student');
+        $cm = get_coursemodule_from_instance('exelearning', $instance->id);
+
+        // The learner works through the whole activity while it is a plain resource.
+        \mod_exelearning\local\track::ingest($instance, $course, $cm, $student->id, [
+            'session'    => 'sessUngraded',
+            'cmi'        => [
+                'cmi.core.score.raw'     => '95',
+                'cmi.core.score.max'     => '100',
+                'cmi.core.lesson_status' => 'completed',
+            ],
+            'itemscores' => [
+                'ide-a' => ['scorepct' => 95.0, 'weighted' => 100.0, 'title' => 'a'],
+            ],
+        ], false);
+
+        // Recorded for completion, and flagged as not counting towards a grade.
+        $rows = $DB->get_records('exelearning_attempt', [
+            'exelearningid' => $instance->id,
+            'userid'        => $student->id,
+        ]);
+        $this->assertNotEmpty($rows);
+        foreach ($rows as $row) {
+            $this->assertEquals(0, (int) $row->gradable, 'Row written while ungraded must be completion-only');
+        }
+
+        // The teacher now turns the activity into a graded one.
+        $data = $this->update_payload($instance, ['gradeenabled' => 1]);
+        $this->assertTrue(exelearning_update_instance($data));
+        $instance = $DB->get_record('exelearning', ['id' => $instance->id]);
+
+        // The columns exist again, and every one of them is empty: nothing the learner
+        // did while the activity was ungraded has been converted into a mark.
+        $grades = grade_get_grades($instance->course, 'mod', 'exelearning', $instance->id, $student->id);
+        $this->assertNotSame([], $grades->items, 'Re-enabling grading must recreate the gradebook columns');
+        foreach ($grades->items as $itemnumber => $item) {
+            $this->assertNull(
+                $item->grades[$student->id]->grade ?? null,
+                "Item {$itemnumber} must have no grade derived from the ungraded interval"
+            );
+        }
+
+        // And the attempt survives, so completion by status still resolves.
+        $this->assertTrue($DB->record_exists('exelearning_attempt', [
+            'exelearningid' => $instance->id,
+            'userid'        => $student->id,
+            'itemnumber'    => 0,
+        ]));
+    }
+
+    /**
+     * Both grade models must obey the same rule about the ungraded interval.
+     *
+     * @return array<string,array{int}>
+     */
+    public static function ungraded_interval_models_provider(): array {
+        return [
+            'overall' => [EXELEARNING_GRADEMODEL_OVERALL],
+            'peritem' => [EXELEARNING_GRADEMODEL_PERITEM],
+        ];
+    }
+
+    /**
      * A programmatic caller that changes the grade model without passing gradeenabled
      * still gets the grades republished.
      *

@@ -54,6 +54,7 @@ class provider implements
             'maxscore'     => 'privacy:metadata:exelearning_attempt:maxscore',
             'scaledscore'  => 'privacy:metadata:exelearning_attempt:scaledscore',
             'status'       => 'privacy:metadata:exelearning_attempt:status',
+            'gradable'     => 'privacy:metadata:exelearning_attempt:gradable',
             'timecreated'  => 'privacy:metadata:exelearning_attempt:timecreated',
             'timemodified' => 'privacy:metadata:exelearning_attempt:timemodified',
         ], 'privacy:metadata:exelearning_attempt');
@@ -224,6 +225,7 @@ class provider implements
                     'maxscore'     => $a->maxscore,
                     'scaledscore'  => $a->scaledscore,
                     'status'       => $a->status,
+                    'gradable'     => \core_privacy\local\request\transform::yesno($a->gradable),
                     'timecreated'  => \core_privacy\local\request\transform::datetime($a->timecreated),
                     'timemodified' => \core_privacy\local\request\transform::datetime($a->timemodified),
                 ];

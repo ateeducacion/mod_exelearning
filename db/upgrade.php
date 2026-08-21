@@ -603,5 +603,24 @@ function xmldb_exelearning_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026082100, 'exelearning');
     }
 
+    // Stage 22 (2026082101): mark attempts recorded while the activity was not graded
+    // (DEC-124-03). ingest() keeps writing the itemnumber=0 row with gradeenabled off,
+    // because completion by status needs it (DEC-69-01), but its score was never
+    // recomputed server-side — there are no registered objectids to recompute from — so
+    // it must never be aggregated into a gradebook grade when grading comes back on.
+    //
+    // Existing rows default to 1: everything recorded before this stage was written by
+    // an ingest() that had no such distinction, and the only path that produced rows
+    // with grading off is the one this stage exists to fix. Assuming gradable is the
+    // conservative choice — it preserves grades sites already published.
+    if ($oldversion < 2026082101) {
+        $table = new xmldb_table('exelearning_attempt');
+        $field = new xmldb_field('gradable', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '1', 'status');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+        upgrade_mod_savepoint(true, 2026082101, 'exelearning');
+    }
+
     return true;
 }

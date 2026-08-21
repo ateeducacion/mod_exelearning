@@ -258,6 +258,7 @@ $string['privacy:metadata:exelearning'] = '~Instàncies d\'activitat eXeLearning
 $string['privacy:metadata:exelearning:usermodified'] = '~L\'usuari que va modificar per última vegada la configuració de l\'activitat.';
 $string['privacy:metadata:exelearning_attempt'] = '~Registres d\'intents per cada enviament que un usuari fa en un element qualificable d\'eXeLearning.';
 $string['privacy:metadata:exelearning_attempt:attempt'] = '~El número d\'intent seqüencial.';
+$string['privacy:metadata:exelearning_attempt:gradable'] = '~Si l\'intent compta per a la qualificació. No, en els intents registrats mentre l\'activitat no era qualificable.';
 $string['privacy:metadata:exelearning_attempt:itemnumber'] = '~L\'element qualificable (0 = global, >0 = un iDevice concret).';
 $string['privacy:metadata:exelearning_attempt:maxscore'] = '~La puntuació màxima disponible per a l\'intent.';
 $string['privacy:metadata:exelearning_attempt:rawscore'] = '~La puntuació bruta obtinguda en l\'intent.';

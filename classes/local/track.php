@@ -220,7 +220,22 @@ class track {
             }
             $overallstatus = in_array($status, ['passed', 'failed', 'completed', 'incomplete'], true)
                     ? $status : 'completed';
-            attempts::record_item($exe->id, $userid, $attempt, 0, $score, $grademax, $overallstatus, $sessiontoken);
+            // Marked completion-only when the activity is not graded (DEC-124-03). The
+            // row is still written — DEC-69-01's completion by status needs it — but its
+            // score never went through the server-side recompute (no registered
+            // objectids to recompute from), so it must not become a mark when grading
+            // comes back on.
+            attempts::record_item(
+                $exe->id,
+                $userid,
+                $attempt,
+                0,
+                $score,
+                $grademax,
+                $overallstatus,
+                $sessiontoken,
+                !empty($exe->gradeenabled)
+            );
             $scaledoverall = attempts::aggregate_scaled($exe->id, $userid, 0, $grademethod);
             $finaloverall = ($scaledoverall === null) ? $score : ($scaledoverall * $grademax);
 
@@ -669,7 +684,11 @@ class track {
             $rawitem,
             $grademax,
             'completed',
-            $sessiontoken
+            $sessiontoken,
+            // Unreachable with grading off — no objectid is registered, so nothing routes
+            // here — but the flag is passed rather than hardcoded so the two write sites
+            // cannot drift apart if that ever changes (DEC-124-03).
+            !empty($exe->gradeenabled)
         );
         // Gradebook grade = aggregation of attempts according to grademethod.
         $scaled = attempts::aggregate_scaled($exe->id, $userid, $itemnumber, $ctx['grademethod']);
