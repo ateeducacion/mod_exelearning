@@ -5,7 +5,7 @@
 > request unable to inflate a grade. This is the entry point; the two detailed docs
 > stay authoritative for their slice:
 > - `scorm-shim-current-flow.md` — the SCORM 1.2 shim as shipped today (step-by-step).
-> - `tracking-architecture.md` — the target dual SCORM 1.2 + xAPI architecture (DEC-17-01, not yet implemented).
+> - `tracking-architecture.md` — the single-channel architecture and the retired xAPI channel (DEC-122-01).
 >
 > Decision trail (Spanish ADRs): `research/decisiones/adr/` — DEC-0-03 (SCORM 1.2),
 > DEC-0-06 (preview/grading), DEC-0-07 (attempts), DEC-0-08/DEC-25-01 (grade model),
@@ -116,8 +116,8 @@ removing `allow-same-origin` would break tracking. Cross-component XSS hardening
 
 The SCORM 1.2 `window.API` shim in `view.php` is **not** considered tech debt: it is
 the deliberate compatibility surface (DEC-0-03) that lets an unmodified web export
-report scores, and it is the channel the dual SCORM/xAPI architecture preserves
-(DEC-17-01, `tracking-architecture.md`).
+report scores, and since DEC-122-01 retired the xAPI channel it is the only browser
+channel there is (`tracking-architecture.md`).
 
 The tech debt is the **serve-time HTML injection** into the extracted package:
 `exelearning_inject_scorm_loader()` (delegador en `lib.php`) →
@@ -149,6 +149,6 @@ emit nothing. See `research/decisiones/adr/DEC-68-01-eventos-ciclo-de-vida-inten
 ## See also
 
 - `docs/scorm-shim-current-flow.md` — shim internals and the endpoint step list.
-- `docs/tracking-architecture.md` — dual SCORM 1.2 + xAPI target (DEC-17-01).
+- `docs/tracking-architecture.md` — the single-channel architecture (DEC-122-01).
 - `docs/ELPX_PACKAGE.md` — how gradable iDevices are detected from the package.
 - `docs/GRADEBOOK.md` — how detected iDevices become grade items and columns.

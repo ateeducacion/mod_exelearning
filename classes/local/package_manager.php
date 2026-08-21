@@ -36,7 +36,6 @@ use context_module;
 use context_user;
 use mod_exelearning\local\scorm\idevice_patch;
 use mod_exelearning\local\scorm\scorm_injector;
-use mod_exelearning\local\xapi\config_injector;
 use moodle_url;
 use stdClass;
 
@@ -285,31 +284,6 @@ final class package_manager {
         // `body.hasClass('exe-scorm')` condition, which is absent here (we serve a web
         // export). We drop that condition from their save guard at serve time.
         idevice_patch::patch($context->id, (int) $data->revision);
-
-        // 8) For packages that bundle the upstream xAPI emitter (eXeLearning PR #1867),
-        // pin window.exeXapi.parentOrigin to this site and force actor:null so honest
-        // packages post statements only to Moodle (DEC-85-01, RIE-013). No-op for legacy
-        // packages without the emitter. Grading itself is guarded server-side by the
-        // xapi_track.php origin/capability checks regardless of this hardening.
-        config_injector::inject($context->id, (int) $data->revision, self::host_origin());
-    }
-
-    /**
-     * Returns this site's origin (scheme://host[:port]) for the xAPI parentOrigin pin.
-     *
-     * @return string
-     */
-    private static function host_origin(): string {
-        global $CFG;
-        $parts = parse_url($CFG->wwwroot);
-        if (empty($parts['scheme']) || empty($parts['host'])) {
-            return $CFG->wwwroot;
-        }
-        $origin = $parts['scheme'] . '://' . $parts['host'];
-        if (!empty($parts['port'])) {
-            $origin .= ':' . $parts['port'];
-        }
-        return $origin;
     }
 
     /**

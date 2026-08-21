@@ -350,7 +350,3 @@ $string['teachermodevisible_help'] = 'If disabled, the teacher layer selector is
 $string['unsavedchanges'] = 'You have unsaved changes. Are you sure you want to close?';
 $string['viewattemptsreport'] = 'View attempts report';
 $string['viewstub']      = 'This is a placeholder view. The full mod_exelearning render (iframe + sidebar + xAPI bridge) is under construction. See <code>research/</code> in the plugin source for the design history.';
-$string['xapiprimaryenabled'] = 'Use xAPI grading when the package supports it';
-$string['xapiprimaryenabled_desc'] = 'If checked, a package that bundles the eXeLearning xAPI emitter is graded through xAPI instead of SCORM (recommended). Uncheck to grade those packages through SCORM 1.2. Packages without the emitter always use SCORM. This is not cmi5 and not an external LRS integration; SCORM 1.2 remains the compatibility path.';
-$string['xapisettings'] = 'xAPI ingestion';
-$string['xapisettings_desc'] = 'Grading channel for packages that emit xAPI statements. SCORM 1.2 stays the compatibility path for packages without the emitter.';

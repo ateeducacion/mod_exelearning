@@ -740,48 +740,6 @@ function exelearning_inject_scorm_loader(int $contextid, int $revision): void {
 }
 
 /**
- * Whether the extracted package bundles the eXeLearning xAPI emitter
- * (`libs/xapi/exe_xapi.js`, upstream PR #1867).
- *
- * Drives the channel choice in view.php (DEC-85-01): an xAPI-capable package grades via
- * xAPI (the SCORM shim is kept inert), while a legacy package keeps SCORM grading.
- *
- * @param int $contextid The activity module context id.
- * @param int $revision  The content filearea revision (itemid).
- * @return bool True when the emitter is present in the served content.
- */
-function exelearning_package_emits_xapi(int $contextid, int $revision): bool {
-    return get_file_storage()->file_exists(
-        $contextid,
-        'mod_exelearning',
-        'content',
-        $revision,
-        '/libs/xapi/',
-        'exe_xapi.js'
-    );
-}
-
-/**
- * Whether the xAPI-primary grading channel is enabled site-wide (DEC-85-01).
- *
- * Master switch (admin setting `exelearning/xapiprimaryenabled`) sitting in front of the
- * per-package channel choice in view.php and the `xapi_track.php` endpoint: when on
- * (default), a package that bundles the eXeLearning xAPI emitter grades via xAPI and the
- * SCORM shim is kept inert; when off, those packages fall back to SCORM grading with no
- * code change (a kill switch). An unset value — e.g. a site upgraded before the setting
- * existed — is treated as enabled, matching the configcheckbox default.
- *
- * This is NOT cmi5 and NOT an external-LRS integration; SCORM 1.2 stays the compatibility
- * path for packages without the emitter (DEC-0-03).
- *
- * @return bool
- */
-function exelearning_xapi_primary_enabled(): bool {
-    $value = get_config('exelearning', 'xapiprimaryenabled');
-    return ($value === false) ? true : (bool) (int) $value;
-}
-
-/**
  * Drop the `body.exe-scorm` condition from the score-save guard of the `form` and
  * `scrambled-list` iDevices in the extracted package (issue #13).
  *

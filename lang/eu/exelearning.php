@@ -354,7 +354,3 @@ $string['teachermodevisible_help'] = 'Desaktibatuta badago, irakasle-geruza haut
 $string['unsavedchanges'] = 'Gorde gabeko aldaketak dituzu. Ziur zaude itxi nahi duzula?';
 $string['viewattemptsreport'] = '~Ikusi saialdien txostena';
 $string['viewstub'] = '~Hau behin-behineko ikuspegi bat da. mod_exelearning-en errendatze osoa (iframe + alboko barra + xAPI zubia) eraikitzen ari da. Ikusi <code>research/</code> pluginaren iturburu-kodean diseinuaren historia ezagutzeko.';
-$string['xapiprimaryenabled'] = '~Erabili xAPI kalifikazioa paketeak onartzen duenean';
-$string['xapiprimaryenabled_desc'] = '~Markatzen bada, eXeLearning-en xAPI igorlea daraman pakete bat xAPI bidez kalifikatzen da SCORMen ordez (gomendatua). Desmarkatu pakete horiek SCORM 1.2 bidez kalifikatzeko. Igorlerik gabeko paketeek beti SCORM erabiltzen dute. Hau ez da cmi5, ezta kanpoko LRS batekin integrazioa ere; SCORM 1.2 bateragarritasun-bidea izaten jarraitzen du.';
-$string['xapisettings'] = '~xAPI irensketa';
-$string['xapisettings_desc'] = '~xAPI adierazpenak igortzen dituzten paketeentzako kalifikazio-kanala. SCORM 1.2 igorlerik gabeko paketeentzako bateragarritasun-bidea izaten jarraitzen du.';

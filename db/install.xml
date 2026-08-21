@@ -112,7 +112,7 @@
       </INDEXES>
     </TABLE>
 
-    <TABLE NAME="exelearning_tracking_events" COMMENT="Audit/idempotency log of ingested xAPI statements. One row per processed statement.id; the grade/UI never depend on it, the flat exelearning_attempt table does.">
+    <TABLE NAME="exelearning_tracking_events" COMMENT="RETAINED LEGACY DATA (DEC-122-01): audit/idempotency log of the removed xAPI ingestion channel, one row per processed statement.id. Nothing writes to it any more; it is kept, not dropped, because it holds learner-linked rows declared to the privacy API and absent from backup/moodle2, so dropping it would destroy personal data with no restore path. The grade/UI never depended on it, the flat exelearning_attempt table does.">
       <FIELDS>
         <FIELD NAME="id"            TYPE="int"  LENGTH="10"  NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="exelearningid" TYPE="int"  LENGTH="10"  NOTNULL="true" SEQUENCE="false"/>

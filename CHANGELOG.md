@@ -13,6 +13,10 @@ User-visible changes per release. Each version matches a [GitHub release](https:
 - Deleting a student attempt asks for confirmation, so a stray click or a link prefetch can no longer discard grades
 - Uploading a style package no longer reports internal server details when it fails
 
+### Removed
+
+- Grading over xAPI. Every package is graded through SCORM 1.2 again, which reports the same per-iDevice scores and a correctly weighted total. Existing grades, attempts and reports are unaffected
+
 ## v4.0.2 – 2026-07-07
 
 ### Added

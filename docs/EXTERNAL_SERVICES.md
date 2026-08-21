@@ -77,8 +77,8 @@ web `track.php` path:
   spurious 0-score attempt — the `scoreraw` param is nullable on purpose (`save_track.php:60-66,126-129`; B6,
   DEC-34-01).
 
-`track::ingest()` itself is the single shared entry point documented at `classes/local/track.php:36-58`; the future
-xAPI source would be a third caller of the same pipeline (see `docs/tracking-architecture.md`).
+`track::ingest()` itself is the single shared entry point documented at `classes/local/track.php:36-58`; the web
+shim and this web service are its only callers (see `docs/tracking-architecture.md`).
 
 ## Coherence with `db/services.php`
 

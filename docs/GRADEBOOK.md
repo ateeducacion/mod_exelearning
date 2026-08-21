@@ -175,8 +175,8 @@ The Grading and Attempts sections of the activity form (`mod_form.php:78-227`), 
 
 ## See also
 
-- `docs/TRACKING.md` — how per-iDevice scores arrive at `track::ingest()` (and `docs/tracking-architecture.md` for
-  the dual SCORM 1.2 + xAPI pipeline).
+- `docs/TRACKING.md` — how per-iDevice scores arrive at `track::ingest()` (and `docs/tracking-architecture.md`
+  for the single-channel SCORM 1.2 pipeline).
 - `docs/PRIVACY_BACKUP_FILES.md` — backup/restore of `exelearning_grade_item` and attempt data
   (`backup/moodle2/backup_exelearning_stepslib.php`).
 - `research/decisiones/adr/` — DEC-0-08, DEC-0-10, DEC-5-01, DEC-12-01, DEC-13-07, DEC-25-01, DEC-37-01, DEC-69-01.

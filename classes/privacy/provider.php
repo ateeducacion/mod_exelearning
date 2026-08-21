@@ -58,10 +58,15 @@ class provider implements
             'timemodified' => 'privacy:metadata:exelearning_attempt:timemodified',
         ], 'privacy:metadata:exelearning_attempt');
 
-        // The xAPI ingestion audit/idempotency log (DEC-85-01): one row per processed
-        // statement.id, attributed to the authenticated user (the client actor is
-        // always ignored). The statements carry no PII; the personal datum is the link
-        // between this user and the activity interactions.
+        // Retained legacy data (DEC-122-01). `exelearning_tracking_events` was the
+        // audit/idempotency log of the xAPI ingestion channel (DEC-85-01), which has
+        // been removed: nothing writes to this table any more. It is deliberately NOT
+        // dropped — it holds learner-linked rows on sites that ran the channel, it was
+        // declared to the privacy API, and it is absent from backup/moodle2, so dropping
+        // it would destroy personal data with no restore path. The table, its
+        // install.xml definition and these declarations stay in place, inert, so the
+        // rows an existing site already holds remain exportable and deletable through
+        // the privacy API exactly as before.
         $collection->add_database_table('exelearning_tracking_events', [
             'userid'       => 'privacy:metadata:exelearning_tracking_events:userid',
             'statementid'  => 'privacy:metadata:exelearning_tracking_events:statementid',
@@ -145,8 +150,10 @@ class provider implements
             'userid'   => $userid,
         ]);
 
-        // The xAPI audit log can hold rows for a user even without an attempt (e.g. a
-        // lifecycle statement or an ungraded activity), so surface its contexts too.
+        // The retained legacy tracking-event log (DEC-122-01) can hold rows for a user
+        // even without an attempt, so surface its contexts too: nothing writes to it now,
+        // but a site that ran the removed xAPI channel still has to be able to export and
+        // delete what it already holds.
         $eventsql = "SELECT ctx.id
                        FROM {exelearning_tracking_events} te
                        JOIN {exelearning} e ON e.id = te.exelearningid

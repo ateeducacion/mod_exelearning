@@ -157,7 +157,6 @@ editor remains):
 * **Styles**: upload eXeLearning style packages (`.zip`), list and
   enable/disable the uploaded and built-in styles, and optionally block users
   from importing styles bundled inside an `.elpx` — all on this page.
-* **xAPI**: master switch for the xAPI-primary grading channel.
 
 ## The embedded editor is a release artifact
 
@@ -202,7 +201,9 @@ recalculated). Completion can require a passing grade (SCORM-style, see
 Grading runtime uses a SCORM 1.2 bridge: a small `window.API` shim installed by
 `view.php` accepts `LMSSetValue` calls from the iDevice's bundled pipwerks
 wrapper and forwards them to `track.php`, which calls Moodle's `grade_update()`.
-xAPI support via `core_xapi` is on the roadmap.
+That bridge, plus the mobile web service below, is the whole tracking surface: an
+xAPI ingestion channel shipped in v4.0.2 and was removed again in
+[DEC-122-01](./research/decisiones/adr/DEC-122-01-retirada-canal-ingesta-xapi.md).
 
 ## Web services (Mobile API)
 
@@ -224,15 +225,16 @@ enforcing context, login and capabilities in code
 `track.php`: scores are routed by stable iDevice `objectid` (unknown objectids are
 ignored), the overall grade is recomputed server-side from the per-iDevice scores
 (the client overall is never trusted), scores are clamped to the grade range and the
-attempt cap is enforced. Tracking is SCORM 1.2 (score per iDevice + overall); xAPI
-ingestion is on the roadmap. The navigable package content itself is served via
-`pluginfile`, not through a web service.
+attempt cap is enforced. Tracking is SCORM 1.2 (score per iDevice + overall). The
+navigable package content itself is served via `pluginfile`, not through a web
+service.
 
 ## Roadmap
 
 See `research/decisiones/adr/` for the full set of ADRs. Highlights:
 
-* [DEC-0-03](./research/decisiones/adr/DEC-0-03-estandar-tracking-y-multi-grade-items.md) — tracking standard and multi-grade-items (SCORM 1.2 now, xAPI roadmap).
+* [DEC-0-03](./research/decisiones/adr/DEC-0-03-estandar-tracking-y-multi-grade-items.md) — tracking standard and multi-grade-items (SCORM 1.2).
+* [DEC-122-01](./research/decisiones/adr/DEC-122-01-retirada-canal-ingesta-xapi.md) — removal of the xAPI ingestion channel (done).
 * [DEC-0-06](./research/decisiones/adr/DEC-0-06-modos-preview-grading.md) — preview vs grading modes (done).
 * [DEC-0-07](./research/decisiones/adr/DEC-0-07-gestion-intentos.md) — multi-attempt support (done).
 * [DEC-0-08](./research/decisiones/adr/DEC-0-08-grade-aggregation-y-feedback.md) — overall vs per-iDevice grade aggregation (done).

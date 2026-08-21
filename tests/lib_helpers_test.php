@@ -38,7 +38,6 @@ require_once($CFG->dirroot . '/mod/exelearning/lib.php');
  * @covers     ::exelearning_require_embedded_editor_enabled
  * @covers     ::exelearning_get_embedded_editor_index_source
  * @covers     ::exelearning_get_embedded_editor_local_static_dir
- * @covers     ::exelearning_xapi_primary_enabled
  * @covers     \mod_exelearning\local\urls
  * @covers     \mod_exelearning\local\package_manager
  */
@@ -76,21 +75,6 @@ final class lib_helpers_test extends advanced_testcase {
         $status = exelearning_reset_userdata((object) ['courseid' => $course->id, 'reset_exelearning' => 1]);
         $this->assertNotEmpty($status);
         $this->assertSame(0, $DB->count_records('exelearning_attempt', ['exelearningid' => $instance->id]));
-    }
-
-    /**
-     * exelearning_xapi_primary_enabled() defaults to on and the admin switch turns it off.
-     */
-    public function test_xapi_primary_grading_defaults_on_and_can_be_disabled(): void {
-        $this->resetAfterTest();
-        // Unset (e.g. a site upgraded before the setting existed) is treated as enabled.
-        $this->assertTrue(exelearning_xapi_primary_enabled());
-
-        set_config('xapiprimaryenabled', '0', 'exelearning');
-        $this->assertFalse(exelearning_xapi_primary_enabled());
-
-        set_config('xapiprimaryenabled', '1', 'exelearning');
-        $this->assertTrue(exelearning_xapi_primary_enabled());
     }
 
     /**

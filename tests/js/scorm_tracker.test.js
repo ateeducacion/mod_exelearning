@@ -259,16 +259,4 @@ describe('createScormApi state machine', () => {
         expect(body.itemscores).toEqual({ 'ide-aaa': { scorepct: 60, weighted: 30, title: 'Quiz' } });
     });
 
-    it('disableTracking keeps window.API alive but POSTs nothing (xAPI-primary, DEC-85-01)', () => {
-        const xhr = makeXhr(200);
-        const { api } = createScormApi(baseConfig({ disableTracking: true, xhrFactory: () => xhr }));
-        // The SCORM contract still answers so pipwerks/iDevices run normally...
-        expect(api.LMSInitialize()).toBe('true');
-        api.LMSSetValue('cmi.core.score.raw', '80');
-        expect(api.LMSCommit()).toBe('true');
-        api.LMSFinish();
-        if (typeof scheduled === 'function') { scheduled(); }
-        // ...but no request is ever made: grading flows through the xAPI listener.
-        expect(xhr.calls.length).toBe(0);
-    });
 });
