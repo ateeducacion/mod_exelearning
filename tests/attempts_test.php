@@ -211,8 +211,27 @@ final class attempts_test extends advanced_testcase {
         $summary = attempts::participation_summary($eid, $userids);
         $this->assertSame(2, $summary['total']);
         $this->assertSame(1, $summary['attempted']);
+        $this->assertSame(1, $summary['graded']);
         // Mean of the single attempted user's best (0.8) → 80.0%.
         $this->assertEqualsWithDelta(80.0, (float) $summary['meanpercent'], 0.0001);
+
+        // Student 2 works through the activity while it is NOT graded. They have
+        // attempted it — so the attempted count rises — but they have no grade, so the
+        // mean must not move and the graded population must not include them
+        // (DEC-124-03). The rendered sentence names both numbers precisely because they
+        // describe different sets of students.
+        attempts::record_item($eid, $student2->id, 1, 0, 2, 10, 'completed', 'c', false);
+
+        $mixed = attempts::participation_summary($eid, $userids);
+        $this->assertSame(2, $mixed['total']);
+        $this->assertSame(2, $mixed['attempted'], 'They did attempt the activity');
+        $this->assertSame(1, $mixed['graded'], 'But they have no gradable history');
+        $this->assertEqualsWithDelta(
+            80.0,
+            (float) $mixed['meanpercent'],
+            0.0001,
+            'A 20% ungraded-period score must not drag the average down'
+        );
     }
 
     /**

@@ -29,7 +29,7 @@ incoherence requiring a fix**; this follow-up is documentation plus one ADR
 |---|---|---|---|
 | N1 | The parser "does not load external DTDs". | Imprecise. Real `.elpx` declare `<!DOCTYPE ode SYSTEM "content.dtd">`; the parser **accepts** that external DOCTYPE but **never fetches or expands** it (`LIBXML_NONET \| LIBXML_COMPACT`, deliberately **without** `LIBXML_DTDLOAD`/`LIBXML_NOENT`) and **rejects only internal entities**. The accurate statement is "never resolves external DTDs/entities and rejects internal entities". | `classes/local/package.php` `load_dom()` (~151-187); [[DEC-26-01]]. See `docs/ELPX_PACKAGE.md`. |
 | N2 | It is "debatable" that the module declares `MOD_ARCHETYPE_ASSIGNMENT` / `MOD_PURPOSE_ASSESSMENT` when grading can be disabled. | Legitimate design question — **still open until now** (no prior ADR). But the report's implied per-instance fix is **infeasible**: `exelearning_supports()` receives only the feature constant, never the instance, so archetype/purpose are resolved per **module type**, never per `gradeenabled`. Decision: **keep ASSESSMENT, document why**. | `lib.php:44-71`; [[DEC-13-07]]; resolved in [[DEC-37-01]]. |
-| N3 | "Technical debt #1 = SCORM/teacher-mode injections" (implied unaddressed). | Already analysed in-repo: the plugin-side fix (serve-time transform) is designed in [[DEC-34-02]] (deferred) and the upstream-vs-plugin trade-off recorded in [[DEC-36-01]]; the definitive exit is xAPI ([[DEC-17-01]]). Not fixed in this PR by design. | [[DEC-34-02]], [[DEC-36-01]]; `docs/TRACKING.md`. |
+| N3 | "Technical debt #1 = SCORM/teacher-mode injections" (implied unaddressed). | Already analysed in-repo: the plugin-side fix (serve-time transform) is designed in [[DEC-34-02]] (deferred) and the upstream-vs-plugin trade-off recorded in [[DEC-36-01]]. The exit via an xAPI channel was implemented and then retired ([[DEC-122-01]]), so the injections stay. Not fixed in this PR by design. | [[DEC-34-02]], [[DEC-36-01]]; `docs/TRACKING.md`. |
 
 ## 3. Findings that remain VALID (the report is right)
 
@@ -61,7 +61,6 @@ No functional code was changed: the audit surfaced no clear incoherence to fix.
 | Item | Status | Reference |
 |---|---|---|
 | Serve-time package transform (removes HTML injection at extraction — report's "debt #1"). | Proposed, deferred (not small/safe). | [[DEC-34-02]] / [[DEC-36-01]] |
-| Dual xAPI + SCORM 1.2 ingestion (definitive removal of the shim). | Proposed, gated on upstream `exelearning#1867`. | [[DEC-17-01]] |
 | `.elpx` client-side JS sandboxing hardening (RIE-001). | Documented roadmap, intentionally not implemented. | [[DEC-0-16]] |
 | Embedded-editor `postMessage` origin: `editorOrigin` falls back to `'*'`. | Hardening opportunity, low risk (same-origin pluginfile). | `docs/EMBEDDED_EDITOR.md` |
 | Promote `MATURITY_BETA` → `MATURITY_STABLE`. | **Done** (PR #77 / [[DEC-77-01]]); the checklist is retained as the STABLE re-release gate. | `docs/RELEASE_CHECKLIST.md` |

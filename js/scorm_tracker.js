@@ -92,24 +92,39 @@
      * because they do not resolve against the current page's DOM — that is what fixes
      * the multi-page collision. Pure: callers own the prev/itemScores state.
      *
-     * @param {Object} newParsed  Result of parseSuspend on the new suspend_data.
-     * @param {Object} prevParsed Previous parseSuspend result (keyed by N).
+     * The change baseline is keyed by OBJECTID, not by the page-local slot N: the
+     * legacy suspend_data format reuses N across pages, so a page-2 iDevice landing on
+     * a slot whose page-1 occupant had the same score and weight would compare equal
+     * against an N-keyed baseline and be dropped without ever reaching its gradebook
+     * column. Two different iDevices are never "unchanged" relative to each other.
+     *
+     * @param {Object} newParsed  Result of parseSuspend on the new suspend_data (keyed by N).
+     * @param {Object} prevParsed Previous baseline (keyed by objectid).
      * @param {Object|null} domMap N -> objectid map (resolveObjectMap result).
      * @returns {{delta: Object, prev: Object}} delta = objectid -> {scorepct, weighted, title}
-     *          for the changed-and-resolvable entries; prev = newParsed (the next baseline).
+     *          for the changed-and-resolvable entries; prev = the next baseline, keyed
+     *          by objectid, carrying forward entries for pages not currently loaded so
+     *          returning to a page does not re-emit its unchanged scores.
      */
     function captureItemScores(newParsed, prevParsed, domMap) {
         var delta = {};
+        var next = {};
         prevParsed = prevParsed || {};
+        for (var seen in prevParsed) {
+            if (prevParsed.hasOwnProperty(seen)) { next[seen] = prevParsed[seen]; }
+        }
         for (var n in newParsed) {
             if (!newParsed.hasOwnProperty(n)) { continue; }
-            var prev = prevParsed[n], cur = newParsed[n];
-            var changed = !prev || prev.scorepct !== cur.scorepct || prev.weighted !== cur.weighted;
-            if (changed && domMap && domMap[n]) {
-                delta[domMap[n]] = { scorepct: cur.scorepct, weighted: cur.weighted, title: cur.title };
+            if (!domMap || !domMap[n]) { continue; }
+            var oid = domMap[n];
+            var before = prevParsed[oid], cur = newParsed[n];
+            var entry = { scorepct: cur.scorepct, weighted: cur.weighted, title: cur.title };
+            next[oid] = entry;
+            if (!before || before.scorepct !== cur.scorepct || before.weighted !== cur.weighted) {
+                delta[oid] = entry;
             }
         }
-        return { delta: delta, prev: newParsed };
+        return { delta: delta, prev: next };
     }
 
     /**
@@ -167,20 +182,12 @@
             return fr && fr.contentDocument;
         };
         var bindUnload = config.bindUnload !== false;
-        // Inert mode for xAPI-primary packages (DEC-85-01): window.API still answers
-        // findAPI()/LMSInitialize so pipwerks reports connected and the iDevices run
-        // (and thus emit their xAPI statements), but no score is ever POSTed to
-        // track.php — grading flows through the xAPI listener instead. The legacy
-        // (SCORM-graded) path leaves this false and is byte-for-byte unchanged.
-        var disableTracking = config.disableTracking === true;
 
         var errCode = '0', cmi = {}, dirty = false, autoTimer = null;
-        var prevSuspend = {};   // Last parsed cmi.suspend_data, keyed by page-local N.
+        var prevSuspend = {};   // Change baseline, keyed by stable objectid across pages.
         var itemScores = {};    // objectid => { scorepct, weighted, title }.
 
         function send(sync) {
-            // xAPI-primary packages keep window.API alive but never POST (DEC-85-01).
-            if (disableTracking) { dirty = false; return true; }
             if (!dirty) { return true; }
             var snapshot = JSON.stringify(cmi);
             var payload = buildPayload(cmid, session, cmi, itemScores, sesskey);

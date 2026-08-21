@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Web contract shared by the two tracking endpoints (SEC-04).
+ * Web contract of the tracking endpoint (SEC-04).
  *
  * @package    mod_exelearning
  * @copyright  2026 ATE (Área de Tecnología Educativa)
@@ -36,15 +36,15 @@ use moodle_url;
  * proxies, browser history and diagnostic tooling, which turns a routine log dump into a
  * set of usable CSRF tokens; a POST body is not logged by any of them (SEC-04).
  *
- * The client side is js/scorm_tracker.js and js/xapi_listener.js, which put the key in
- * the body they build; the server side is {@see self::require_body_sesskey()}, called by
- * track.php and xapi_track.php after decoding that body.
+ * The client side is js/scorm_tracker.js, which puts the key in the body it builds; the
+ * server side is {@see self::require_body_sesskey()}, called by track.php after decoding
+ * that body.
  */
 final class tracking_endpoint {
     /**
      * Confirms the session key carried in a decoded JSON request body.
      *
-     * Replaces require_sesskey() in the tracking endpoints: that helper reads the key
+     * Replaces require_sesskey() in the tracking endpoint: that helper reads the key
      * from the request parameters, which is exactly where it must no longer be. An
      * absent, empty or non-string value is rejected before calling confirm_sesskey(),
      * because confirm_sesskey() falls back to required_param('sesskey') when given an
@@ -67,36 +67,14 @@ final class tracking_endpoint {
      * @param int $cmid Course module id.
      * @param string $mode grading|preview (DEC-0-06).
      * @param string $session Per-page attempt token, groups one page load's writes.
-     * @param bool $disabletracking Keep window.API alive but inert for xAPI-primary packages (DEC-85-01).
      * @return array Config, JSON-encoded by the caller into the page.
      */
-    public static function scorm_config(int $cmid, string $mode, string $session, bool $disabletracking): array {
+    public static function scorm_config(int $cmid, string $mode, string $session): array {
         return [
-            'cmid'            => $cmid,
-            'trackurl'        => self::endpoint_url('track.php', $cmid, $mode),
-            'session'         => $session,
-            'sesskey'         => sesskey(),
-            'disableTracking' => $disabletracking,
-        ];
-    }
-
-    /**
-     * Builds the config handed to js/xapi_listener.js createListener().
-     *
-     * @param int $cmid Course module id.
-     * @param string $mode grading|preview (DEC-0-06).
-     * @param string $registration Attempt-grouping token, shared with the SCORM tracker.
-     * @param string $hostorigin Trusted host origin the statements must come from (RIE-013).
-     * @return array Config, JSON-encoded by the caller into the page.
-     */
-    public static function xapi_config(int $cmid, string $mode, string $registration, string $hostorigin): array {
-        return [
-            'cmid'          => $cmid,
-            'trackurl'      => self::endpoint_url('xapi_track.php', $cmid, $mode),
-            'registration'  => $registration,
-            'mode'          => $mode,
-            'sesskey'       => sesskey(),
-            'allowedOrigin' => $hostorigin,
+            'cmid'     => $cmid,
+            'trackurl' => self::endpoint_url('track.php', $cmid, $mode),
+            'session'  => $session,
+            'sesskey'  => sesskey(),
         ];
     }
 

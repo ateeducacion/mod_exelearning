@@ -31,7 +31,8 @@ scores into the Moodle gradebook via `grade_update()`
 | `maxscore` | Max score | `:79` |
 | `scaledscore` | `rawscore/maxscore` in 0..1 | `:80` |
 | `status` | `completed|passed|failed|incomplete` | `:81` |
-| `timecreated` / `timemodified` | Timestamps | `:83-84` |
+| `gradable` | Whether the attempt counts towards the grade (0 = recorded while the activity was not graded, DEC-124-03) | `:82` |
+| `timecreated` / `timemodified` | Timestamps | `:84-85` |
 
 (`sessiontoken` exists in the table but is not exported — it is a per-page-load
 correlation token, not user-identifying.)

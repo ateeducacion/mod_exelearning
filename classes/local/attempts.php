@@ -62,7 +62,20 @@ class attempts {
     }
 
     /**
-     * Count distinct attempts a user has on an activity (for maxattempt).
+     * Count distinct GRADABLE attempts a user has on an activity (for maxattempt).
+     *
+     * Ungraded-period attempts (gradable = 0) are excluded on purpose. maxattempt is a
+     * grading control — mod_form.php disables it along with the rest of the grade
+     * settings when the activity is not graded — so charging it for work the activity
+     * itself declared to be outside assessment produces a state with no way out: with
+     * maxattempt = 1, a learner who used the activity while it was ungraded arrives at
+     * the limit having never had a gradable attempt, and every further submission is
+     * refused with 'maxattemptsreached'. They could never be graded at all (DEC-124-03).
+     *
+     * This is the ONE counting query that filters. The allocation query in
+     * resolve_attempt_number() must not: it takes MAX(attempt) to pick the next number,
+     * and skipping rows there would reissue an attempt number that already exists,
+     * colliding with the upsert key of record_item() and merging two attempts into one.
      *
      * @param int $exelearningid
      * @param int $userid
@@ -72,7 +85,7 @@ class attempts {
         global $DB;
         return (int) $DB->count_records_sql(
             "SELECT COUNT(DISTINCT attempt) FROM {exelearning_attempt}
-                  WHERE exelearningid = ? AND userid = ?",
+                  WHERE exelearningid = ? AND userid = ? AND gradable = 1",
             [$exelearningid, $userid]
         );
     }
@@ -114,7 +127,7 @@ class attempts {
      * @param int[] $userids Candidate users (enrolled students visible to the teacher).
      * @param int $grademethod One of the GRADE_* constants; defaults to highest
      *     so a caller that has not migrated keeps the previous behaviour.
-     * @return array{total:int, attempted:int, meanpercent:float|null}
+     * @return array{total:int, attempted:int, graded:int, meanpercent:float|null}
      */
     public static function participation_summary(
         int $exelearningid,
@@ -125,7 +138,7 @@ class attempts {
 
         $total = count($userids);
         if ($total === 0) {
-            return ['total' => 0, 'attempted' => 0, 'meanpercent' => null];
+            return ['total' => 0, 'attempted' => 0, 'graded' => 0, 'meanpercent' => null];
         }
 
         [$insql, $params] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED);
@@ -149,6 +162,7 @@ class attempts {
             "SELECT id, userid, scaledscore
                    FROM {exelearning_attempt}
                   WHERE exelearningid = :exeid2 AND itemnumber = 0 AND userid $insql2
+                        AND gradable = 1
                ORDER BY userid ASC, attempt ASC",
             $params2
         );
@@ -156,6 +170,12 @@ class attempts {
         foreach ($rows as $row) {
             $byuser[(int) $row->userid][] = (float) $row->scaledscore;
         }
+        // The mean is computed over GRADABLE history only, so it describes a different
+        // population than $attempted: a learner whose only work happened while the
+        // activity was ungraded has attempted it but has no grade (DEC-124-03). Return
+        // that population so the rendered sentence can name both instead of silently
+        // averaging over a set the reader cannot see.
+        $graded = count($byuser);
         $meanpercent = null;
         if ($byuser !== []) {
             $sum = 0.0;
@@ -165,7 +185,12 @@ class attempts {
             $meanpercent = ($sum / count($byuser)) * 100.0;
         }
 
-        return ['total' => $total, 'attempted' => $attempted, 'meanpercent' => $meanpercent];
+        return [
+            'total'       => $total,
+            'attempted'   => $attempted,
+            'graded'      => $graded,
+            'meanpercent' => $meanpercent,
+        ];
     }
 
     /**
@@ -203,6 +228,23 @@ class attempts {
         global $DB;
 
         if ($sessiontoken !== '') {
+            // Matched on the token ALONE, deliberately, so a session keeps the one
+            // attempt it started with even if the master grading switch changes
+            // underneath it (DEC-124-03).
+            //
+            // Splitting the session into a second, gradable attempt was tried and is
+            // wrong. The client accumulates its itemScores map and never clears it — by
+            // design, so a failed POST cannot lose a score — so every later POST re-sends
+            // everything captured during the ungraded period. A fresh gradable attempt is
+            // therefore a clean vessel for contaminated content: the server cannot tell
+            // which entries of that map were earned before the switch and which after,
+            // and the ungraded work lands in the gradebook. Measured: the split produced
+            // "attempt=2 item=1 raw=95 gradable=1" and published 95.
+            //
+            // A session that crossed the switch can produce no trustworthy grade at all,
+            // so it produces none. Reloading mints a new token and a clean attempt, which
+            // costs the learner nothing because count_user_attempts() does not charge the
+            // ungraded one against maxattempt.
             $existing = $DB->get_field('exelearning_attempt', 'attempt', [
                 'exelearningid' => $exelearningid,
                 'userid'        => $userid,
@@ -235,6 +277,8 @@ class attempts {
      * @param float $maxscore
      * @param string $status completed|passed|failed|incomplete
      * @param string $sessiontoken
+     * @param bool $gradable False when the activity was not graded at the time (DEC-124-03):
+     *        the row still feeds completion and the report, but the aggregation ignores it.
      */
     public static function record_item(
         int $exelearningid,
@@ -244,12 +288,51 @@ class attempts {
         float $rawscore,
         float $maxscore,
         string $status,
-        string $sessiontoken
+        string $sessiontoken,
+        bool $gradable = true
     ): void {
         global $DB;
 
         $now = time();
         $scaled = ($maxscore > 0) ? max(0.0, min(1.0, $rawscore / $maxscore)) : 0.0;
+
+        // A row written while the activity was not graded is completion-only
+        // (DEC-124-03): it stays in the report and feeds completion by status, but the
+        // aggregation queries below exclude it, so re-enabling grading never turns work
+        // done during the ungraded period into a mark.
+        //
+        // The flag belongs to the ATTEMPT, not to the individual row, and it can be
+        // lowered but never raised. An attempt is one learner sitting, and its rows are
+        // written across it: the itemnumber=0 row on every autocommit, an itemnumber>0
+        // row the first time each iDevice is routed. If the switch is turned on
+        // mid-sitting, the per-iDevice rows that apply_one() then inserts would otherwise
+        // arrive gradable inside an attempt whose work was done ungraded — and they carry
+        // exactly the accumulated client scores the ungraded period produced.
+        //
+        // So the rule runs in both directions over the WHOLE attempt: if any row of it is
+        // already completion-only then so is this one, and the first ungraded write takes
+        // every row already there down with it.
+        //
+        // Asking one arbitrary row for the attempt's gradability is not the same thing —
+        // IGNORE_MULTIPLE has no ORDER BY, so a mixed attempt would answer differently
+        // depending on which row the database returned. A mixed attempt must not be
+        // reachable in the first place: count_user_attempts() charges maxattempt for an
+        // attempt if ANY of its rows is gradable, so a mixed one would keep consuming the
+        // cap and could still be republished when grading returns.
+        $attemptkey = [
+            'exelearningid' => $exelearningid,
+            'userid'        => $userid,
+            'attempt'       => $attempt,
+        ];
+        $attemptungraded = $DB->record_exists('exelearning_attempt', $attemptkey + ['gradable' => 0]);
+        $gradableflag = ($gradable && !$attemptungraded) ? 1 : 0;
+        if ($gradableflag === 0 && $DB->record_exists('exelearning_attempt', $attemptkey + ['gradable' => 1])) {
+            // A session that has crossed the switch is spent: take the rows this POST does
+            // not touch down too. In PERITEM the ungraded POST rewrites only the overall
+            // row — the objectid filter empties itemscores, so apply_one() never runs —
+            // and the per-iDevice rows would otherwise survive as gradable.
+            $DB->set_field('exelearning_attempt', 'gradable', 0, $attemptkey);
+        }
 
         $existing = $DB->get_record('exelearning_attempt', [
             'exelearningid' => $exelearningid,
@@ -259,6 +342,12 @@ class attempts {
         ]);
 
         if ($existing) {
+            // Lowered, never raised: $gradableflag is already resolved against the whole
+            // attempt above. It matters because the four lines below REPLACE the score
+            // rather than appending, so a write carrying ungraded-period data must take
+            // the row down with it, or the row would claim to be gradable while holding a
+            // score earned outside assessment.
+            $existing->gradable     = $gradableflag;
             $existing->rawscore     = $rawscore;
             $existing->maxscore     = $maxscore;
             $existing->scaledscore  = $scaled;
@@ -276,6 +365,7 @@ class attempts {
                 'maxscore'      => $maxscore,
                 'scaledscore'   => $scaled,
                 'status'        => $status,
+                'gradable'      => $gradableflag,
                 'sessiontoken'  => $sessiontoken,
                 'timecreated'   => $now,
                 'timemodified'  => $now,
@@ -302,7 +392,7 @@ class attempts {
 
         $scaled = $DB->get_fieldset_sql(
             "SELECT scaledscore FROM {exelearning_attempt}
-                  WHERE exelearningid = ? AND userid = ? AND itemnumber = ?
+                  WHERE exelearningid = ? AND userid = ? AND itemnumber = ? AND gradable = 1
                ORDER BY attempt ASC",
             [$exelearningid, $userid, $itemnumber]
         );
@@ -365,7 +455,7 @@ class attempts {
 
         $rs = $DB->get_recordset_sql(
             "SELECT id, userid, itemnumber, scaledscore FROM {exelearning_attempt}
-                  WHERE exelearningid = :exeid AND userid $insql
+                  WHERE exelearningid = :exeid AND userid $insql AND gradable = 1
                ORDER BY userid, itemnumber, attempt ASC",
             $params
         );
