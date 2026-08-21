@@ -190,7 +190,7 @@
         var disableTracking = config.disableTracking === true;
 
         var errCode = '0', cmi = {}, dirty = false, autoTimer = null;
-        var prevSuspend = {};   // Last parsed cmi.suspend_data, keyed by page-local N.
+        var prevSuspend = {};   // Change baseline, keyed by stable objectid across pages.
         var itemScores = {};    // objectid => { scorepct, weighted, title }.
 
         function send(sync) {
