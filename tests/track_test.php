@@ -425,65 +425,136 @@ final class track_test extends advanced_testcase {
     }
 
     /**
-     * A teacher flipping the grading switch mid-session cannot promote the work already
-     * recorded in that session (DEC-124-03).
+     * A teacher flipping the grading switch mid-session cannot get the work recorded
+     * during the ungraded period into the gradebook (DEC-124-03).
      *
-     * The upsert is keyed by the session's attempt number, and track.php re-reads the
-     * instance on every POST, so a learner holding a page open keeps writing into the
-     * same row while the switch changes underneath them. The client makes this certain
-     * rather than unlikely: js/scorm_tracker.js accumulates itemScores and never clears
-     * the map — deliberately, so a failed POST cannot lose a score — so every later POST
-     * re-sends everything captured during the ungraded period.
+     * The payload carries the SAME itemscores map on both POSTs, because that is what the
+     * client really sends: js/scorm_tracker.js accumulates the map and never clears it —
+     * deliberately, so a failed POST cannot lose a score — so every later POST re-sends
+     * everything captured during the ungraded period.
      *
-     * Gradability is therefore decided when the row is created and never revisited.
+     * That is why the session cannot simply be split into a second, gradable attempt. The
+     * server cannot tell which entries of the accumulated map were earned before the
+     * switch and which after, so a fresh gradable attempt is a clean vessel for
+     * contaminated content. A session that crossed the switch produces no grade at all;
+     * reloading mints a new token and a clean attempt.
+     *
+     * Both grade models, because they publish through different code paths and each has
+     * its own fallback to the client's raw score: OVERALL through the grade_update() in
+     * ingest(), PERITEM through apply_one().
+     *
+     * @param int $grademodel The grade model to exercise.
+     * @dataProvider grading_disabled_models_provider
      */
-    public function test_switching_grading_on_mid_session_does_not_promote_the_attempt(): void {
+    public function test_switching_grading_on_mid_session_produces_no_grade(int $grademodel): void {
         global $DB;
         [$instance, $student] = $this->create_activity_with_student([
-            'gradeenabled' => 0,
-            'grademodel'   => 0, // OVERALL: the mode that publishes a column at all.
+            'gradeenabled' => 1,
+            'grademodel'   => $grademodel,
         ]);
         [$course, $cm] = $this->course_and_cm($instance);
+        $objectid = $this->objectid_for($instance, 1);
+
+        // The activity becomes a plain resource before the learner starts.
+        $DB->set_field('exelearning', 'gradeenabled', 0, ['id' => $instance->id]);
+        $instance = $DB->get_record('exelearning', ['id' => $instance->id], '*', MUST_EXIST);
+        exelearning_sync_grade_items($instance->id);
 
         $payload = [
-            'session' => 'sessOpenTab',
-            'cmi'     => [
+            'session'    => 'sessOpenTab',
+            'cmi'        => [
                 'cmi.core.score.raw'     => '95',
                 'cmi.core.score.max'     => '100',
                 'cmi.core.lesson_status' => 'completed',
+            ],
+            'itemscores' => [
+                $objectid => ['scorepct' => 95.0, 'weighted' => 100.0, 'title' => 'A'],
             ],
         ];
 
         // POST #1, grading off.
         track::ingest($instance, $course, $cm, $student->id, $payload, false);
-        $this->assertSame(0, (int) $DB->get_field('exelearning_attempt', 'gradable', [
-            'exelearningid' => $instance->id, 'userid' => $student->id, 'itemnumber' => 0,
-        ]));
 
         // The teacher enables grading. The learner does NOT reload, so the next
-        // autocommit arrives on the same session token.
+        // autocommit arrives on the same session token carrying the same accumulated map.
         $DB->set_field('exelearning', 'gradeenabled', 1, ['id' => $instance->id]);
         $instance = $DB->get_record('exelearning', ['id' => $instance->id], '*', MUST_EXIST);
         exelearning_sync_grade_items($instance->id);
-
-        // POST #2, same session, grading now on.
         track::ingest($instance, $course, $cm, $student->id, $payload, false);
 
-        // The ungraded-period row keeps the meaning it was created with...
-        $this->assertSame(0, (int) $DB->get_field('exelearning_attempt', 'gradable', [
+        // The session keeps its single, ungraded attempt: no second attempt was minted
+        // for the re-sent scores to land in.
+        $rows = $DB->get_records('exelearning_attempt', [
             'exelearningid' => $instance->id, 'userid' => $student->id,
-            'itemnumber' => 0, 'attempt' => 1,
+        ]);
+        $this->assertNotEmpty($rows);
+        foreach ($rows as $row) {
+            $this->assertSame(1, (int) $row->attempt, 'The session must not be split');
+            $this->assertSame(0, (int) $row->gradable, 'Nothing from this session may become gradable');
+        }
+
+        // And nothing reaches the gradebook, which is the guarantee that matters.
+        $grades = grade_get_grades($instance->course, 'mod', 'exelearning', $instance->id, $student->id);
+        foreach ($grades->items as $itemnumber => $item) {
+            $this->assertNull(
+                $item->grades[$student->id]->grade ?? null,
+                "Item {$itemnumber} must carry no grade from the ungraded period"
+            );
+        }
+    }
+
+    /**
+     * A session opened while the activity was ungraded cannot be used to win an extra
+     * gradable attempt once grading comes back on (DEC-124-03).
+     *
+     * The cap has a $sessionknown escape hatch so an in-progress session is never cut off
+     * mid-write. If a session that started during the ungraded period could later resolve
+     * to a NEW gradable attempt, that exemption would carry across and hand the learner an
+     * attempt beyond maxattempt.
+     */
+    public function test_an_ungraded_session_cannot_win_an_extra_gradable_attempt(): void {
+        global $DB;
+        [$instance, $student] = $this->create_activity_with_student([
+            'gradeenabled' => 1,
+            'grademodel'   => 0,
+            'maxattempt'   => 1,
+        ]);
+        [$course, $cm] = $this->course_and_cm($instance);
+
+        // The learner spends their single gradable attempt.
+        track::ingest($instance, $course, $cm, $student->id, [
+            'session' => 'sessGraded',
+            'cmi'     => ['cmi.core.score.raw' => '50', 'cmi.core.score.max' => '100'],
+        ], false);
+        $this->assertSame(1, $DB->count_records('exelearning_attempt', [
+            'exelearningid' => $instance->id, 'userid' => $student->id, 'gradable' => 1,
         ]));
 
-        // ...and the session was SPLIT rather than merged: the work done after the switch
-        // went on belongs to a new, gradable attempt, so the learner is not left silently
-        // uncreditable in a row that can never produce a mark.
-        $this->assertSame(1, (int) $DB->get_field('exelearning_attempt', 'gradable', [
+        // The teacher makes the activity ungraded; the learner opens a new session. The
+        // cap must not refuse them here — it is a grading control and the activity is not
+        // graded — but the attempt it produces is completion-only.
+        $DB->set_field('exelearning', 'gradeenabled', 0, ['id' => $instance->id]);
+        $instance = $DB->get_record('exelearning', ['id' => $instance->id], '*', MUST_EXIST);
+        exelearning_sync_grade_items($instance->id);
+        $result = track::ingest($instance, $course, $cm, $student->id, [
+            'session' => 'sessUngraded',
+            'cmi'     => ['cmi.core.score.raw' => '95', 'cmi.core.score.max' => '100'],
+        ], false);
+        $this->assertTrue($result['ok'], 'An ungraded activity must not enforce the attempt cap');
+
+        // Grading comes back on while that session is still open.
+        $DB->set_field('exelearning', 'gradeenabled', 1, ['id' => $instance->id]);
+        $instance = $DB->get_record('exelearning', ['id' => $instance->id], '*', MUST_EXIST);
+        exelearning_sync_grade_items($instance->id);
+        track::ingest($instance, $course, $cm, $student->id, [
+            'session' => 'sessUngraded',
+            'cmi'     => ['cmi.core.score.raw' => '95', 'cmi.core.score.max' => '100'],
+        ], false);
+
+        // Still exactly one gradable attempt: maxattempt was not circumvented.
+        $this->assertSame(1, $DB->count_records('exelearning_attempt', [
             'exelearningid' => $instance->id, 'userid' => $student->id,
-            'itemnumber' => 0, 'attempt' => 2,
-        ]));
-        $this->assertSame(2, $DB->count_records('exelearning_attempt', [
-            'exelearningid' => $instance->id, 'userid' => $student->id, 'itemnumber' => 0,
+            'itemnumber' => 0, 'gradable' => 1,
         ]));
     }
 

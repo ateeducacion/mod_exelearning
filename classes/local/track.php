@@ -155,12 +155,7 @@ class track {
         $lock = $lockfactory->get_lock('ingest_' . $exe->id . '_' . $userid, 5);
         try {
             // Resolve the attempt number (one per page load / session).
-            $attempt = attempts::resolve_attempt_number(
-                $exe->id,
-                $userid,
-                $sessiontoken,
-                !empty($exe->gradeenabled)
-            );
+            $attempt = attempts::resolve_attempt_number($exe->id, $userid, $sessiontoken);
             // Whether this attempt already has rows, checked before any write for it:
             // drives the one-shot attempt_started event below (fired only when this
             // commit is what brings the attempt into existence).
@@ -180,8 +175,19 @@ class track {
             ]) : false;
 
             // Attempt limit (DEC-0-07 phase 2): a fresh session over the cap is rejected.
+            // The attempt cap applies only while the activity is a graded one. It is a
+            // grading control — mod_form.php disables it with the rest of the grade
+            // settings when gradeenabled is off — and count_user_attempts() now counts
+            // gradable attempts only, so leaving it armed here would refuse a learner
+            // access to an UNGRADED activity on the strength of graded attempts they
+            // spent earlier (DEC-124-03).
+            //
+            // It also closes a bypass: with the cap armed while grading is off, the
+            // $sessionknown escape hatch below is the only thing that lets such a session
+            // write at all, and a session known from the ungraded period would then carry
+            // that exemption into a later gradable attempt.
             $maxattempt = (int) ($exe->maxattempt ?? 0);
-            if ($maxattempt > 0) {
+            if ($maxattempt > 0 && !empty($exe->gradeenabled)) {
                 $sessionknown = ($sessiontoken !== '') && $DB->record_exists(
                     'exelearning_attempt',
                     ['exelearningid' => $exe->id, 'userid' => $userid, 'sessiontoken' => $sessiontoken]
@@ -705,17 +711,22 @@ class track {
             $grademax,
             'completed',
             $sessiontoken,
-            // Unreachable with grading off — no objectid is registered, so nothing routes
-            // here — but the flag is passed rather than hardcoded so the two write sites
-            // cannot drift apart if that ever changes (DEC-124-03).
+            // Lowered to 0 by record_item() when the attempt it belongs to is
+            // completion-only, which is how a switch-on mid-sitting is prevented from
+            // making the accumulated client scores gradable (DEC-124-03).
             !empty($exe->gradeenabled)
         );
-        // Gradebook grade = aggregation of attempts according to grademethod.
+        // Gradebook grade = aggregation of attempts according to grademethod, over
+        // GRADABLE rows only. A null means this learner has no gradable history for this
+        // iDevice, and the historical fallback to $rawitem is the score the CLIENT sent —
+        // so taking it would publish an unverified browser value in exactly the case
+        // where the server decided none of the history counts. Publish nothing instead.
+        // Mirrors the same rule on the overall in ingest().
         $scaled = attempts::aggregate_scaled($exe->id, $userid, $itemnumber, $ctx['grademethod']);
         $finalitem = ($scaled === null) ? $rawitem : ($scaled * $grademax);
         // In "overall only" mode per-iDevice columns are not published (DEC-0-08),
         // but the attempt IS recorded for the report.
-        if ($ctx['grademodel'] !== EXELEARNING_GRADEMODEL_OVERALL) {
+        if ($ctx['grademodel'] !== EXELEARNING_GRADEMODEL_OVERALL && $scaled !== null) {
             grade_update(
                 'mod/exelearning',
                 $exe->course,

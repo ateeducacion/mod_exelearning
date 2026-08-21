@@ -82,36 +82,51 @@ Una fila de `exelearning_attempt` escrita con la calificación apagada queda mar
   `attempts::aggregate_scaled()`, `attempts::fetch_scaled_by_user_item()` y la media de
   participación del resumen. Si una sola no filtrara, la asimetría volvería por ahí.
 
-**Una sesión que atraviesa un cambio de estado se parte en dos intentos.**
-`resolve_attempt_number()` busca el intento de la sesión por `sessiontoken` **y por
-gradabilidad**, así que un alumno con la página abierta cuando el profesor enciende la
-calificación recibe un intento nuevo y calificable en su siguiente autocommit, en vez de
-seguir escribiendo en una fila que jamás podrá producir nota. No le cuesta nada:
-`count_user_attempts()` no cobra el intento no calificable contra `maxattempt`. El efecto
-lateral importante es que **cada intento queda homogéneo** —todas sus filas se escribieron
-bajo un mismo estado— que es lo que permite que la marca describa las notas junto a las que
-está.
+**La marca pertenece al INTENTO, y puede bajar pero nunca subir.** Una sesión conserva el
+intento con el que nació aunque el interruptor cambie por debajo, y toda fila que se escriba
+en ese intento hereda su gradabilidad: `record_item()` calcula la marca como el mínimo entre
+lo que trae la escritura y lo que ya tiene el intento.
 
-Sin partir, el caso encendido→apagado dejaba al alumno completando la actividad entera
-dentro de una fila marcada como sólo-finalización, sin nota y sin ninguna señal.
+Partir la sesión en un segundo intento calificable se intentó y **es incorrecto**. El cliente
+acumula su mapa `itemScores` y no lo vacía nunca —a propósito, para que un POST fallido no
+pierda una nota— de modo que cada POST posterior reenvía todo lo capturado durante el periodo
+no calificable. Un intento nuevo y calificable es, por tanto, un recipiente limpio para
+contenido sucio: el servidor no puede saber qué entradas de ese mapa se ganaron antes del
+cambio y cuáles después. Medido sobre la implementación que partía:
 
-**La marca puede bajar, nunca subir.** En `record_item()`, una escritura que trae datos del
-periodo no calificable baja la fila a `gradable = 0`. Es necesario porque el upsert
-**sustituye** la nota en lugar de añadir una fila: si no bajara, la fila afirmaría ser
-calificable mientras guarda una nota obtenida fuera de evaluación. Subirla es lo que nunca
-puede ocurrir: es la garantía que este campo existe para dar. Con el reparto anterior la
-situación casi no se da —los intentos son homogéneos— y esto queda como guarda para
-cualquier llamador que no pase por `resolve_attempt_number()`.
+```
+attempt=1 item=0 raw=95 gradable=0
+attempt=2 item=0 raw=95 gradable=1
+attempt=2 item=1 raw=95 gradable=1
+GRADE item 1 = '95.00000'
+```
 
-Una revisión anterior de este ADR justificaba «no actualizar nunca» diciendo que bajar la
-marca destruiría el historial que [[DEC-124-01]] promete recuperar. La premisa era falsa:
-las cuatro líneas siguientes de esa misma rama ya sustituyen `rawscore`, `maxscore`,
-`scaledscore` y `status`, así que el historial anterior se pierde de todas formas y sólo
-sobrevivía la marca, ya desligada del contenido que decía describir.
+Una sesión que ha cruzado el interruptor no puede producir ninguna nota fiable, así que no
+produce ninguna. Recargar acuña un token nuevo y un intento limpio, y eso no le cuesta nada al
+alumno porque `count_user_attempts()` no cobra el no calificable contra `maxattempt`.
 
-**Sin historial calificable no se publica nada.** `aggregate_scaled()` devuelve `null` cuando
-todas las filas `itemnumber = 0` del alumno son sólo-finalización, y el código caía entonces a
-`$score`, que es el `cmi.core.score.raw` del cliente. Publicar ese valor sería confiar en el
+El precio, asumido: un alumno con la pestaña abierta cuando se enciende la calificación sigue
+trabajando sin nota hasta que recargue, y no recibe ningún aviso. Es preferible a la
+alternativa —convertir en nota trabajo hecho fuera de evaluación, que es justo lo que este ADR
+prohíbe— y su trabajo no se pierde: queda registrado, cuenta para la finalización y no le gasta
+intentos. Avisarlo en la interfaz requiere que el servidor devuelva una señal y que el cliente
+la lea; queda anotado como seguimiento.
+
+**El tope de intentos sólo se aplica mientras la actividad califica.** `maxattempt` es un
+control de calificación, y con `count_user_attempts()` filtrando, dejarlo armado con el
+interruptor apagado negaría el acceso a una actividad **no calificable** por intentos
+calificables gastados antes. Además cierra un rodeo: con el tope armado durante el periodo
+apagado, la excepción `$sessionknown` —que existe para no cortar una sesión en curso— era lo
+único que permitía escribir, y una sesión conocida del periodo apagado se llevaría esa exención
+a un intento calificable posterior.
+
+**Sin historial calificable no se publica nada, en ninguno de los dos modelos.**
+`aggregate_scaled()` devuelve `null` cuando todas las filas del alumno para ese item son
+sólo-finalización, y el código caía entonces al valor del cliente: `$score`
+(`cmi.core.score.raw`) en el overall de `ingest()`, y `$rawitem` en el por-iDevice de
+`apply_one()`. Los dos caminos tienen su propio fallback y los dos hay que cerrarlos —cerrar
+sólo el overall dejaba PERITEM publicando el 95 del navegador, que es exactamente lo que
+midió la sonda de arriba. Publicar ese valor sería confiar en el
 navegador precisamente en el caso en que el servidor ha decidido que nada del historial cuenta.
 La publicación del overall exige ahora historial calificable. No afecta al primer POST normal:
 `record_item()` se ejecuta antes, así que con el interruptor encendido siempre hay al menos una
@@ -135,6 +150,7 @@ significa:
 | `MAX(attempt)` de `resolve_attempt_number()` | **no** | asigna el siguiente número; saltarse filas reemitiría un número existente, colisionando con la clave del upsert de `record_item()` y fundiendo dos intentos en uno |
 | `COUNT(DISTINCT userid)` de participación | **no** | cuenta quién ha participado, no quién ha sido calificado. Como la media **sí** filtra, las dos mitades de la frase describen poblaciones distintas, así que `participation_summary()` devuelve además `graded` y la cadena nombra las dos: *«N de M han intentado · media X% sobre G calificados»* |
 | contador «intentos usados» de `view.php` | **sí**, vía `count_user_attempts()` | es el número contra el que se muestra el tope; contarlo aparte mostraría «1 de 1» a un alumno al que el servidor todavía acepta |
+| comprobación del tope en `ingest()` | **no se ejecuta** con el interruptor apagado | es un control de calificación; ver arriba |
 | `get_user_attempts` (servicio web) | **no**, pero lo expone | la lista es el historial del alumno y va entera; se añade `gradable` por intento y `usedattempts` con el número que el servidor aplica, para que un cliente no deduzca el tope de `count($attempts)` |
 | `custom_completion` | **no** | la finalización es la razón por la que la fila existe |
 

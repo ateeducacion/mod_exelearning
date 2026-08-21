@@ -127,7 +127,7 @@ class attempts {
      * @param int[] $userids Candidate users (enrolled students visible to the teacher).
      * @param int $grademethod One of the GRADE_* constants; defaults to highest
      *     so a caller that has not migrated keeps the previous behaviour.
-     * @return array{total:int, attempted:int, meanpercent:float|null}
+     * @return array{total:int, attempted:int, graded:int, meanpercent:float|null}
      */
     public static function participation_summary(
         int $exelearningid,
@@ -218,36 +218,37 @@ class attempts {
      * @param int $exelearningid
      * @param int $userid
      * @param string $sessiontoken
-     * @param bool $gradable Whether the activity is graded right now. A session that
-     *        straddles a change of the master grading switch is split into two attempts,
-     *        so every row of an attempt is written under one grading state (DEC-124-03).
      * @return int Attempt number to write to.
      */
     public static function resolve_attempt_number(
         int $exelearningid,
         int $userid,
-        string $sessiontoken,
-        bool $gradable = true
+        string $sessiontoken
     ): int {
         global $DB;
 
         if ($sessiontoken !== '') {
-            // Matching on gradability too means a session that straddles a change of the
-            // master grading switch is SPLIT into two attempts instead of writing both
-            // intervals into one row (DEC-124-03). A learner holding a page open when the
-            // teacher enables grading therefore gets a fresh, gradable attempt on their
-            // next autocommit, rather than silently completing the activity into a row
-            // that can never produce a mark. It costs them nothing: count_user_attempts()
-            // does not charge the ungraded one against maxattempt.
+            // Matched on the token ALONE, deliberately, so a session keeps the one
+            // attempt it started with even if the master grading switch changes
+            // underneath it (DEC-124-03).
             //
-            // Each attempt is then homogeneous — every row in it was written under one
-            // grading state — which is what lets the flag describe the scores it sits
-            // next to.
+            // Splitting the session into a second, gradable attempt was tried and is
+            // wrong. The client accumulates its itemScores map and never clears it — by
+            // design, so a failed POST cannot lose a score — so every later POST re-sends
+            // everything captured during the ungraded period. A fresh gradable attempt is
+            // therefore a clean vessel for contaminated content: the server cannot tell
+            // which entries of that map were earned before the switch and which after,
+            // and the ungraded work lands in the gradebook. Measured: the split produced
+            // "attempt=2 item=1 raw=95 gradable=1" and published 95.
+            //
+            // A session that crossed the switch can produce no trustworthy grade at all,
+            // so it produces none. Reloading mints a new token and a clean attempt, which
+            // costs the learner nothing because count_user_attempts() does not charge the
+            // ungraded one against maxattempt.
             $existing = $DB->get_field('exelearning_attempt', 'attempt', [
                 'exelearningid' => $exelearningid,
                 'userid'        => $userid,
                 'sessiontoken'  => $sessiontoken,
-                'gradable'      => $gradable ? 1 : 0,
             ], IGNORE_MULTIPLE);
             if ($existing !== false) {
                 return (int) $existing;
@@ -294,11 +295,30 @@ class attempts {
 
         $now = time();
         $scaled = ($maxscore > 0) ? max(0.0, min(1.0, $rawscore / $maxscore)) : 0.0;
+
         // A row written while the activity was not graded is completion-only
         // (DEC-124-03): it stays in the report and feeds completion by status, but the
         // aggregation queries below exclude it, so re-enabling grading never turns work
         // done during the ungraded period into a mark.
+        //
+        // The flag belongs to the ATTEMPT, not to the individual row, and it can be
+        // lowered but never raised. An attempt is one learner sitting, and its rows are
+        // written across it: the itemnumber=0 row on every autocommit, an itemnumber>0
+        // row the first time each iDevice is routed. If the switch is turned on
+        // mid-sitting, the per-iDevice rows that apply_one() then inserts would otherwise
+        // arrive gradable inside an attempt whose work was done ungraded — and they carry
+        // exactly the accumulated client scores the ungraded period produced.
+        //
+        // So: if any row of this attempt is already completion-only, so is this one.
+        $attemptgradable = $DB->get_field('exelearning_attempt', 'gradable', [
+            'exelearningid' => $exelearningid,
+            'userid'        => $userid,
+            'attempt'       => $attempt,
+        ], IGNORE_MULTIPLE);
         $gradableflag = $gradable ? 1 : 0;
+        if ($attemptgradable !== false) {
+            $gradableflag = min($gradableflag, (int) $attemptgradable);
+        }
 
         $existing = $DB->get_record('exelearning_attempt', [
             'exelearningid' => $exelearningid,
@@ -308,22 +328,13 @@ class attempts {
         ]);
 
         if ($existing) {
-            // The flag can be lowered but never raised (DEC-124-03).
-            //
-            // It has to describe the score sitting next to it, and the four lines below
-            // REPLACE that score with the incoming one — the upsert keeps one row per
-            // (attempt, itemnumber), it does not append. So a write carrying
-            // ungraded-period data must take the row down with it, or the row would claim
-            // to be gradable while holding a score earned outside assessment.
-            //
-            // Raising it is what must never happen: that is the guarantee this flag
-            // exists to make, and it is exactly what a mid-session switch-on would do.
-            // resolve_attempt_number() normally prevents the situation from arising at
-            // all by splitting the attempt on a state change, so each attempt is
-            // homogeneous; this is the guard for any caller that does not go through it.
-            if (!$gradable) {
-                $existing->gradable = 0;
-            }
+            // Lowered, never raised — $gradableflag is already min()'d against the
+            // attempt above, so this only ever writes the same value or a 0. It matters
+            // because the four lines below REPLACE the score rather than appending: a
+            // write carrying ungraded-period data must take the row down with it, or the
+            // row would claim to be gradable while holding a score earned outside
+            // assessment.
+            $existing->gradable     = $gradableflag;
             $existing->rawscore     = $rawscore;
             $existing->maxscore     = $maxscore;
             $existing->scaledscore  = $scaled;
