@@ -559,51 +559,100 @@ final class track_test extends advanced_testcase {
     }
 
     /**
-     * The mirror direction: switching grading OFF mid-session must not leave the row
-     * claiming to be gradable while holding a score earned outside assessment.
+     * The mirror direction: once a session has written anything while the activity was
+     * ungraded, the WHOLE attempt is completion-only — every row of it, not just the one
+     * being written (DEC-124-03).
      *
-     * record_item()'s upsert REPLACES the score rather than appending, so the flag has to
-     * describe whatever score is currently stored. A write carrying ungraded-period data
-     * takes the row down with it (DEC-124-03). Splitting handles this too, but the
-     * demotion is the guard for any caller that does not go through
-     * resolve_attempt_number().
+     * A mixed attempt is not a cosmetic inconsistency; it breaks three things at once.
+     * count_user_attempts() counts an attempt as used if ANY of its rows is gradable, so a
+     * mixed attempt keeps charging maxattempt in PERITEM while an OVERALL one stops — the
+     * very asymmetry between grade models this decision exists to remove. The surviving
+     * gradable row can be republished when grading returns. And it corrupts the
+     * inheritance itself: a later write asks the attempt for its gradability, and with a
+     * mixed attempt the answer depends on which row the database happens to return first.
+     *
+     * PERITEM is where it shows, because it is the model that keeps itemnumber > 0 rows
+     * the ungraded POST never touches: with the mappings soft-deleted the objectid filter
+     * empties itemscores, apply_one() does not run, and only the overall row is rewritten.
+     *
+     * @param int $grademodel The grade model to exercise.
+     * @dataProvider grading_disabled_models_provider
      */
-    public function test_switching_grading_off_mid_session_does_not_leave_a_gradable_row(): void {
+    public function test_switching_grading_off_mid_session_takes_the_whole_attempt_down(
+        int $grademodel
+    ): void {
         global $DB;
         [$instance, $student] = $this->create_activity_with_student([
             'gradeenabled' => 1,
-            'grademodel'   => 0,
+            'grademodel'   => $grademodel,
+            'maxattempt'   => 1,
         ]);
         [$course, $cm] = $this->course_and_cm($instance);
+        $objectid = $this->objectid_for($instance, 1);
 
-        $payload = fn(string $raw) => [
-            'session' => 'sessFlipOff',
-            'cmi'     => [
+        // The accumulated client map, sent identically on every POST of this tab.
+        $payload = fn(string $raw, float $pct) => [
+            'session'    => 'sessFlipOff',
+            'cmi'        => [
                 'cmi.core.score.raw'     => $raw,
                 'cmi.core.score.max'     => '100',
                 'cmi.core.lesson_status' => 'completed',
             ],
+            'itemscores' => [
+                $objectid => ['scorepct' => $pct, 'weighted' => 100.0, 'title' => 'A'],
+            ],
         ];
 
-        track::ingest($instance, $course, $cm, $student->id, $payload('80'), false);
-        $this->assertSame(1, (int) $DB->get_field('exelearning_attempt', 'gradable', [
-            'exelearningid' => $instance->id, 'userid' => $student->id, 'itemnumber' => 0,
+        // Graded work first: this writes the overall row AND the per-iDevice row.
+        track::ingest($instance, $course, $cm, $student->id, $payload('80', 80.0), false);
+        $this->assertGreaterThan(0, $DB->count_records('exelearning_attempt', [
+            'exelearningid' => $instance->id, 'userid' => $student->id, 'gradable' => 1,
         ]));
 
         // The teacher makes the activity a plain resource; the learner does not reload.
         $DB->set_field('exelearning', 'gradeenabled', 0, ['id' => $instance->id]);
         $instance = $DB->get_record('exelearning', ['id' => $instance->id], '*', MUST_EXIST);
         exelearning_sync_grade_items($instance->id);
-        track::ingest($instance, $course, $cm, $student->id, $payload('95'), false);
+        track::ingest($instance, $course, $cm, $student->id, $payload('95', 95.0), false);
 
-        // No row may claim to be gradable while holding the ungraded 95.
+        // EVERY row of the attempt is down, including the per-iDevice one this POST never
+        // touched.
         $rows = $DB->get_records('exelearning_attempt', [
-            'exelearningid' => $instance->id, 'userid' => $student->id, 'itemnumber' => 0,
+            'exelearningid' => $instance->id, 'userid' => $student->id, 'attempt' => 1,
+        ]);
+        $this->assertNotEmpty($rows);
+        foreach ($rows as $row) {
+            $this->assertSame(
+                0,
+                (int) $row->gradable,
+                "itemnumber {$row->itemnumber} must have been taken down with the attempt"
+            );
+        }
+
+        // So the attempt stops counting against maxattempt, in BOTH models.
+        $this->assertSame(0, \mod_exelearning\local\attempts::count_user_attempts(
+            (int) $instance->id,
+            (int) $student->id
+        ));
+
+        // And grading coming back on republishes nothing from it: the session is spent.
+        $DB->set_field('exelearning', 'gradeenabled', 1, ['id' => $instance->id]);
+        $instance = $DB->get_record('exelearning', ['id' => $instance->id], '*', MUST_EXIST);
+        exelearning_sync_grade_items($instance->id);
+        track::ingest($instance, $course, $cm, $student->id, $payload('95', 95.0), false);
+
+        $rows = $DB->get_records('exelearning_attempt', [
+            'exelearningid' => $instance->id, 'userid' => $student->id, 'attempt' => 1,
         ]);
         foreach ($rows as $row) {
-            if ((float) $row->rawscore === 95.0) {
-                $this->assertSame(0, (int) $row->gradable, 'The ungraded score must not sit in a gradable row');
-            }
+            $this->assertSame(0, (int) $row->gradable, 'A spent session cannot come back');
+        }
+        $grades = grade_get_grades($instance->course, 'mod', 'exelearning', $instance->id, $student->id);
+        foreach ($grades->items as $itemnumber => $item) {
+            $this->assertNull(
+                $item->grades[$student->id]->grade ?? null,
+                "Item {$itemnumber} must carry no grade from a session that crossed the switch"
+            );
         }
     }
 

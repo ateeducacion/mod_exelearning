@@ -138,7 +138,7 @@ class attempts {
 
         $total = count($userids);
         if ($total === 0) {
-            return ['total' => 0, 'attempted' => 0, 'meanpercent' => null];
+            return ['total' => 0, 'attempted' => 0, 'graded' => 0, 'meanpercent' => null];
         }
 
         [$insql, $params] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED);
@@ -309,15 +309,29 @@ class attempts {
         // arrive gradable inside an attempt whose work was done ungraded — and they carry
         // exactly the accumulated client scores the ungraded period produced.
         //
-        // So: if any row of this attempt is already completion-only, so is this one.
-        $attemptgradable = $DB->get_field('exelearning_attempt', 'gradable', [
+        // So the rule runs in both directions over the WHOLE attempt: if any row of it is
+        // already completion-only then so is this one, and the first ungraded write takes
+        // every row already there down with it.
+        //
+        // Asking one arbitrary row for the attempt's gradability is not the same thing —
+        // IGNORE_MULTIPLE has no ORDER BY, so a mixed attempt would answer differently
+        // depending on which row the database returned. A mixed attempt must not be
+        // reachable in the first place: count_user_attempts() charges maxattempt for an
+        // attempt if ANY of its rows is gradable, so a mixed one would keep consuming the
+        // cap and could still be republished when grading returns.
+        $attemptkey = [
             'exelearningid' => $exelearningid,
             'userid'        => $userid,
             'attempt'       => $attempt,
-        ], IGNORE_MULTIPLE);
-        $gradableflag = $gradable ? 1 : 0;
-        if ($attemptgradable !== false) {
-            $gradableflag = min($gradableflag, (int) $attemptgradable);
+        ];
+        $attemptungraded = $DB->record_exists('exelearning_attempt', $attemptkey + ['gradable' => 0]);
+        $gradableflag = ($gradable && !$attemptungraded) ? 1 : 0;
+        if ($gradableflag === 0 && $DB->record_exists('exelearning_attempt', $attemptkey + ['gradable' => 1])) {
+            // A session that has crossed the switch is spent: take the rows this POST does
+            // not touch down too. In PERITEM the ungraded POST rewrites only the overall
+            // row — the objectid filter empties itemscores, so apply_one() never runs —
+            // and the per-iDevice rows would otherwise survive as gradable.
+            $DB->set_field('exelearning_attempt', 'gradable', 0, $attemptkey);
         }
 
         $existing = $DB->get_record('exelearning_attempt', [
@@ -328,12 +342,11 @@ class attempts {
         ]);
 
         if ($existing) {
-            // Lowered, never raised — $gradableflag is already min()'d against the
-            // attempt above, so this only ever writes the same value or a 0. It matters
-            // because the four lines below REPLACE the score rather than appending: a
-            // write carrying ungraded-period data must take the row down with it, or the
-            // row would claim to be gradable while holding a score earned outside
-            // assessment.
+            // Lowered, never raised: $gradableflag is already resolved against the whole
+            // attempt above. It matters because the four lines below REPLACE the score
+            // rather than appending, so a write carrying ungraded-period data must take
+            // the row down with it, or the row would claim to be gradable while holding a
+            // score earned outside assessment.
             $existing->gradable     = $gradableflag;
             $existing->rawscore     = $rawscore;
             $existing->maxscore     = $maxscore;

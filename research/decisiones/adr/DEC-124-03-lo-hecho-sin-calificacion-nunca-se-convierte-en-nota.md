@@ -83,9 +83,21 @@ Una fila de `exelearning_attempt` escrita con la calificación apagada queda mar
   participación del resumen. Si una sola no filtrara, la asimetría volvería por ahí.
 
 **La marca pertenece al INTENTO, y puede bajar pero nunca subir.** Una sesión conserva el
-intento con el que nació aunque el interruptor cambie por debajo, y toda fila que se escriba
-en ese intento hereda su gradabilidad: `record_item()` calcula la marca como el mínimo entre
-lo que trae la escritura y lo que ya tiene el intento.
+intento con el que nació aunque el interruptor cambie por debajo, y el invariante es que
+**todas las filas de un intento comparten su marca**. `record_item()` lo mantiene en las dos
+direcciones: si alguna fila del intento ya es sólo-finalización, la que se escribe también lo
+es; y la primera escritura no calificable **baja todas las filas que ya estuvieran ahí**, no
+sólo la suya.
+
+Bajar únicamente la fila que se escribe no basta, y deja un intento mixto. En PERITEM el POST
+no calificable reescribe sólo la fila overall —con los mapeos borrados el filtro por objectid
+vacía `itemscores` y `apply_one()` no llega a ejecutarse— así que las filas por iDevice
+sobrevivirían calificables. Un intento mixto rompe tres cosas a la vez:
+`count_user_attempts()` cuenta el intento como gastado si **alguna** de sus filas es
+calificable, con lo que seguiría consumiendo `maxattempt`; la fila superviviente puede
+republicarse al volver a encender; y corrompe la propia herencia, porque preguntar por la
+gradabilidad del intento con `IGNORE_MULTIPLE` —que no lleva `ORDER BY`— devuelve una fila
+cualquiera, de modo que `min(entrante, una fila cualquiera)` no es `min(entrante, el intento)`.
 
 Partir la sesión en un segundo intento calificable se intentó y **es incorrecto**. El cliente
 acumula su mapa `itemScores` y no lo vacía nunca —a propósito, para que un POST fallido no
