@@ -62,7 +62,20 @@ class attempts {
     }
 
     /**
-     * Count distinct attempts a user has on an activity (for maxattempt).
+     * Count distinct GRADABLE attempts a user has on an activity (for maxattempt).
+     *
+     * Ungraded-period attempts (gradable = 0) are excluded on purpose. maxattempt is a
+     * grading control — mod_form.php disables it along with the rest of the grade
+     * settings when the activity is not graded — so charging it for work the activity
+     * itself declared to be outside assessment produces a state with no way out: with
+     * maxattempt = 1, a learner who used the activity while it was ungraded arrives at
+     * the limit having never had a gradable attempt, and every further submission is
+     * refused with 'maxattemptsreached'. They could never be graded at all (DEC-124-03).
+     *
+     * This is the ONE counting query that filters. The allocation query in
+     * resolve_attempt_number() must not: it takes MAX(attempt) to pick the next number,
+     * and skipping rows there would reissue an attempt number that already exists,
+     * colliding with the upsert key of record_item() and merging two attempts into one.
      *
      * @param int $exelearningid
      * @param int $userid
@@ -72,7 +85,7 @@ class attempts {
         global $DB;
         return (int) $DB->count_records_sql(
             "SELECT COUNT(DISTINCT attempt) FROM {exelearning_attempt}
-                  WHERE exelearningid = ? AND userid = ?",
+                  WHERE exelearningid = ? AND userid = ? AND gradable = 1",
             [$exelearningid, $userid]
         );
     }
@@ -268,11 +281,28 @@ class attempts {
         ]);
 
         if ($existing) {
+            // NOTE: $gradable is deliberately NOT applied on update. A row's gradability
+            // is decided when it is created and never changes afterwards (DEC-124-03).
+            //
+            // The upsert is keyed by the session's attempt number, so a learner holding a
+            // page open while the teacher flips the master grading switch keeps posting
+            // into this same row. Re-deciding the flag on every POST would let that flip
+            // rewrite history in BOTH directions: off->on would promote work done outside
+            // assessment into a grade, which is precisely the guarantee this flag exists
+            // to make; and on->off would demote work that WAS done under assessment,
+            // destroying the history DEC-124-01 promises can be recovered when grading
+            // comes back on.
+            //
+            // Splitting the attempt on a state change was the other candidate. It was
+            // rejected: resolve_attempt_number() keys on sessiontoken, so splitting means
+            // one token mapping to two attempt numbers, and the learner gets a cleanly
+            // gradable attempt anyway just by reloading — which now costs them nothing,
+            // since count_user_attempts() no longer charges ungraded attempts against
+            // maxattempt.
             $existing->rawscore     = $rawscore;
             $existing->maxscore     = $maxscore;
             $existing->scaledscore  = $scaled;
             $existing->status       = $status;
-            $existing->gradable     = $gradableflag;
             $existing->sessiontoken = $sessiontoken;
             $existing->timemodified = $now;
             $DB->update_record('exelearning_attempt', $existing);

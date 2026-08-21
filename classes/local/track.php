@@ -236,8 +236,19 @@ class track {
                 $sessiontoken,
                 !empty($exe->gradeenabled)
             );
+            // With no GRADABLE overall history at all — every row for itemnumber 0 is
+            // completion-only (DEC-124-03) — aggregate_scaled() returns null, and the
+            // historical fallback below took $score, which is the client's
+            // cmi.core.score.raw, so taking it here would publish an unverified browser
+            // value in exactly the case where the server has decided none of the history
+            // counts: a learner holding a page open across a mid-session switch-on.
+            //
+            // Note this is not the ordinary first-POST case. record_item() runs above,
+            // so with grading on there is always at least one gradable row by the time
+            // this executes and the aggregation has something to return.
             $scaledoverall = attempts::aggregate_scaled($exe->id, $userid, 0, $grademethod);
-            $finaloverall = ($scaledoverall === null) ? $score : ($scaledoverall * $grademax);
+            $hasgradablehistory = ($scaledoverall !== null);
+            $finaloverall = $hasgradablehistory ? ($scaledoverall * $grademax) : $score;
 
             // Publish the aggregated overall grade ONLY in OVERALL mode (DEC-25-01): in
             // PERITEM the per-iDevice grades carry the gradebook.
@@ -261,7 +272,11 @@ class track {
             // implying a path that does not exist — pinned by the peritem case of
             // test_ingest_with_grading_disabled_records_attempt_but_publishes_no_grade.
             $result = GRADE_UPDATE_OK;
-            if ($grademodel === EXELEARNING_GRADEMODEL_OVERALL && !empty($exe->gradeenabled)) {
+            if (
+                $grademodel === EXELEARNING_GRADEMODEL_OVERALL
+                && !empty($exe->gradeenabled)
+                && $hasgradablehistory
+            ) {
                 $grade = (object) [
                     'userid'   => $userid,
                     'rawgrade' => $finaloverall,

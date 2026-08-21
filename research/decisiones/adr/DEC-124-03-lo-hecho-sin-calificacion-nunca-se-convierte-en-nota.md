@@ -82,13 +82,52 @@ Una fila de `exelearning_attempt` escrita con la calificación apagada queda mar
   `attempts::aggregate_scaled()`, `attempts::fetch_scaled_by_user_item()` y la media de
   participación del resumen. Si una sola no filtrara, la asimetría volvería por ahí.
 
-**Lo que deliberadamente NO filtra**, que es la otra mitad de la decisión: las consultas
-que *cuentan* o *asignan* siguen viendo todas las filas. El `COUNT(DISTINCT attempt)` que
-aplica `maxattempt`, el `COUNT(DISTINCT userid)` de participación y el `MAX(attempt)` que
-asigna el siguiente número de intento no llevan el filtro. Un alumno que gastó intentos
-mientras la actividad no calificaba los gastó igualmente, y participó igualmente; y filtrar
-en el `MAX(attempt)` haría que se reutilizaran números de intento, corrompiendo el
-historial. La regla es: **la agregación de nota filtra, el recuento y la asignación no.**
+La marca **se decide al crear la fila y no se vuelve a tocar**. `record_item()` no aplica
+`$gradable` en su rama de actualización. El upsert está indexado por el número de intento de
+la sesión, así que un alumno con la página abierta sigue escribiendo en la misma fila mientras
+el profesor cambia el interruptor por debajo; volver a decidir la marca en cada POST permitiría
+reescribir el historial en **las dos** direcciones: apagado→encendido promovería a nota trabajo
+hecho fuera de evaluación —justo la garantía que este campo existe para dar— y
+encendido→apagado degradaría trabajo que **sí** se hizo bajo evaluación, destruyendo el
+historial que [[DEC-124-01]] promete recuperar. El cliente lo hace inevitable en vez de
+improbable: `js/scorm_tracker.js` acumula `itemScores` y no vacía el mapa —a propósito, para
+que un POST fallido no pierda una nota— de modo que cada POST posterior reenvía todo lo
+capturado durante el intervalo apagado.
+
+Se consideró **partir el intento** al cambiar de estado, y se descartó:
+`resolve_attempt_number()` indexa por `sessiontoken`, así que partir significa un token
+apuntando a dos números de intento, y el alumno consigue un intento limpio simplemente
+recargando —que ahora no le cuesta nada, por lo que sigue.
+
+**Sin historial calificable no se publica nada.** `aggregate_scaled()` devuelve `null` cuando
+todas las filas `itemnumber = 0` del alumno son sólo-finalización, y el código caía entonces a
+`$score`, que es el `cmi.core.score.raw` del cliente. Publicar ese valor sería confiar en el
+navegador precisamente en el caso en que el servidor ha decidido que nada del historial cuenta.
+La publicación del overall exige ahora historial calificable. No afecta al primer POST normal:
+`record_item()` se ejecuta antes, así que con el interruptor encendido siempre hay al menos una
+fila calificable cuando se llega ahí.
+
+**El backup lleva la marca.** `gradable` forma parte del significado académico de la fila, no
+de su contabilidad, así que viaja en el `backup_nested_element` de los intentos y el restore la
+lee explícitamente, con respaldo a `1` para copias anteriores a esta decisión. Omitirla dejaba
+que el valor por defecto de la columna convirtiera en calificable, al restaurar, un historial
+que no lo era: un backup/restore no puede cambiar en silencio el significado académico del
+historial de un alumno. Es exactamente el mismo defecto que ya se corrigió para `gradeenabled`
+(B4, [[DEC-34-01]]), una columna más tarde.
+
+**Qué filtra y qué no.** No es una regla por tipo de consulta sino por lo que cada una
+significa:
+
+| consulta | filtra | por qué |
+|---|---|---|
+| `aggregate_scaled()`, `fetch_scaled_by_user_item()`, media del resumen | **sí** | son la nota |
+| `COUNT(DISTINCT attempt)` de `count_user_attempts()` (`maxattempt`) | **sí** | `maxattempt` es un control de calificación —`mod_form.php` lo deshabilita junto al resto de ajustes de nota cuando la actividad no califica—, así que cobrárselo al alumno por trabajo que la propia actividad declaró fuera de evaluación crea un estado sin salida: con `maxattempt = 1`, quien usó la actividad mientras no calificaba llega al límite sin haber tenido nunca un intento calificable, y ya no puede obtener nota |
+| `MAX(attempt)` de `resolve_attempt_number()` | **no** | asigna el siguiente número; saltarse filas reemitiría un número existente, colisionando con la clave del upsert de `record_item()` y fundiendo dos intentos en uno |
+| `COUNT(DISTINCT userid)` de participación | **no** | cuenta quién ha participado, no quién ha sido calificado |
+| `custom_completion` | **no** | la finalización es la razón por la que la fila existe |
+
+Una revisión anterior de este ADR afirmaba que «el recuento y la asignación no filtran» como
+regla general. Era incorrecto para `maxattempt`, y queda corregido arriba.
 
 Las filas preexistentes toman el valor por defecto `1`. Todo lo registrado antes de esta
 etapa lo escribió un `ingest()` que no hacía esta distinción, y suponerlas calificables es
