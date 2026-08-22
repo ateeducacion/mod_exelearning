@@ -130,4 +130,75 @@ final class scorm_runtime_test extends advanced_testcase {
         $this->assertStringContainsString('pipwerks', $source);
         $this->assertStringNotContainsString('MOODLE LOCAL CHANGE', $source);
     }
+
+    /**
+     * Read the provenance file into key => value pairs.
+     *
+     * @return array<string,string> Everything declared in assets/scorm/SOURCE.
+     */
+    private function source_declaration(): array {
+        $path = self::ASSETS . '/SOURCE';
+        $this->assertFileExists($path, 'assets/scorm/SOURCE is missing; the runtime has no declared provenance');
+
+        $declared = [];
+        foreach (preg_split('~\r?\n~', (string) file_get_contents($path)) as $line) {
+            $line = trim($line);
+            if ($line === '' || $line[0] === '#') {
+                continue;
+            }
+            $parts = explode(':', $line, 2);
+            if (count($parts) === 2) {
+                $declared[trim($parts[0])] = trim($parts[1]);
+            }
+        }
+        return $declared;
+    }
+
+    /**
+     * The two files are byte-for-byte what the declared core commit produced.
+     *
+     * The banner checks above catch a copy that is the wrong SHAPE — a dropped layer, a
+     * missing stamp. They cannot catch a copy that is the wrong CONTENT: an edit inside a
+     * layer keeps every banner in place and the stamp still names a release. Only a digest
+     * catches that, and only a digest tied to a specific commit says which build it is.
+     */
+    public function test_the_runtime_matches_the_digests_its_provenance_declares(): void {
+        $declared = $this->source_declaration();
+
+        foreach (['SCORM_API_wrapper.js', 'SCOFunctions.js'] as $name) {
+            $this->assertArrayHasKey($name, $declared, "assets/scorm/SOURCE does not declare $name");
+            $expected = $declared[$name];
+            $this->assertMatchesRegularExpression('~^sha256:[0-9a-f]{64}$~', $expected, "$name has no sha256 in SOURCE");
+            $actual = 'sha256:' . hash('sha256', $this->asset($name));
+            $this->assertSame(
+                $expected,
+                $actual,
+                "$name does not match the digest in assets/scorm/SOURCE. Either it was edited here — "
+                    . 'which is what this test exists to stop — or it was updated without regenerating SOURCE.'
+            );
+        }
+    }
+
+    /**
+     * The provenance names a single core commit, and the stamp inside the file agrees
+     * with the version SOURCE declares.
+     */
+    public function test_the_provenance_names_the_commit_and_agrees_with_the_stamp(): void {
+        $declared = $this->source_declaration();
+
+        $this->assertArrayHasKey('core-commit', $declared);
+        $this->assertMatchesRegularExpression(
+            '~^[0-9a-f]{40}$~',
+            $declared['core-commit'],
+            'core-commit must be a full commit id: a branch name or a release string cannot identify a build'
+        );
+        $this->assertArrayHasKey('core-repo', $declared);
+
+        $this->assertArrayHasKey('runtime-version', $declared);
+        $this->assertStringContainsString(
+            'eXeLearning-SCORM12-Runtime: ' . $declared['runtime-version'],
+            $this->asset('SCOFunctions.js'),
+            'the stamp inside the runtime disagrees with the version its provenance declares'
+        );
+    }
 }

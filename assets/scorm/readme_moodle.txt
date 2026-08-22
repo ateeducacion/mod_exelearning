@@ -1,7 +1,7 @@
 Description of the SCORM runtime files import into mod_exelearning
 ==================================================================
 
-Files:     SCORM_API_wrapper.js, SCOFunctions.js
+Files:     SCORM_API_wrapper.js, SCOFunctions.js, SOURCE
 Location:  assets/scorm/
 Upstream:  https://github.com/exelearning/exelearning
            public/app/common/scorm/scorm12/
@@ -90,14 +90,25 @@ How to update
    That is the whole procedure. Do not assemble the file by hand, do not drop
    layers, do not patch anything.
 
-2. Check the stamp changed to the release you meant to track:
+2. Regenerate assets/scorm/SOURCE for the commit you exported from:
+
+       core-commit:  the eXeLearning commit you built the export with
+       runtime-version: the stamp now in the file
+       sha256 of each of the two files
+
+   scorm_runtime_test.php checks both files against those digests, so a copy that
+   was edited here fails even if every banner and the stamp still look right.
+   The stamp alone cannot do that: it names a release, and a release is built
+   many times.
+
+3. Check the stamp changed to the release you meant to track:
 
        head -3 assets/scorm/SCOFunctions.js
 
-3. If upstream bumped the pipwerks version, update its <version> in
+4. If upstream bumped the pipwerks version, update its <version> in
    thirdpartylibs.xml.
 
-4. Re-run the tests that cover the runtime and the injection path:
+5. Re-run the tests that cover the runtime and the injection path:
 
        make test ARGS=mod/exelearning/tests/local/scorm/scorm_runtime_test.php
        make test ARGS=mod/exelearning/tests/local/scorm/scorm_injector_test.php
