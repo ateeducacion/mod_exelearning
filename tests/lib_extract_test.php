@@ -35,6 +35,9 @@ use advanced_testcase;
  * @covers     \mod_exelearning\local\scorm\idevice_patch
  */
 final class lib_extract_test extends advanced_testcase {
+    /** @var string Base ELPX used when a test needs to seed extra files into a package. */
+    private const PACKAGE_WITH_RUNTIME_SOURCE = 'research/fixtures/elpx/actividad-evaluable.elpx';
+
     /**
      * Creating an instance from the default ELPX fixture expands the package into
      * the content filearea, ships the SCORM wrapper shim and rewrites the HTML so
@@ -75,6 +78,52 @@ final class lib_extract_test extends advanced_testcase {
         $html = $index->get_content();
         $this->assertStringContainsString('<!-- mod_exelearning:scorm-loader -->', $html);
         $this->assertStringContainsString('libs/SCORM_API_wrapper.js', $html);
+    }
+
+    /**
+     * A package that brings its own SCORM runtime gets the plugin's anyway.
+     *
+     * This activity grades with the runtime the plugin ships and no other. A
+     * package uploaded as a SCORM export carries one of unknown vintage that
+     * would otherwise decide the marks the plugin then has to read back, so
+     * extraction replaces it rather than deferring to it.
+     */
+    public function test_extraction_replaces_a_runtime_the_package_brought_with_it(): void {
+        global $CFG, $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        // Build an ELPX that already contains both runtime files, with contents
+        // no eXeLearning release would ever produce.
+        $sentinel = '/* package copy, must never run */';
+        $packagepath = make_request_directory() . '/carries-its-own-runtime.elpx';
+        $source = $CFG->dirroot . '/mod/exelearning/' . self::PACKAGE_WITH_RUNTIME_SOURCE;
+        copy($source, $packagepath);
+
+        $zip = new \ZipArchive();
+        $this->assertTrue($zip->open($packagepath) === true, 'could not reopen the fixture to seed it');
+        $zip->addFromString('libs/SCORM_API_wrapper.js', $sentinel);
+        $zip->addFromString('libs/SCOFunctions.js', $sentinel);
+        $zip->close();
+
+        $course = $this->getDataGenerator()->create_course();
+        $instance = $this->getDataGenerator()->get_plugin_generator('mod_exelearning')
+            ->create_instance(['course' => $course->id, 'packagefilepath' => $packagepath]);
+        $cm = get_coursemodule_from_instance('exelearning', $instance->id);
+        $context = \context_module::instance($cm->id);
+        $revision = (int) $DB->get_field('exelearning', 'revision', ['id' => $instance->id]);
+
+        $fs = get_file_storage();
+        foreach (['SCORM_API_wrapper.js', 'SCOFunctions.js'] as $name) {
+            $stored = $fs->get_file($context->id, 'mod_exelearning', 'content', $revision, '/libs/', $name);
+            $this->assertInstanceOf(\stored_file::class, $stored, "$name was not installed");
+            $this->assertNotSame($sentinel, $stored->get_content(), "the package's own $name survived extraction");
+            $this->assertSame(
+                file_get_contents($CFG->dirroot . '/mod/exelearning/assets/scorm/' . $name),
+                $stored->get_content(),
+                "$name served to learners is not the copy the plugin ships"
+            );
+        }
     }
 
     /**

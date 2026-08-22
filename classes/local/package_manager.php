@@ -239,11 +239,29 @@ final class package_manager {
             1
         );
 
-        // 5) If the package (web export) does not include libs/SCORM_API_wrapper.js,
-        // inject it from the plugin's assets/ directory. eXeLearning v4 only bundles
-        // this wrapper in the SCORM export; without it, gradable iDevices display
-        // "this page is not part of a SCORM package".
-        foreach (['SCORM_API_wrapper.js', 'SCOFunctions.js'] as $shimname) {
+        // 5) Install the plugin's own SCORM 1.2 runtime, ALWAYS, replacing whatever
+        // the package carried. This activity grades with the runtime the plugin
+        // ships and no other: a web export brings none at all, and a SCORM export
+        // brings one of unknown vintage that would otherwise decide the marks this
+        // plugin then has to read back. One runtime per eXeLearning version, and the
+        // plugin's copy is the one that runs.
+        //
+        // The pair is installed together or not at all. Mixing the plugin's wrapper
+        // with a package's SCOFunctions.js — which the previous per-file loop could
+        // do — pairs files written against different wrapper versions, a combination
+        // neither project tests.
+        $runtimefiles = ['SCORM_API_wrapper.js', 'SCOFunctions.js'];
+        $runtimepaths = [];
+        foreach ($runtimefiles as $shimname) {
+            $assetpath = __DIR__ . '/../../assets/scorm/' . $shimname;
+            if (!is_file($assetpath)) {
+                // Never install half a runtime; leave the package untouched instead.
+                $runtimepaths = [];
+                break;
+            }
+            $runtimepaths[$shimname] = $assetpath;
+        }
+        foreach ($runtimepaths as $shimname => $assetpath) {
             $present = $fs->get_file(
                 $context->id,
                 'mod_exelearning',
@@ -253,11 +271,7 @@ final class package_manager {
                 $shimname
             );
             if ($present) {
-                continue;
-            }
-            $assetpath = __DIR__ . '/../../assets/scorm/' . $shimname;
-            if (!is_file($assetpath)) {
-                continue;
+                $present->delete();
             }
             $fs->create_file_from_pathname([
                 'contextid' => $context->id,
