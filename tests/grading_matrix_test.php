@@ -348,8 +348,9 @@ final class grading_matrix_test extends advanced_testcase {
      * @param array $itemscores Map objectid => [scorepct, weight].
      * @param array $expectedperitem Map objectid => expected column value (null = ungraded).
      * @param float $expectedoverall Expected overall grade.
+     *
+     * @dataProvider grading_scenarios
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('grading_scenarios')]
     public function test_grading_matrix(
         array $roster,
         array $itemscores,
