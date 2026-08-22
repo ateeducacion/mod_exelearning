@@ -97,4 +97,62 @@ final class scorm_injector_test extends advanced_testcase {
         $reindex = $fs->get_file($contextid, 'mod_exelearning', 'content', $revision, '/', 'index.html')->get_content();
         $this->assertSame(1, substr_count($reindex, $marker));
     }
+
+    /**
+     * A package that already references the runtime must end up with ONE copy of it,
+     * not two.
+     *
+     * An eXeLearning SCORM 1.2 export carries its own `libs/SCOFunctions.js` and its own
+     * script tags, and this plugin accepts such a package: `content.xml` at the root is
+     * the only thing it validates. package_manager overwrites the FILES with the
+     * plugin's own, so the bytes were never in doubt — but the page still had two script
+     * tags pointing at them, so the whole runtime was parsed and executed twice.
+     *
+     * Measured in a live Moodle before this fix: a SCORM export uploaded as an activity
+     * served a page with two `SCORM_API_wrapper.js` tags and two `SCOFunctions.js` tags.
+     * The LMS-visible traffic happened to survive it — one LMSInitialize, one commit and
+     * one finish at pagehide — but "it happens to be idempotent" is not a contract, and
+     * nothing was testing it.
+     */
+    public function test_a_package_that_already_loads_the_runtime_does_not_get_a_second_copy(): void {
+        $this->resetAfterTest();
+        $contextid = \context_system::instance()->id;
+        $revision = 44;
+
+        $this->put_html(
+            $contextid,
+            $revision,
+            '/',
+            'index.html',
+            '<html><head><title>t</title>'
+                . '<script src="libs/SCORM_API_wrapper.js"></script>'
+                . '<script src="libs/SCOFunctions.js"></script>'
+                . '</head><body></body></html>'
+        );
+        $this->put_html(
+            $contextid,
+            $revision,
+            '/html/',
+            'page.html',
+            '<html><head><script src="../libs/SCORM_API_wrapper.js"></script>'
+                . '<script src="../libs/SCOFunctions.js"></script></head><body></body></html>'
+        );
+
+        scorm_injector::inject($contextid, $revision);
+
+        $fs = get_file_storage();
+        $index = $fs->get_file($contextid, 'mod_exelearning', 'content', $revision, '/', 'index.html')
+            ->get_content();
+        $page = $fs->get_file($contextid, 'mod_exelearning', 'content', $revision, '/html/', 'page.html')
+            ->get_content();
+
+        $this->assertSame(1, substr_count($index, 'SCORM_API_wrapper.js'), 'index.html loads the wrapper once');
+        $this->assertSame(1, substr_count($index, 'SCOFunctions.js'), 'index.html loads SCOFunctions once');
+        $this->assertSame(1, substr_count($page, 'SCORM_API_wrapper.js'), 'a nested page loads the wrapper once');
+        $this->assertSame(1, substr_count($page, 'SCOFunctions.js'), 'a nested page loads SCOFunctions once');
+
+        // And what survives is the plugin's own tag, at the plugin's own path depth.
+        $this->assertStringContainsString('<script src="libs/SCORM_API_wrapper.js"></script>', $index);
+        $this->assertStringContainsString('<script src="../libs/SCOFunctions.js"></script>', $page);
+    }
 }

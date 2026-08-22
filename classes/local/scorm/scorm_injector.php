@@ -89,6 +89,18 @@ final class scorm_injector {
             }
             $path = $file->get_filepath();
             $payload = ($path === '/') ? $tags : $tagshtml;
+            // Drop any runtime the package brought its own script tags for. An
+            // eXeLearning SCORM 1.2 export references these two files itself, and this
+            // plugin accepts such a package, so without this the page loads the runtime
+            // TWICE — package_manager has already replaced the files with the plugin's
+            // own, so both tags point at the same bytes and the whole runtime is parsed
+            // and executed a second time. One runtime, once, is the contract.
+            $html = preg_replace(
+                '~[ \t]*<script\b[^>]*\bsrc\s*=\s*"[^"]*(?:SCORM_API_wrapper|SCOFunctions)\.js"[^>]*>'
+                    . '\s*</script>[ \t]*\r?\n?~i',
+                '',
+                $html
+            ) ?? $html;
             // Insert just before </head> (case-insensitive).
             $newhtml = preg_replace('~</head>~i', $payload . '</head>', $html, 1);
             if ($newhtml === null || $newhtml === $html) {
