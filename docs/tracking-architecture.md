@@ -55,10 +55,11 @@ Everything the server accepts from the package is validated server-side:
   `cmi.core.score.raw` (DEC-6-01). The weights travel inline with each item, so the
   recomputed overall is a true **weighted** mean.
 - Every score is clamped to the configured grade range, and the `itemscores` map is size-capped.
-- `gradeenabled` is respected (DEC-13-07): with grading off no grade items exist, so scores
-  route nowhere. Attempts are still recorded, on purpose — DEC-13-07 preserves the history so
-  that switching grading back on recalculates from it, and the `completionstatusrequired` rule
-  (DEC-69-01) reads those attempt rows whether or not the activity is graded.
+- `gradeenabled` is respected (DEC-13-07): with grading off no grade items exist, so
+  `ingest()` acknowledges the request and writes nothing — no attempt row, no grade, no
+  event (DEC-126-01). Turning the switch on starts recording from that moment; nothing is
+  recovered from before it, and `completionstatusrequired` (DEC-69-01) has no attempt rows
+  to read while the activity is ungraded.
 - Preview mode (DEC-0-06) acknowledges without writing.
 
 ## Retired: the xAPI ingestion channel
