@@ -157,7 +157,7 @@ final class scorm_injector_test extends advanced_testcase {
     }
 
     /**
-     * The injected bootstrap runs the runtime's page lifecycle, not only its connection.
+     * The injected bootstrap opens the session AND releases the runtime's write gate.
      *
      * The plugin manufactures a SCORM session around content that is not a SCORM package.
      * `pipwerks.SCORM.init()` opens the connection; `loadPage()` runs the entry policy, and
@@ -170,7 +170,7 @@ final class scorm_injector_test extends advanced_testcase {
      * reached track.php, and the gradebook column stayed empty for an activity the learner
      * had completed.
      */
-    public function test_the_bootstrap_runs_the_runtimes_page_lifecycle(): void {
+    public function test_the_bootstrap_releases_the_runtimes_write_gate(): void {
         $this->resetAfterTest();
         $contextid = \context_system::instance()->id;
         $revision = 51;
@@ -183,10 +183,20 @@ final class scorm_injector_test extends advanced_testcase {
             ->get_file($contextid, 'mod_exelearning', 'content', $revision, '/', 'index.html')
             ->get_content();
 
-        $this->assertStringContainsString('pipwerks.SCORM.init()', $index);
-        $this->assertStringContainsString('window.loadPage()', $index);
-        // Optional by construction: a package whose runtime predates the page lifecycle
-        // must not throw on a call that does not exist there.
-        $this->assertStringContainsString("typeof window.loadPage === 'function'", $index);
+        // The runtime's supported entry for a host that owns the page.
+        $this->assertStringContainsString('ns.session.open({ ownsLifecycle: false })', $index);
+        $this->assertStringContainsString("typeof ns.session.open === 'function'", $index);
+
+        // NOT the SCO lifecycle: every page of this export shares one session and one
+        // lesson_status, so loadPage() on a page after a terminal status closes the
+        // session — measured live, page two then ran with a dead connection and recorded
+        // nothing.
+        $this->assertStringNotContainsString('window.loadPage()', $index);
+
+        // And not pipwerks alone, except as the fallback for a runtime that predates
+        // session.open(): opening pipwerks leaves the runtime's own client idle and every
+        // write is refused with 301, silently.
+        $this->assertStringContainsString('window.pipwerks.SCORM.init()', $index);
+        $this->assertMatchesRegularExpression('~ticks > 40 && window\.pipwerks~', $index);
     }
 }

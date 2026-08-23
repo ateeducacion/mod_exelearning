@@ -43,28 +43,45 @@ final class scorm_injector {
         $fs = get_file_storage();
         $marker = '<!-- mod_exelearning:scorm-loader -->';
         // The plugin manufactures a SCORM session around content that is not a SCORM
-        // package, so it has to complete the manufacture.
+        // package, so it has to open that session itself: eXeLearning only does it in its
+        // on-click flow, and with isScorm == 1 (auto-save after each question) that flow
+        // never runs.
         //
-        // First `pipwerks.SCORM.init()`, so connection.isActive is true and `set()` calls
-        // reach window.parent.API: eXeLearning only calls init() in its on-click flow, and
-        // with isScorm == 1 (auto-save after each question) that never happens.
+        // `exeScorm12.session.open({ ownsLifecycle: false })` is the runtime's supported
+        // entry for a host like this one. It brings the client's own state machine up and
+        // applies the entry policy — the runtime holds every LMS write until that policy
+        // has run — while leaving the end-of-session handling to the host.
         //
-        // Then `loadPage()`, which is the runtime's page lifecycle. A web export never
-        // calls it — that entry point belongs to a SCORM export — and the rewritten runtime
-        // holds every LMS write until the entry policy has run. Measured on a live Moodle
-        // before this line existed: with an eXeLearning 4.x export the activity registry
-        // held the learner's score, `cmi.core.score.raw` and `cmi.suspend_data` stayed
-        // empty, no POST ever reached track.php and the gradebook column stayed empty.
-        // Calling loadPage() by hand in the same session published the score immediately.
-        // Older runtimes have no loadPage(), so the call is optional by construction.
+        // Two things it deliberately does NOT do, both measured on a live Moodle:
+        //
+        // - It does not call `loadPage()`. That is the SCO lifecycle, and this serving
+        // model has no SCOs: every page of the export shares one session and one
+        // lesson_status, so after page one published `passed`, loadPage() on page two
+        // saw a finished SCO and closed the session — page two ran with a dead
+        // connection and recorded nothing.
+        // - It does not settle for `pipwerks.SCORM.init()`. That opens pipwerks'
+        // connection while the runtime's own client stays idle, and then every write is
+        // refused locally with 301 before it reaches the LMS. The failure is silent from
+        // outside: the activity registry holds the learner's score, the entry policy
+        // reports as applied, and only `cmi.core.score.raw` staying empty gives it away.
+        // Measured: registry scored 1 with score 50, `cmi.core.score.raw` "", no POST.
+        //
+        // `init()` stays as the fallback for a package whose runtime predates
+        // session.open(), and is tried only after the wait for that entry point has had
+        // two seconds to fail — the two files load in sequence, so the runtime always
+        // arrives after the wrapper.
         $initscript = "\n    <script>\n" .
                 "      (function(){\n" .
+                "        var opened = false, ticks = 0;\n" .
                 "        var t = setInterval(function(){\n" .
-                "          if (window.pipwerks && window.pipwerks.SCORM) {\n" .
-                "            clearInterval(t);\n" .
-                "            try { window.pipwerks.SCORM.init(); } catch(e){}\n" .
-                "            try { if (typeof window.loadPage === 'function') { window.loadPage(); } } catch(e){}\n" .
+                "          ticks++;\n" .
+                "          var ns = window.exeScorm12;\n" .
+                "          if (!opened && ns && ns.session && typeof ns.session.open === 'function') {\n" .
+                "            try { opened = ns.session.open({ ownsLifecycle: false }) === true; } catch(e){}\n" .
+                "          } else if (!opened && ticks > 40 && window.pipwerks && window.pipwerks.SCORM) {\n" .
+                "            try { window.pipwerks.SCORM.init(); opened = true; } catch(e){}\n" .
                 "          }\n" .
+                "          if (opened || ticks > 200) { clearInterval(t); }\n" .
                 "        }, 50);\n" .
                 "      })();\n" .
                 "    </script>\n";
