@@ -1,8 +1,9 @@
 ---
 id: DEC-124-02
 title: "El interruptor 'Calificable' silencia la publicación de nota, no la ingesta"
-status: Accepted
+status: Superseded
 date: 2026-08-21
+superseded_by: [DEC-126-01]
 tracking_issue: 124
 deciders:
   - erseco

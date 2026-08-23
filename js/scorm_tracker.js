@@ -204,6 +204,9 @@
      * exelearning_grade_item.objectid). This is the multi-page collision fix
      * (DEC-5-01 / RIE-007).
      *
+     * Only the legacy format needs this: a versioned `exe12/` record carries its
+     * objectid already.
+     *
      * @param {Document|null} doc The iframe's content document (null if unavailable).
      * @returns {Object|null} Map of N (int) to objectid, or null when nothing resolves.
      */
@@ -221,23 +224,90 @@
     }
 
     /**
+     * True when a legacy entry is a stale copy of a score already banked for a
+     * DIFFERENT iDevice that is not on the currently loaded page.
+     *
+     * The producer rewrites its WHOLE lmsData map on every score, so a suspend_data
+     * write made on page 2 still carries the entries page 1 left in the slots page 2
+     * now occupies. Those carried-over entries are byte-identical to what we already
+     * banked for their real owner — same title, same score, same weight — and their
+     * owner is, by construction, not on the loaded page. That triple is the signature
+     * this looks for.
+     *
+     * @param {Object} entry    The legacy entry under consideration.
+     * @param {string} oid      The objectid the current page's DOM maps its slot to.
+     * @param {Object} baseline Everything banked so far, keyed by objectid.
+     * @param {Object} onPage   Set of objectids the loaded page owns.
+     * @returns {boolean} True when the entry belongs to an off-page iDevice.
+     */
+    function isCarriedOver(entry, oid, baseline, onPage) {
+        for (var bid in baseline) {
+            if (!baseline.hasOwnProperty(bid) || bid === oid || onPage[bid]) { continue; }
+            var banked = baseline[bid];
+            if (banked.title === entry.title
+                    && banked.scorepct === entry.scorepct
+                    && banked.weighted === entry.weighted) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * From a fresh suspend_data parse, keep only the entries that changed (the iDevice
-     * that just scored, always on the currently loaded page) and stamp them by stable
-     * objectid. Stale cross-page entries left in the collided suspend_data are skipped
-     * because they do not resolve against the current page's DOM — that is what fixes
-     * the multi-page collision. Pure: callers own the prev/itemScores state.
+     * that just scored) and stamp them by stable objectid. Pure: callers own the
+     * prev/itemScores state.
      *
-     * The change baseline is keyed by OBJECTID, not by the page-local slot N: the
-     * legacy suspend_data format reuses N across pages, so a page-2 iDevice landing on
-     * a slot whose page-1 occupant had the same score and weight would compare equal
-     * against an N-keyed baseline and be dropped without ever reaching its gradebook
-     * column. Two different iDevices are never "unchanged" relative to each other.
+     * VERSIONED (`exe12/`) entries carry their own objectid: they are matched against
+     * the objectid-keyed baseline and nothing below applies — no DOM resolution, no
+     * heuristics, no residual limits. Everything that follows exists solely because
+     * the legacy format cannot name its owner.
      *
-     * @param {Object} newParsed  Result of parseSuspend on the new suspend_data (keyed by N).
+     * LEGACY entries name only a page-local slot N, which the producer reuses on every
+     * page, and every write repeats the whole map — so the payload mixes the score
+     * that just happened with stale entries from pages visited earlier. Two rules that
+     * look reasonable each break one half of that:
+     *
+     *  - keying the change baseline by slot N drops a real grade: a page-2 iDevice
+     *    whose slot already held a page-1 entry with the SAME score and weight
+     *    compares equal and is never graded (trace synthetic-collided-slot-same-score);
+     *  - keying it by objectid alone invents one: the stale page-1 entry resolves
+     *    against page 2's DOM map, looks brand-new for that objectid and contaminates
+     *    an iDevice the learner never touched (trace synthetic-stale-slot).
+     *
+     * The rule implemented here keeps the objectid-keyed baseline (so no grade is
+     * lost) and adds an attribution test before trusting a slot resolution (so no
+     * grade is invented). A legacy entry is attributed to the objectid its slot
+     * resolves to unless an identical entry — same title, same score, same weight —
+     * is already banked for a different objectid that the loaded page does NOT own,
+     * in which case it is a carried-over copy and is ignored entirely: neither graded
+     * nor banked under the wrong owner.
+     *
+     * Two consequences worth stating:
+     *  - a slot with no live occupant (beyond the loaded page's node count, or an
+     *    id-less node) never resolves at all, so it can never be attributed;
+     *  - a single-page package is untouched by the attribution test, because every
+     *    banked objectid is on the loaded page and the test can only ever fire
+     *    against an off-page one.
+     *
+     * Residual limits, honestly:
+     *  1. two iDevices on different pages that share a title AND score identically
+     *     AND weigh the same are indistinguishable in this format; the later one is
+     *     read as a carry-over and stays ungraded until its score changes. A real
+     *     recorded trace shows repeated titles are common (four iDevices all called
+     *     "Activity A"), so the score+weight half of the triple is load-bearing.
+     *  2. a stale entry whose real owner was never banked — its page was scored
+     *     before this LMS session began (a resumed attempt) — has nothing to match
+     *     against and is still attributed to the current slot occupant.
+     *  3. both disappear under `exe12/`, which is why the fix belongs in the legacy
+     *     branch only and why nothing here should be generalised to the new format.
+     *
+     * @param {Object} newParsed  Result of parseSuspend (keyed by objectid or by N).
      * @param {Object} prevParsed Previous baseline (keyed by objectid).
-     * @param {Object|null} domMap N -> objectid map (resolveObjectMap result).
+     * @param {Object|null} domMap N -> objectid map (resolveObjectMap result); unused
+     *          for versioned entries.
      * @returns {{delta: Object, prev: Object}} delta = objectid -> {scorepct, weighted, title}
-     *          for the changed-and-resolvable entries; prev = the next baseline, keyed
+     *          for the changed-and-attributable entries; prev = the next baseline, keyed
      *          by objectid, carrying forward entries for pages not currently loaded so
      *          returning to a page does not re-emit its unchanged scores.
      */
@@ -248,16 +318,29 @@
         for (var seen in prevParsed) {
             if (prevParsed.hasOwnProperty(seen)) { next[seen] = prevParsed[seen]; }
         }
+        // The objectids the loaded page owns; an entry can only be a carry-over from
+        // a page that is NOT loaded.
+        var onPage = {};
+        if (domMap) {
+            for (var slot in domMap) {
+                if (domMap.hasOwnProperty(slot)) { onPage[domMap[slot]] = true; }
+            }
+        }
         for (var n in newParsed) {
             if (!newParsed.hasOwnProperty(n)) { continue; }
             // A VERSIONED (`exe12/`) entry names its own activity, so it needs no DOM
             // resolution and cannot collide: it is already keyed by the stable objectid.
             // Everything below exists only because the legacy format cannot name its
             // owner and reuses the page-local slot N across pages.
-            var own = newParsed[n].objectid;
-            if (!own && (!domMap || !domMap[n])) { continue; }
-            var oid = own || domMap[n];
-            var before = prevParsed[oid], cur = newParsed[n];
+            var cur = newParsed[n];
+            var oid = cur.objectid;
+            if (!oid) {
+                // Legacy: resolve the page-local slot, then check attribution.
+                if (!domMap || !domMap[n]) { continue; }
+                oid = domMap[n];
+                if (isCarriedOver(cur, oid, prevParsed, onPage)) { continue; }
+            }
+            var before = prevParsed[oid];
             var entry = { scorepct: cur.scorepct, weighted: cur.weighted, title: cur.title };
             next[oid] = entry;
             if (!before || before.scorepct !== cur.scorepct || before.weighted !== cur.weighted) {
@@ -324,7 +407,9 @@
         var bindUnload = config.bindUnload !== false;
 
         var errCode = '0', cmi = {}, dirty = false, autoTimer = null;
-        var prevSuspend = {};   // Change baseline, keyed by stable objectid across pages.
+        // Everything banked so far from cmi.suspend_data, keyed by objectid (both
+        // payload formats converge on it; see captureItemScores).
+        var prevSuspend = {};
         var itemScores = {};    // objectid => { scorepct, weighted, title }.
 
         function send(sync) {

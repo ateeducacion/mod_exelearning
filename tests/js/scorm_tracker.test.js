@@ -73,10 +73,86 @@ describe('parseSuspend', () => {
         expect(Object.keys(r)).toEqual(['1']);
     });
 
+    it('ignores the empty tail a trailing ".\\t" separator leaves behind', () => {
+        const r = parseSuspend('1. "Quiz"; score: 60%; weighted: 30%.\t');
+        expect(Object.keys(r)).toEqual(['1']);
+    });
+
     it('returns an empty map for empty/falsy input', () => {
         expect(parseSuspend('')).toEqual({});
         expect(parseSuspend(null)).toEqual({});
         expect(parseSuspend(undefined)).toEqual({});
+    });
+});
+
+describe('parseSuspend (versioned exe12 payload, core PR #2209)', () => {
+    // Captured verbatim from a package built by the new SCORM 1.2 runtime.
+    const REAL = 'exe12/1|ide-a;7;0;4;100;25;0;100';
+
+    it('parses a real captured record, keyed by the objectid it carries', () => {
+        expect(parseSuspend(REAL)).toEqual({
+            'ide-a': { title: '', scorepct: 100, weighted: 25, objectid: 'ide-a' },
+        });
+    });
+
+    it('reads the score from field [4], never from answered/total', () => {
+        // The real record above says answered=0 of total=4 while scoring 100: an
+        // iDevice may report a score without reporting question counters.
+        expect(parseSuspend(REAL)['ide-a'].scorepct).toBe(100);
+    });
+
+    it('normalises the score into 0-100 with the record own min/max window', () => {
+        const r = parseSuspend('exe12/1|q;1;2;4;5;75;0;10');
+        expect(r.q.scorepct).toBe(50);
+        expect(r.q.weighted).toBe(75);
+    });
+
+    it('clamps an out-of-window score and repairs a degenerate min/max range', () => {
+        expect(parseSuspend('exe12/1|q;1;0;0;250;1;0;100').q.scorepct).toBe(100);
+        expect(parseSuspend('exe12/1|q;1;0;0;-5;1;0;100').q.scorepct).toBe(0);
+        // max <= min cannot normalise anything; the producer falls back to a
+        // 100-wide window and so do we (score 30 in 0..100).
+        expect(parseSuspend('exe12/1|q;1;0;0;30;1;0;0').q.scorepct).toBe(30);
+    });
+
+    it('percent-decodes the activity id', () => {
+        expect(Object.keys(parseSuspend('exe12/1|ide%20a%7Cb;1;0;0;10;1;0;100'))).toEqual(['ide a|b']);
+    });
+
+    it('parses several records separated by "|"', () => {
+        const r = parseSuspend('exe12/1|a;1;0;0;10;1;0;100|b;1;0;0;20;2;0;100');
+        expect(Object.keys(r)).toEqual(['a', 'b']);
+        expect(r.b.scorepct).toBe(20);
+    });
+
+    it('skips records that must not reach a gradebook column', () => {
+        const r = parseSuspend(
+            'exe12/1|ok;1;0;0;40;1;0;100'          // evaluable, scored: kept
+            + '|noscore;1;0;0;;1;0;100'            // evaluable but no result yet
+            + '|notevaluable;6;0;0;80;1;0;100'     // completionRequired+completed, not evaluable
+            + '|3;40;1'                            // unclaimed migrated legacy pool record
+            + '|;1;0;0;50;1;0;100'                 // empty id
+            + '|short;1;0;0'                       // truncated record
+            + '|bad;x;0;0;50;1;0;100'              // unreadable flags
+            + '|ide%zz;1;0;0;50;1;0;100'           // malformed percent escape in the id
+        );
+        expect(Object.keys(r)).toEqual(['ok']);
+    });
+
+    it('accepts a header with no records at all', () => {
+        expect(parseSuspend('exe12/1')).toEqual({});
+    });
+
+    it('returns nothing for a version it does not understand, rather than misparsing', () => {
+        // A future revision may reorder or repurpose fields; publishing a wrong grade
+        // is worse than publishing none.
+        expect(parseSuspend('exe12/2|ide-a;7;0;4;100;25;0;100')).toEqual({});
+        expect(parseSuspend('exe12/x|ide-a;7;0;4;100;25;0;100')).toEqual({});
+        expect(parseSuspend('exe12/|ide-a;7;0;4;100;25;0;100')).toEqual({});
+    });
+
+    it('still parses the legacy format (the header is what selects the parser)', () => {
+        expect(parseSuspend('1. "Quiz"; score: 60%; weighted: 30%.')[1].title).toBe('Quiz');
     });
 });
 
@@ -175,6 +251,105 @@ describe('captureItemScores', () => {
         const newParsed = parseSuspend('2. "OtherPage"; score: 90%; weighted: 45%.');
         const { delta } = captureItemScores(newParsed, {}, { 1: 'ide-aaa' });
         expect(delta).toEqual({});
+    });
+
+    it('ignores a stale entry the producer carried over into another page slot', () => {
+        // Page 1 banks ide-aaa. On page 2 the producer rewrites the WHOLE map, so
+        // slot 1 still holds page 1's entry while slot 2 holds the answer just given.
+        // Slot 1 now resolves to ide-ccc, an iDevice the learner never touched: the
+        // carried-over entry must neither be graded nor banked under it.
+        const page1 = captureItemScores(
+            parseSuspend('1. "Quiz"; score: 60%; weighted: 30%.'),
+            {},
+            { 1: 'ide-aaa' },
+        );
+        const page2 = captureItemScores(
+            parseSuspend('1. "Quiz"; score: 60%; weighted: 30%.\t2. "Essay"; score: 80%; weighted: 40%.'),
+            page1.prev,
+            { 1: 'ide-ccc', 2: 'ide-ddd' },
+        );
+
+        expect(page2.delta).toEqual({ 'ide-ddd': { scorepct: 80, weighted: 40, title: 'Essay' } });
+        expect(page2.prev['ide-ccc']).toBeUndefined();
+        // The real owner keeps its banked value.
+        expect(page2.prev['ide-aaa']).toEqual({ scorepct: 60, weighted: 30, title: 'Quiz' });
+    });
+
+    it('still grades two same-titled iDevices sitting on the SAME page', () => {
+        // A recorded package really does repeat titles ("Activity A" four times), so
+        // the attribution test must never fire against an objectid the loaded page
+        // owns — only against one carried over from a page that is not loaded.
+        const first = captureItemScores(
+            parseSuspend('1. "Activity A"; score: 0%; weighted: 25%.'),
+            {},
+            objmap,
+        );
+        const second = captureItemScores(
+            parseSuspend('1. "Activity A"; score: 0%; weighted: 25%.\t2. "Activity A"; score: 0%; weighted: 25%.'),
+            first.prev,
+            objmap,
+        );
+
+        expect(Object.keys(second.delta)).toEqual(['ide-bbb']);
+    });
+
+    it('KNOWN LIMIT: a cross-page twin (same title, score and weight) stays ungraded', () => {
+        // The legacy format gives the entry no identity beyond its title, so two
+        // iDevices on different pages that share a title AND score identically AND
+        // weigh the same are indistinguishable. The later one is read as a carried
+        // over copy of the first and is not graded until its score changes. This is
+        // the residual limit documented on captureItemScores; the versioned exe12
+        // format below has no such case.
+        const page1 = captureItemScores(
+            parseSuspend('1. "Quiz"; score: 60%; weighted: 30%.'),
+            {},
+            { 1: 'ide-aaa' },
+        );
+        const page2 = captureItemScores(
+            parseSuspend('1. "Quiz"; score: 60%; weighted: 30%.'),
+            page1.prev,
+            { 1: 'ide-bbb' },
+        );
+        expect(page2.delta).toEqual({});
+
+        // ...and it lands as soon as the learner's score differs.
+        const rescored = captureItemScores(
+            parseSuspend('1. "Quiz"; score: 90%; weighted: 30%.'),
+            page2.prev,
+            { 1: 'ide-bbb' },
+        );
+        expect(rescored.delta).toEqual({ 'ide-bbb': { scorepct: 90, weighted: 30, title: 'Quiz' } });
+    });
+
+    it('routes versioned exe12 entries by their own objectid, with no DOM at all', () => {
+        const parsed = parseSuspend('exe12/1|ide-zzz;7;0;4;100;25;0;100');
+        const { delta, prev } = captureItemScores(parsed, {}, null);
+
+        expect(delta).toEqual({ 'ide-zzz': { scorepct: 100, weighted: 25, title: '' } });
+        expect(prev).toEqual({ 'ide-zzz': { scorepct: 100, weighted: 25, title: '' } });
+    });
+
+    it('emits only the changed exe12 record when the whole map is rewritten', () => {
+        const first = captureItemScores(parseSuspend('exe12/1|a;1;0;0;40;1;0;100'), {}, null);
+        const second = captureItemScores(
+            parseSuspend('exe12/1|a;1;0;0;40;1;0;100|b;1;0;0;70;1;0;100'),
+            first.prev,
+            null,
+        );
+        expect(Object.keys(second.delta)).toEqual(['b']);
+    });
+
+    it('never applies the legacy attribution test to exe12 records', () => {
+        // Two activities on different pages with identical scores and weights: the
+        // legacy branch would call the second a carry-over, the versioned one must
+        // not, because each record names its own owner.
+        const page1 = captureItemScores(parseSuspend('exe12/1|a;1;0;0;100;1;0;100'), {}, { 1: 'a' });
+        const page2 = captureItemScores(
+            parseSuspend('exe12/1|a;1;0;0;100;1;0;100|b;1;0;0;100;1;0;100'),
+            page1.prev,
+            { 1: 'b' },
+        );
+        expect(page2.delta).toEqual({ b: { scorepct: 100, weighted: 1, title: '' } });
     });
 });
 

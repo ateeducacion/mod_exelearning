@@ -1,0 +1,35 @@
+{
+  "traceVersion": 1,
+  "scenario": "exe12-versioned-two-pages",
+  "recordedFrom": {
+    "repo": "hand-authored",
+    "ref": "core PR #2209 payload format",
+    "exportFormat": "scorm12"
+  },
+  "package": {
+    "odeId": "",
+    "pageCount": 2
+  },
+  "pages": [
+    { "index": 0, "url": "index.html",   "ideviceNodes": ["ide-a"] },
+    { "index": 1, "url": "html/p2.html", "ideviceNodes": ["ide-b", "ide-c"] }
+  ],
+  "scorm": [
+    { "seq": 0, "page": 0, "method": "LMSInitialize", "args": [""] },
+    { "seq": 1, "page": 0, "method": "LMSSetValue",
+      "args": ["cmi.suspend_data", "exe12/1|ide-a;7;0;4;0;25;0;100"] },
+    { "seq": 2, "page": 0, "method": "LMSSetValue",
+      "args": ["cmi.suspend_data", "exe12/1|ide-a;7;0;4;100;25;0;100"] },
+    { "seq": 3, "page": 1, "method": "LMSSetValue",
+      "args": ["cmi.suspend_data", "exe12/1|ide-b;7;2;4;5;75;0;10|ide-c;2;0;1;;1;0;100|3;40;1|ide-a;7;0;4;100;25;0;100"] },
+    { "seq": 4, "page": 1, "method": "LMSFinish", "args": [""] }
+  ],
+  "xapi": [],
+  "expected": {
+    "perItem": { "ide-a": 100, "ide-b": 50 },
+    "ungraded": ["ide-c"],
+    "overall": 62.5,
+    "weights": { "ide-a": 25, "ide-b": 75 },
+    "note": "Hand-authored for the versioned exe12/1 payload (core PR #2209). Records carry their own activity id, so nothing depends on the page-local slot and page 1 rewriting the whole map cannot contaminate anybody. ide-a: field[4]=100 in the 0-100 window with answered=0 of total=4 -- the score is NOT derivable from the counters, which is why it is read from field [4]. ide-b: field[4]=5 in its own 0-10 window = 50%, weight 75. ide-c is flagged 2 (completionRequired, NOT evaluable) and has an empty score field: it never produced a result and must stay ungraded. '3;40;1' is a migrated-but-unclaimed legacy pool record (position;score;weight): it names a page position, not an iDevice, so it is dropped rather than attributed to whatever sits at that position. overall = (100*25 + 50*75)/100 = 62.5."
+  }
+}

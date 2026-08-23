@@ -72,6 +72,10 @@ class attempts {
      * the limit having never had a gradable attempt, and every further submission is
      * refused with 'maxattemptsreached'. They could never be graded at all (DEC-124-03).
      *
+     * Since DEC-126-01 ingest() writes nothing at all while grading is off, so no new
+     * row can carry a 0. The filter stays for the rows earlier versions left behind and
+     * for restored backups that carry them.
+     *
      * This is the ONE counting query that filters. The allocation query in
      * resolve_attempt_number() must not: it takes MAX(attempt) to pick the next number,
      * and skipping rows there would reissue an attempt number that already exists,
@@ -232,19 +236,16 @@ class attempts {
             // attempt it started with even if the master grading switch changes
             // underneath it (DEC-124-03).
             //
-            // Splitting the session into a second, gradable attempt was tried and is
-            // wrong. The client accumulates its itemScores map and never clears it — by
-            // design, so a failed POST cannot lose a score — so every later POST re-sends
-            // everything captured during the ungraded period. A fresh gradable attempt is
-            // therefore a clean vessel for contaminated content: the server cannot tell
-            // which entries of that map were earned before the switch and which after,
-            // and the ungraded work lands in the gradebook. Measured: the split produced
-            // "attempt=2 item=1 raw=95 gradable=1" and published 95.
+            // Splitting the session into a second attempt when the switch moves was tried
+            // and is wrong. The client accumulates its itemScores map and never clears it
+            // — by design, so a failed POST cannot lose a score — so every later POST
+            // re-sends everything captured earlier in the sitting. The server cannot tell
+            // which entries were earned before the switch and which after, so the new
+            // attempt would be a clean vessel for mixed content. Measured: the split
+            // produced "attempt=2 item=1 raw=95 gradable=1" and published 95.
             //
-            // A session that crossed the switch can produce no trustworthy grade at all,
-            // so it produces none. Reloading mints a new token and a clean attempt, which
-            // costs the learner nothing because count_user_attempts() does not charge the
-            // ungraded one against maxattempt.
+            // Reloading the page mints a new token and a clean attempt, which is the
+            // supported way to start a fresh sitting (DEC-126-01).
             $existing = $DB->get_field('exelearning_attempt', 'attempt', [
                 'exelearningid' => $exelearningid,
                 'userid'        => $userid,
@@ -297,9 +298,13 @@ class attempts {
         $scaled = ($maxscore > 0) ? max(0.0, min(1.0, $rawscore / $maxscore)) : 0.0;
 
         // A row written while the activity was not graded is completion-only
-        // (DEC-124-03): it stays in the report and feeds completion by status, but the
-        // aggregation queries below exclude it, so re-enabling grading never turns work
-        // done during the ungraded period into a mark.
+        // (DEC-124-03): it stays in the report, but the aggregation queries below exclude
+        // it, so re-enabling grading never turns work done during the ungraded period
+        // into a mark.
+        //
+        // Since DEC-126-01 no production caller passes false — with grading off
+        // ingest() returns before recording anything — so everything below now applies
+        // only to rows earlier versions wrote and to restored backups carrying them.
         //
         // The flag belongs to the ATTEMPT, not to the individual row, and it can be
         // lowered but never raised. An attempt is one learner sitting, and its rows are

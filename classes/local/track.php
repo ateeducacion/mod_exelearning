@@ -22,9 +22,10 @@ namespace mod_exelearning\local;
  * Holds the per-iDevice routing logic so it can be unit-tested without invoking
  * the AJAX script. Two concerns live here:
  *
- *  - {@see self::parse_suspend_data()} decodes eXeLearning v4's `cmi.suspend_data`
- *    string. It is the single PHP source of truth for that format and mirrors the
- *    JavaScript parser in the `view.php` SCORM shim.
+ *  - {@see self::parse_suspend_data()} decodes eXeLearning's `cmi.suspend_data`
+ *    string — both the versioned `exe12/` payload written by the SCORM 1.2 runtime
+ *    and the legacy unversioned lines. It is the single PHP source of truth for both
+ *    formats and mirrors the JavaScript parser in the `view.php` SCORM shim.
  *  - {@see self::apply_item_scores()} routes per-iDevice scores to the gradebook by
  *    the stable `objectid` captured client-side (DEC-5-01 / RIE-007), instead of by
  *    the page-local index N the producer emits — which collides across pages.
@@ -112,6 +113,17 @@ class track {
             return ['ok' => true, 'mode' => 'preview', 'rawscore' => $score, 'status' => $status];
         }
 
+        // Master grading switch (DEC-13-07): with grading off the instance has no
+        // grade items, so the objectid filter below empties itemscores, the
+        // server-side recompute never runs, and ingest would fall through to trusting
+        // the CLIENT's cmi.core.score.raw — writing attempt rows, gradebook updates
+        // and lifecycle events for an activity its teacher configured as ungraded.
+        // Mirror the xAPI channel (xapi\ingestor::ingest()): acknowledge, write
+        // nothing.
+        if (empty($exe->gradeenabled)) {
+            return ['ok' => true, 'noop' => true];
+        }
+
         // Per-iDevice routing: prefer the stable objectid map (DEC-5-01); fall back
         // to the page-local index from cmi.suspend_data only when none is supplied.
         $itemscores = (isset($payload['itemscores']) && is_array($payload['itemscores']))
@@ -197,19 +209,11 @@ class track {
             ]) : false;
 
             // Attempt limit (DEC-0-07 phase 2): a fresh session over the cap is rejected.
-            // The attempt cap applies only while the activity is a graded one. It is a
-            // grading control — mod_form.php disables it with the rest of the grade
-            // settings when gradeenabled is off — and count_user_attempts() now counts
-            // gradable attempts only, so leaving it armed here would refuse a learner
-            // access to an UNGRADED activity on the strength of graded attempts they
-            // spent earlier (DEC-124-03).
-            //
-            // It also closes a bypass: with the cap armed while grading is off, the
-            // $sessionknown escape hatch below is the only thing that lets such a session
-            // write at all, and a session known from the ungraded period would then carry
-            // that exemption into a later gradable attempt.
+            // The cap only ever applies to a graded activity, and DEC-126-01 makes that
+            // true by construction: with grading off ingest() returned above, so no
+            // attempt was created and none was charged against the cap.
             $maxattempt = (int) ($exe->maxattempt ?? 0);
-            if ($maxattempt > 0 && !empty($exe->gradeenabled)) {
+            if ($maxattempt > 0) {
                 $sessionknown = ($sessiontoken !== '') && $DB->record_exists(
                     'exelearning_attempt',
                     ['exelearningid' => $exe->id, 'userid' => $userid, 'sessiontoken' => $sessiontoken]
@@ -253,11 +257,10 @@ class track {
             }
             $overallstatus = in_array($status, ['passed', 'failed', 'completed', 'incomplete'], true)
                     ? $status : 'completed';
-            // Marked completion-only when the activity is not graded (DEC-124-03). The
-            // row is still written — DEC-69-01's completion by status needs it — but its
-            // score never went through the server-side recompute (no registered
-            // objectids to recompute from), so it must not become a mark when grading
-            // comes back on.
+            // Always gradable: reaching here means the activity is graded (DEC-126-01).
+            // The flag itself stays because rows written by earlier versions, while the
+            // activity was ungraded, are in the database marked 0 and must keep being
+            // excluded from every aggregation.
             attempts::record_item(
                 $exe->id,
                 $userid,
@@ -267,18 +270,13 @@ class track {
                 $grademax,
                 $overallstatus,
                 $sessiontoken,
-                !empty($exe->gradeenabled)
+                true
             );
-            // With no GRADABLE overall history at all — every row for itemnumber 0 is
-            // completion-only (DEC-124-03) — aggregate_scaled() returns null, and the
-            // historical fallback below took $score, which is the client's
-            // cmi.core.score.raw, so taking it here would publish an unverified browser
-            // value in exactly the case where the server has decided none of the history
-            // counts: a learner holding a page open across a mid-session switch-on.
-            //
-            // Note this is not the ordinary first-POST case. record_item() runs above,
-            // so with grading on there is always at least one gradable row by the time
-            // this executes and the aggregation has something to return.
+            // A gradable row has just been written by record_item(), so the aggregation
+            // has something to return. The null branch is left as a floor: taking $score
+            // would publish the client's cmi.core.score.raw unverified, and a learner
+            // whose only stored history is completion-only rows from an older version
+            // must not be graded from it.
             $scaledoverall = attempts::aggregate_scaled($exe->id, $userid, 0, $grademethod);
             $hasgradablehistory = ($scaledoverall !== null);
             $finaloverall = $hasgradablehistory ? ($scaledoverall * $grademax) : $score;
@@ -286,30 +284,12 @@ class track {
             // Publish the aggregated overall grade ONLY in OVERALL mode (DEC-25-01): in
             // PERITEM the per-iDevice grades carry the gradebook.
             //
-            // And only while the master grading switch is on (DEC-13-07, DEC-124-02).
-            // With it off, exelearning_sync_grade_items() has deleted this instance's
-            // grade items — and grade_update() RECREATES a deleted item, so publishing
-            // here would resurrect the very column the teacher turned off. It would also
-            // publish the CLIENT's cmi.core.score.raw, because with no registered
-            // objectids there is nothing for the server-side recompute to work from.
-            //
-            // The attempt row above is still written, deliberately: DEC-69-01's
-            // completion by status reads it filtering on exelearningid, userid,
-            // itemnumber and status, never on gradeenabled, and mod_form.php does not
-            // gate that rule on the switch either. It is also the history DEC-13-07
-            // preserves so grading recomputes when the switch goes back on (DEC-124-01).
-            //
-            // apply_one()'s per-iDevice grade_update() needs no guard of its own: it
-            // routes by registered objectid (DEC-5-01), and with the switch off none is
-            // registered, so it never runs. A second check there would be dead code
-            // implying a path that does not exist — pinned by the peritem case of
-            // test_ingest_with_grading_disabled_records_attempt_but_publishes_no_grade.
+            // The master grading switch needs no check here: with it off ingest()
+            // returned at the top (DEC-126-01), which is what stops grade_update() from
+            // RECREATING the very column exelearning_sync_grade_items() deleted when the
+            // teacher turned grading off.
             $result = GRADE_UPDATE_OK;
-            if (
-                $grademodel === EXELEARNING_GRADEMODEL_OVERALL
-                && !empty($exe->gradeenabled)
-                && $hasgradablehistory
-            ) {
+            if ($grademodel === EXELEARNING_GRADEMODEL_OVERALL && $hasgradablehistory) {
                 $grade = (object) [
                     'userid'   => $userid,
                     'rawgrade' => $finaloverall,
@@ -941,17 +921,17 @@ class track {
             $grademax,
             'completed',
             $sessiontoken,
-            // Lowered to 0 by record_item() when the attempt it belongs to is
-            // completion-only, which is how a switch-on mid-sitting is prevented from
-            // making the accumulated client scores gradable (DEC-124-03).
-            !empty($exe->gradeenabled)
+            // Always gradable: apply_one() only runs for a registered objectid, and an
+            // ungraded activity has none — it returned at the top of ingest()
+            // (DEC-126-01).
+            true
         );
         // Gradebook grade = aggregation of attempts according to grademethod, over
         // GRADABLE rows only. A null means this learner has no gradable history for this
-        // iDevice, and the historical fallback to $rawitem is the score the CLIENT sent —
-        // so taking it would publish an unverified browser value in exactly the case
-        // where the server decided none of the history counts. Publish nothing instead.
-        // Mirrors the same rule on the overall in ingest().
+        // iDevice — only completion-only rows written by an older version — and the
+        // fallback to $rawitem is the score the CLIENT sent, so taking it would publish
+        // an unverified browser value. Publish nothing instead. Mirrors the same rule on
+        // the overall in ingest().
         $scaled = attempts::aggregate_scaled($exe->id, $userid, $itemnumber, $ctx['grademethod']);
         $finalitem = ($scaled === null) ? $rawitem : ($scaled * $grademax);
         // In "overall only" mode per-iDevice columns are not published (DEC-0-08),

@@ -137,17 +137,17 @@ no grade items and no reports and behaves like a plain resource: `exelearning_sy
 (→ `\mod_exelearning\grades\grade_sync::sync()`) removes all grade items (via
 `\mod_exelearning\grades\grade_item_manager::remove_all()`) and detects nothing, and
 `exelearning_update_grades()` (→ `\mod_exelearning\grades\grade_sync::update_grades()`) returns early.
-Attempt history (`exelearning_attempt`) is preserved.
 
-Preserved, but **not retroactively graded**. Rows recorded while the switch is off are marked
-`gradable = 0` (`db/install.xml`) and are never aggregated into a gradebook grade — not even after grading is
-switched back on (**DEC-124-03**). They keep feeding completion-by-status and the attempts report, and they do
-**not** count against `maxattempt`, so a learner who used the activity while it was a plain resource still has
-their allowance when it becomes a graded one. A session that straddles a change of the switch is split into two
-attempts, so each attempt is written entirely under one grading state.
+Nothing new is recorded either. `track::ingest()` acknowledges the request and writes nothing at all — no
+attempt row, no grade, no event (**DEC-126-01**). That is what makes "work done while the activity was not
+graded never becomes a mark" (**DEC-124-03**) true by construction: there is nothing that could later be
+converted. It also means an ungraded period cannot use up the learner's `maxattempt` allowance, because it
+creates no attempts. Two consequences are accepted deliberately: completion-by-status (**DEC-69-01**) does not
+resolve on an ungraded activity, since it reads attempt rows and there are none; and enabling the switch starts
+recording from that moment, recovering nothing from before it.
 
-What re-enabling *does* recover is the history recorded while the activity **was** graded: switching back on
-republishes it from `exelearning_attempt` (**DEC-124-01**), which it did not do before.
+History recorded while the activity **was** graded is untouched by all of this: it stays in
+`exelearning_attempt`, and switching the activity back to graded republishes it (**DEC-124-01**).
 
 **Caveat**: `FEATURE_GRADE_HAS_GRADE` is **static** — `exelearning_supports()` returns `true` unconditionally
 (`lib.php:66-67`), regardless of `gradeenabled`. So Moodle still classifies the activity type as gradable even when a

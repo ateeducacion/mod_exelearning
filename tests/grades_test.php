@@ -150,17 +150,10 @@ final class grades_test extends advanced_testcase {
      * model (DEC-124-03).
      *
      * The OFF -> ON test above covers recovering history recorded while the activity WAS
-     * graded. This is the other interval, and before this change the two grade models
-     * disagreed about it. With grading off there are no registered objectids, so:
-     *
-     *  - PERITEM wrote no itemnumber>0 rows at all — nothing to resurrect;
-     *  - OVERALL wrote the itemnumber=0 row that completion by status needs, carrying a
-     *    score that had NOT been recomputed server-side because there was nothing to
-     *    recompute from. Re-enabling grading then published that browser-reported value.
-     *
-     * The switch is now a statement about assessment, not a pause button: what a learner
-     * did while the activity was a plain resource is kept for completion and for the
-     * report, and is never retroactively converted into a grade. Both models obey it.
+     * graded. This is the other interval, and DEC-126-01 makes it trivial: with
+     * grading off nothing is recorded at all, so there is nothing that could later be
+     * converted into a mark. This test is the guarantee itself, kept because the
+     * guarantee is what matters to a teacher, not the mechanism that delivers it.
      *
      * @param int $grademodel The grade model to exercise.
      * @dataProvider ungraded_interval_models_provider
@@ -195,15 +188,11 @@ final class grades_test extends advanced_testcase {
             ],
         ], false);
 
-        // Recorded for completion, and flagged as not counting towards a grade.
-        $rows = $DB->get_records('exelearning_attempt', [
+        // Nothing was recorded. An activity that is not graded has no tracking table.
+        $this->assertFalse($DB->record_exists('exelearning_attempt', [
             'exelearningid' => $instance->id,
             'userid'        => $student->id,
-        ]);
-        $this->assertNotEmpty($rows);
-        foreach ($rows as $row) {
-            $this->assertEquals(0, (int) $row->gradable, 'Row written while ungraded must be completion-only');
-        }
+        ]));
 
         // The teacher now turns the activity into a graded one.
         $data = $this->update_payload($instance, ['gradeenabled' => 1]);
@@ -221,11 +210,11 @@ final class grades_test extends advanced_testcase {
             );
         }
 
-        // And the attempt survives, so completion by status still resolves.
-        $this->assertTrue($DB->record_exists('exelearning_attempt', [
+        // And there is still no attempt: enabling grading does not resurrect the past,
+        // it starts recording from now.
+        $this->assertFalse($DB->record_exists('exelearning_attempt', [
             'exelearningid' => $instance->id,
             'userid'        => $student->id,
-            'itemnumber'    => 0,
         ]));
     }
 
