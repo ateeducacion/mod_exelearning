@@ -42,17 +42,28 @@ final class scorm_injector {
     public static function inject(int $contextid, int $revision): void {
         $fs = get_file_storage();
         $marker = '<!-- mod_exelearning:scorm-loader -->';
-        // After loading the wrapper, force `pipwerks.SCORM.init()` so that
-        // connection.isActive=true and subsequent `set()` calls DO reach
-        // window.parent.API.LMSSetValue. eXeLearning only invokes init() in the
-        // on-click flow; with isScorm==1 (auto-save after each question) it never
-        // gets called, so we trigger it here.
+        // The plugin manufactures a SCORM session around content that is not a SCORM
+        // package, so it has to complete the manufacture.
+        //
+        // First `pipwerks.SCORM.init()`, so connection.isActive is true and `set()` calls
+        // reach window.parent.API: eXeLearning only calls init() in its on-click flow, and
+        // with isScorm == 1 (auto-save after each question) that never happens.
+        //
+        // Then `loadPage()`, which is the runtime's page lifecycle. A web export never
+        // calls it — that entry point belongs to a SCORM export — and the rewritten runtime
+        // holds every LMS write until the entry policy has run. Measured on a live Moodle
+        // before this line existed: with an eXeLearning 4.x export the activity registry
+        // held the learner's score, `cmi.core.score.raw` and `cmi.suspend_data` stayed
+        // empty, no POST ever reached track.php and the gradebook column stayed empty.
+        // Calling loadPage() by hand in the same session published the score immediately.
+        // Older runtimes have no loadPage(), so the call is optional by construction.
         $initscript = "\n    <script>\n" .
                 "      (function(){\n" .
                 "        var t = setInterval(function(){\n" .
                 "          if (window.pipwerks && window.pipwerks.SCORM) {\n" .
                 "            clearInterval(t);\n" .
                 "            try { window.pipwerks.SCORM.init(); } catch(e){}\n" .
+                "            try { if (typeof window.loadPage === 'function') { window.loadPage(); } } catch(e){}\n" .
                 "          }\n" .
                 "        }, 50);\n" .
                 "      })();\n" .

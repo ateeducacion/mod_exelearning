@@ -155,4 +155,38 @@ final class scorm_injector_test extends advanced_testcase {
         $this->assertStringContainsString('<script src="libs/SCORM_API_wrapper.js"></script>', $index);
         $this->assertStringContainsString('<script src="../libs/SCOFunctions.js"></script>', $page);
     }
+
+    /**
+     * The injected bootstrap runs the runtime's page lifecycle, not only its connection.
+     *
+     * The plugin manufactures a SCORM session around content that is not a SCORM package.
+     * `pipwerks.SCORM.init()` opens the connection; `loadPage()` runs the entry policy, and
+     * the rewritten eXeLearning runtime holds every LMS write until it has. A web export
+     * never calls loadPage() itself — that entry point belongs to a SCORM export — so
+     * without this the score never leaves the page.
+     *
+     * Measured on a live Moodle before the call existed: the activity registry held the
+     * learner's score, `cmi.core.score.raw` and `cmi.suspend_data` stayed empty, no POST
+     * reached track.php, and the gradebook column stayed empty for an activity the learner
+     * had completed.
+     */
+    public function test_the_bootstrap_runs_the_runtimes_page_lifecycle(): void {
+        $this->resetAfterTest();
+        $contextid = \context_system::instance()->id;
+        $revision = 51;
+
+        $this->put_html($contextid, $revision, '/', 'index.html', '<html><head></head><body></body></html>');
+
+        scorm_injector::inject($contextid, $revision);
+
+        $index = get_file_storage()
+            ->get_file($contextid, 'mod_exelearning', 'content', $revision, '/', 'index.html')
+            ->get_content();
+
+        $this->assertStringContainsString('pipwerks.SCORM.init()', $index);
+        $this->assertStringContainsString('window.loadPage()', $index);
+        // Optional by construction: a package whose runtime predates the page lifecycle
+        // must not throw on a call that does not exist there.
+        $this->assertStringContainsString("typeof window.loadPage === 'function'", $index);
+    }
 }
