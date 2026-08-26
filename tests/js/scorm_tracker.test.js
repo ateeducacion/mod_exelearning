@@ -13,6 +13,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * Vitest unit tests for the SCORM 1.2 tracker (js/scorm_tracker.js).
+ *
+ * @category   test
+ * @copyright  2026 ATE (Área de Tecnología Educativa)
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 // Side-effect import: the module exposes its API on window.exeScormTracker (and on
 // module.exports), so reading the global works whether Vitest treats the file as ESM
 // or CJS. globals (describe/it/expect/vi) are enabled in vitest.config.mjs.

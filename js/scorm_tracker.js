@@ -25,6 +25,9 @@
  *
  * It is exposed two ways from a single body: window.exeScormTracker for the
  * browser bootstrap, and module.exports for the test runner.
+ *
+ * @copyright  2026 ATE (Área de Tecnología Educativa)
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 (function () {
     'use strict';
