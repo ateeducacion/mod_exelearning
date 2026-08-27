@@ -132,6 +132,28 @@ final class scorm_runtime_test extends advanced_testcase {
     }
 
     /**
+     * The vendored runtime defines the host entry point the injected bootstrap calls.
+     *
+     * scorm_injector's bootstrap opens the session through
+     * `exeScorm12.session.open({ ownsLifecycle: false })` and only falls back to
+     * `pipwerks.SCORM.init()` when that entry never appears. That fallback is a silent
+     * failure with this runtime: pipwerks' connection opens, the runtime's own client
+     * stays idle and refuses every write with 301 before it reaches the LMS. A copy
+     * taken from a build that predates session.open() would put every activity on that
+     * path without a single test noticing — so the file itself is checked (DEC-105-02).
+     */
+    public function test_the_runtime_defines_the_host_entry_point_the_bootstrap_calls(): void {
+        $source = $this->asset('SCOFunctions.js');
+
+        $this->assertMatchesRegularExpression(
+            '/exeScorm12\.session\s*=\s*\{\s*open:\s*function\s*\(/',
+            $source,
+            'the vendored runtime does not define exeScorm12.session.open(); the bootstrap would fall back to '
+                . 'pipwerks.SCORM.init() and every write would be refused silently'
+        );
+    }
+
+    /**
      * Read the provenance file into key => value pairs.
      *
      * @return array<string,string> Everything declared in assets/scorm/SOURCE.
