@@ -10,9 +10,9 @@
 
 core-repo: https://github.com/exelearning/exelearning
 core-ref: feature/refactor-scorm-library
-core-commit: db5a5a6da0906fa6efc3a49547c7221751ccf158
+core-commit: a457d71a7ebdd590129cf3d139766afe1455aadf
 runtime-version: v0.0.0-alpha
 generated-by: make export-scorm12 (src/cli/commands/elp-export.ts)
 
 SCORM_API_wrapper.js: sha256:f2a558ba284edbc6842edf51678df1f7e3e05cbf09ec00bc6dd5988b6caa2e78
-SCOFunctions.js: sha256:a13556b13170e20ad8eff15a4eb9571f9b1872d6cb046738607cb6911a5dfcf8
+SCOFunctions.js: sha256:99e7ab8ecebaab3578abe72b04c3ed0e8b6d9384351e0d3688f15a3c92452ec3

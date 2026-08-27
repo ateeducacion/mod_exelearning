@@ -1844,12 +1844,14 @@
             };
         }
         if (!activities) {
-            // No registry layer at all. A host may assemble the runtime without
-            // it (the Moodle plugin does), and then NOTHING will ever report
-            // progress — so the page-flag branch below would pin such a page to
-            // `incomplete` for the rest of time. Completion is simply not this
-            // host's business: report no required activities and let the status
-            // be decided without them.
+            // No registry layer at all. Tolerated, not shipped: eXeLearning's
+            // exports and the Moodle plugin both carry all five layers, but a
+            // host that assembles the runtime without this one must still get a
+            // working runtime. There NOTHING will ever report progress — so the
+            // page-flag branch below would pin such a page to `incomplete` for
+            // the rest of time. Completion is simply not that host's business:
+            // report no required activities and let the status be decided
+            // without them.
             return {
                 hasRequired: false,
                 allRequiredComplete: true,
@@ -1923,9 +1925,22 @@
          * the SCO now); preserve every other stored status. Restores the
          * activity registry from cmi.suspend_data and adopts the LMS mastery
          * score as the success threshold when the LMS publishes one.
+         *
+         * Idempotent: the entry decision is taken once per session. A second
+         * call — a host that opened the session and the SCO's own loadPage()
+         * both go through session.open() — reads and writes nothing, and never
+         * merges the stored records back over progress the learner has made
+         * since. Without an open session nothing is read, so nothing is
+         * applied and the next call after the session opens still runs it.
          */
         applyEntryPolicy: function () {
+            if (state.entryApplied) {
+                return;
+            }
             var client = deps.getClient();
+            if (!client.isActive()) {
+                return;
+            }
             var status = client.getValue(LESSON_STATUS);
             if (status === '' || status === STATUS.NOT_ATTEMPTED) {
                 writeStatus(STATUS.INCOMPLETE);
@@ -2088,6 +2103,13 @@
          * no required activity was pending.
          */
         reconcilePendingActivities: function () {
+            // Before the session opens there is nothing to reconcile against:
+            // every read and write would be refused (and logged) by the
+            // client. iDevices register on jQuery ready, before loadPage(),
+            // and the entry policy sees those registrations when it runs.
+            if (!deps.getClient().isActive()) {
+                return null;
+            }
             if (policy.decideStatus().reason !== 'required-activities-pending') {
                 return null;
             }
@@ -2099,12 +2121,16 @@
          *
          * A terminal status already recorded is preserved — with one
          * exception: when the policy itself wrote that terminal status during
-         * this session and a required activity registered afterwards, the
-         * page demonstrably is not finished, so the policy corrects its own
-         * verdict back to "incomplete". A terminal status restored from a
-         * previous attempt, or written explicitly by content, is never
-         * downgraded. Movement *between* terminal statuses (a retried failed
-         * activity now passing) is always allowed.
+         * this session and the decision afterwards returns to
+         * `required-activities-pending` — a required activity registering
+         * late, or a replay reporting `completed: false` for one that had
+         * been complete — the page demonstrably is not finished, so the
+         * policy corrects its own verdict back to "incomplete". (The local
+         * name `lateRegistration` covers both causes: what is checked is the
+         * decision reason, not how it came about.) A terminal status
+         * restored from a previous attempt, or written explicitly by content,
+         * is never downgraded. Movement *between* terminal statuses (a
+         * retried failed activity now passing) is always allowed.
          *
          * `effective` is the status actually in force at the LMS after the
          * call — when a write is rejected it is the previously stored value,
@@ -2804,10 +2830,12 @@
     // `activities` is deliberately NOT required. This adapter only binds and
     // re-exports the registry, never calls it, and `policy` already degrades to
     // its page-level fallback when the registry is absent. Requiring it here
-    // made the layer set non-composable: a host that ships the runtime WITHOUT
-    // the registry — the Moodle plugin does, so that its packages keep writing
-    // the legacy cmi.suspend_data format its parsers understand — got no
-    // runtime at all instead of one without the registry.
+    // made the layer set non-composable: a host that assembles the runtime
+    // WITHOUT the registry got no runtime at all instead of one without it.
+    // That is a tolerance, not a shipped configuration: eXeLearning's exports
+    // and the Moodle plugin (mod_exelearning #105 vendors the complete
+    // five-layer file, byte-identical to the exporter's output) always ship
+    // all five layers.
     if (
         !exeScorm12 ||
         !exeScorm12.client ||
@@ -2839,6 +2867,10 @@
 
     var state = {
         loadPageRan: false,
+        // Who owns the page lifecycle, decided by the first successful
+        // session.open(): null until then, true when this runtime does (a
+        // SCO), false when the host declined it and ends the session itself.
+        ownsLifecycle: null,
     };
 
     function warn(message) {
@@ -2852,6 +2884,7 @@
      */
     exeScorm12.resetAdapterForTests = function () {
         state.loadPageRan = false;
+        state.ownsLifecycle = null;
     };
 
     /**
@@ -2889,6 +2922,14 @@
      * which is silent from outside: the registry holds the score, the entry policy
      * reports as applied, and `cmi.core.score.raw` stays empty.
      *
+     * Ownership rule: the first successful open decides who owns the lifecycle, and
+     * later calls cannot change it. A host that declined ownership keeps the page's
+     * own loadPage() (a SCORM 1.2 package embedded by the host still carries its
+     * `<body onload>`) from installing the SCO lifecycle behind its back; a host
+     * opening after the SCO already owns the lifecycle does not remove it. The entry
+     * policy is applied once per session whichever caller comes first — a failed open
+     * decides nothing, so the next successful caller takes the decision.
+     *
      * @param {object} [options] - Session options.
      * @param {boolean} [options.ownsLifecycle=true] - False when the host owns the page
      * and its end-of-session handling, so the SCO lifecycle must not be installed.
@@ -2900,8 +2941,11 @@
             if (!client.initialize()) {
                 return false;
             }
+            if (state.ownsLifecycle === null) {
+                state.ownsLifecycle = ownsLifecycle;
+            }
             policy.applyEntryPolicy();
-            if (ownsLifecycle) {
+            if (state.ownsLifecycle) {
                 lifecycle.install();
             }
             return true;
