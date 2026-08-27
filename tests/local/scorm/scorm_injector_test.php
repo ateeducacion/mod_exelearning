@@ -199,4 +199,144 @@ final class scorm_injector_test extends advanced_testcase {
         $this->assertStringContainsString('window.pipwerks.SCORM.init()', $index);
         $this->assertMatchesRegularExpression('~ticks > 40 && window\.pipwerks~', $index);
     }
+
+    /**
+     * A SCORM 1.2 export opens its own session as a SCO: `<body onload="loadPage()">`,
+     * and exe_export.js calls window.loadPage() as well whenever the body carries the
+     * `exe-scorm` class. Both go through `session.open({ ownsLifecycle: true })`, which
+     * installs the page lifecycle this serving model must not run (every page shares
+     * one session — see test_the_bootstrap_releases_the_runtimes_write_gate). The runtime
+     * gives the lifecycle to the FIRST successful open, so with that entry left in place
+     * who owns it is a race between the bootstrap's first tick and the page's own load
+     * events. The injector removes the entry instead, so the bootstrap is the only
+     * opener; everything else on the body tag survives.
+     */
+    public function test_a_scorm_export_opens_the_session_only_through_the_bootstrap(): void {
+        $this->resetAfterTest();
+        $contextid = \context_system::instance()->id;
+        $revision = 62;
+
+        $this->put_html(
+            $contextid,
+            $revision,
+            '/',
+            'index.html',
+            '<html><head><title>t</title>'
+                . '<script src="libs/SCORM_API_wrapper.js"></script>'
+                . '<script src="libs/SCOFunctions.js"></script>'
+                . '</head><body class="exe-export exe-scorm exe-scorm12 exe-font-roboto" onload="loadPage()" lang="en">'
+                . '<main></main></body></html>'
+        );
+        $this->put_html(
+            $contextid,
+            $revision,
+            '/html/',
+            'page.html',
+            '<html><head></head>'
+                . "<body onload='loadPage()' class='exe-export exe-scorm exe-scorm12'><main></main></body></html>"
+        );
+
+        scorm_injector::inject($contextid, $revision);
+
+        $fs = get_file_storage();
+        $index = $fs->get_file($contextid, 'mod_exelearning', 'content', $revision, '/', 'index.html')
+            ->get_content();
+        $page = $fs->get_file($contextid, 'mod_exelearning', 'content', $revision, '/html/', 'page.html')
+            ->get_content();
+
+        foreach (['index.html' => $index, 'html/page.html' => $page] as $name => $html) {
+            // The bootstrap is the only session opener left on the page.
+            $this->assertSame(
+                1,
+                substr_count($html, 'ns.session.open({ ownsLifecycle: false })'),
+                "$name opens the session through the bootstrap, once"
+            );
+            $this->assertStringNotContainsString('loadPage()', $html, "$name no longer opens the session as a SCO");
+            $this->assertDoesNotMatchRegularExpression('~<body\b[^>]*\bonload\s*=~i', $html, "$name has no body onload");
+            $this->assertStringNotContainsString('exe-scorm', $html, "$name carries no exe-scorm / exe-scorm12 class");
+            $this->assertSame(1, substr_count($html, '<body'), "$name still has exactly one body tag");
+        }
+
+        // Every other attribute and class of the body tag survives, in place.
+        $this->assertStringContainsString('<body class="exe-export exe-font-roboto" lang="en">', $index);
+        $this->assertStringContainsString("<body class='exe-export'>", $page);
+        $this->assertStringContainsString('<main></main>', $index);
+    }
+
+    /**
+     * A web export — what every .elpx upload is — carries no SCO entry, and the
+     * injector must leave its body exactly as it was: the neutralisation is scoped to
+     * the SCORM export case, not a rewrite of every page.
+     */
+    public function test_a_web_export_keeps_its_body_untouched(): void {
+        $this->resetAfterTest();
+        $contextid = \context_system::instance()->id;
+        $revision = 63;
+
+        $before = '<html><head><title>w</title></head>'
+            . '<body class="exe-export exe-web-site" lang="es" data-x="1"><main>hi</main></body></html>';
+        $this->put_html($contextid, $revision, '/', 'index.html', $before);
+
+        scorm_injector::inject($contextid, $revision);
+
+        $after = get_file_storage()
+            ->get_file($contextid, 'mod_exelearning', 'content', $revision, '/', 'index.html')
+            ->get_content();
+
+        // The bootstrap went in, and from <body onward the page is byte-for-byte the original.
+        $this->assertStringContainsString('ns.session.open({ ownsLifecycle: false })', $after);
+        $this->assertSame(
+            substr($before, strpos($before, '<body')),
+            substr($after, strpos($after, '<body')),
+            'a web export body is not rewritten'
+        );
+    }
+
+    /**
+     * Cases for {@see test_neutralise_sco_entry_removes_only_the_sco_entry()}.
+     *
+     * @return array<string, array{0: string, 1: string}> [input, expected].
+     */
+    public static function sco_entry_provider(): array {
+        return [
+            'exporter output' => [
+                '<body class="exe-export exe-scorm exe-scorm12" onload="loadPage()" lang="en">',
+                '<body class="exe-export" lang="en">',
+            ],
+            'single quotes, attributes in another order, semicolon, case' => [
+                "<BODY onload='loadPage();' Class='exe-scorm12 exe-export EXE-SCORM' lang='en'>",
+                "<BODY Class='exe-export' lang='en'>",
+            ],
+            'only the SCO classes: the attribute goes with them' => [
+                '<body class="exe-scorm exe-scorm12" onload="loadPage()">',
+                '<body>',
+            ],
+            'an onload that is not the SCO entry is left alone' => [
+                '<body class="exe-export" onload="somethingElse()">',
+                '<body class="exe-export" onload="somethingElse()">',
+            ],
+            'a web export is returned byte-for-byte' => [
+                '<body class="exe-export exe-web-site" lang="en">',
+                '<body class="exe-export exe-web-site" lang="en">',
+            ],
+            'no body tag at all' => [
+                '<div class="exe-scorm">loadPage()</div>',
+                '<div class="exe-scorm">loadPage()</div>',
+            ],
+        ];
+    }
+
+    /**
+     * The neutralisation touches the SCO entry and nothing else: `onload="loadPage()"`
+     * exactly, and the `exe-scorm` / `exe-scorm12` class tokens.
+     *
+     * @dataProvider sco_entry_provider
+     * @param string $input A page (or a body tag).
+     * @param string $expected What must come out.
+     */
+    public function test_neutralise_sco_entry_removes_only_the_sco_entry(string $input, string $expected): void {
+        $wrap = static fn(string $tag): string => '<html><head></head>' . $tag . '<p>loadPage() in text stays</p></body></html>';
+
+        $this->assertSame($wrap($expected), scorm_injector::neutralise_sco_entry($wrap($input)));
+    }
 }

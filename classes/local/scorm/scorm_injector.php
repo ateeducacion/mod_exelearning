@@ -58,7 +58,12 @@ final class scorm_injector {
         // model has no SCOs: every page of the export shares one session and one
         // lesson_status, so after page one published `passed`, loadPage() on page two
         // saw a finished SCO and closed the session — page two ran with a dead
-        // connection and recorded nothing.
+        // connection and recorded nothing. And nothing else on the page may call it
+        // either: a SCORM 1.2 export arrives with its own SCO entry (`<body
+        // onload="loadPage()">` plus the `exe-scorm` class exe_export.js keys on), and
+        // the runtime hands the lifecycle to whichever open succeeds FIRST. Rather than
+        // race the page's load events, neutralise_sco_entry() removes that entry before
+        // the bootstrap goes in, so the bootstrap is the only opener on every page.
         // - It does not settle for `pipwerks.SCORM.init()`. That opens pipwerks'
         // connection while the runtime's own client stays idle, and then every write is
         // refused locally with 301 before it reaches the LMS. The failure is silent from
@@ -117,6 +122,10 @@ final class scorm_injector {
             }
             $path = $file->get_filepath();
             $payload = ($path === '/') ? $tags : $tagshtml;
+            // A SCORM export must not open the session as a SCO behind the bootstrap's
+            // back (see the comment above and neutralise_sco_entry()); a web export
+            // comes back from this untouched.
+            $html = self::neutralise_sco_entry($html);
             // Drop any runtime the package brought its own script tags for. An
             // eXeLearning SCORM 1.2 export references these two files itself, and this
             // plugin accepts such a package, so without this the page loads the runtime
@@ -146,5 +155,59 @@ final class scorm_injector {
             $file->delete();
             $fs->create_file_from_string($record, $newhtml);
         }
+    }
+
+    /**
+     * Removes the SCO entry of a page exported as SCORM 1.2, so that the injected
+     * bootstrap is the only thing that opens the session.
+     *
+     * An eXeLearning SCORM 1.2 export carries `<body class="exe-export exe-scorm
+     * exe-scorm12" onload="loadPage()">`. Both the onload attribute and the `exe-scorm`
+     * class — exe_export.js calls window.loadPage() itself whenever the body has it —
+     * open the session AS A SCO, `session.open({ ownsLifecycle: true })`, which installs
+     * the page lifecycle this serving model must not run (see inject()). The runtime's
+     * ownership rule is "the first successful open decides", so leaving that entry in
+     * place makes who owns the lifecycle a race between the bootstrap's first tick and
+     * the page's own load events. Removing it is deterministic: the page becomes what
+     * every other package this plugin serves already is — a web export with no
+     * `exe-scorm` switch. DEC-13-11 records why the plugin deliberately does not ADD
+     * that class to the pages it serves; this is the same rule applied to a package
+     * that arrives with it, and idevice_patch covers the two iDevices that gate their
+     * save on it (DEC-105-02).
+     *
+     * Only the SCO entry is touched: an onload that is exactly `loadPage()` (what the
+     * exporter emits; any other handler is left alone) and the `exe-scorm` /
+     * `exe-scorm12` class tokens. Every other attribute and class of the body tag —
+     * `exe-export`, a global-font class, `lang` — survives in place, a class attribute
+     * left empty is dropped, and a page without a SCO entry is returned byte-for-byte.
+     *
+     * @param string $html A package page.
+     * @return string The page with its SCO entry removed.
+     */
+    public static function neutralise_sco_entry(string $html): string {
+        $rewritten = preg_replace_callback(
+            '~<body\b[^>]*>~i',
+            static function (array $body): string {
+                $tag = $body[0];
+                $tag = preg_replace('~\s+onload\s*=\s*(["\'])\s*loadPage\(\)\s*;?\s*\1~i', '', $tag) ?? $tag;
+                $tag = preg_replace_callback(
+                    '~(\s+class\s*=\s*)(["\'])(.*?)\2~is',
+                    static function (array $attr): string {
+                        $kept = [];
+                        foreach (preg_split('~\s+~', trim($attr[3])) ?: [] as $class) {
+                            if ($class !== '' && !in_array(strtolower($class), ['exe-scorm', 'exe-scorm12'], true)) {
+                                $kept[] = $class;
+                            }
+                        }
+                        return $kept === [] ? '' : $attr[1] . $attr[2] . implode(' ', $kept) . $attr[2];
+                    },
+                    $tag
+                ) ?? $tag;
+                return $tag;
+            },
+            $html,
+            1
+        );
+        return $rewritten ?? $html;
     }
 }
