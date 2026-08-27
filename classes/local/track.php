@@ -601,6 +601,12 @@ class track {
      * ".\t". N is the page-local DOM index of the iDevice (NOT our itemnumber); see
      * DEC-5-01. The score/weight labels are localised, hence the `[^:]+` parts.
      *
+     * Trailing `; {label}: {n}` groups after the weight are accepted and ignored: a
+     * writer that appends a labelled per-iDevice field (exelearning #2322 adds
+     * `; Estado: <0|1|2>`) must not make the record vanish from the gradebook. The
+     * group is not captured — nothing here reads it — and it has to be a labelled
+     * number, so a truncated or garbled line is still skipped. Mirrors the JS parser.
+     *
      * @param string $suspend Raw cmi.suspend_data value.
      * @return array Map of page-local N (int) to ['title' => string,
      *         'scorepct' => float, 'weighted' => float]. Empty when nothing parses.
@@ -618,7 +624,7 @@ class track {
             // parser in the view.php shim).
             if (
                 preg_match(
-                    '~^(\d+)\.\s"([^"]*)";\s[^:]+:\s([\d.,]+)%;\s[^:]+:\s([\d.,]+)%\.?$~',
+                    '~^(\d+)\.\s"([^"]*)";\s[^:]+:\s([\d.,]+)%;\s[^:]+:\s([\d.,]+)%(?:;\s[^:;]+:\s[\d.,]+%?)*\.?$~',
                     $line,
                     $m
                 )

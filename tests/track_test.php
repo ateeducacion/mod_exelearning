@@ -303,6 +303,36 @@ final class track_test extends advanced_testcase {
     }
 
     /**
+     * parse_suspend_data() tolerates a trailing "; <label>: <n>" group after the
+     * weight — a legacy writer that appends a labelled per-iDevice field
+     * (exelearning #2322 adds "; Estado: <0|1|2>") must not make the record vanish
+     * from the gradebook. Records with and without the suffix parse alike, the suffix
+     * is ignored, and a suffix that is not a labelled number is still rejected. Keeps
+     * parity with the JS parser in the view.php shim.
+     */
+    public function test_parse_suspend_data_tolerates_a_trailing_label_suffix(): void {
+        $suspend = '1. "Quiz"; Puntuación: 60%; Peso: 30%; Estado: 2' . ".\t"
+                . '2. "Plain"; Puntuación: 70%; Peso: 35%' . ".\t"
+                . '3. "Last"; Puntuación: 80%; Peso: 35%; Estado: 1.';
+
+        $parsed = track::parse_suspend_data($suspend);
+
+        $this->assertSame([1, 2, 3], array_keys($parsed));
+        $this->assertSame('Quiz', $parsed[1]['title']);
+        $this->assertEqualsWithDelta(60.0, $parsed[1]['scorepct'], 0.0001);
+        $this->assertEqualsWithDelta(30.0, $parsed[1]['weighted'], 0.0001);
+        $this->assertSame('Plain', $parsed[2]['title']);
+        $this->assertEqualsWithDelta(70.0, $parsed[2]['scorepct'], 0.0001);
+        $this->assertEqualsWithDelta(35.0, $parsed[2]['weighted'], 0.0001);
+        $this->assertEqualsWithDelta(80.0, $parsed[3]['scorepct'], 0.0001);
+        $this->assertArrayNotHasKey('objectid', $parsed[1], 'a legacy record still names no owner');
+
+        // Not a labelled number: still malformed, still skipped.
+        $this->assertSame([], track::parse_suspend_data('1. "Quiz"; score: 60%; weighted: 30%; garbage.'));
+        $this->assertSame([], track::parse_suspend_data('1. "Quiz"; score: 60%; weighted: 30% trailing.'));
+    }
+
+    /**
      * Loads the course and cm records for an instance (ingest() needs both for the
      * completion update).
      *

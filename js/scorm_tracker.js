@@ -143,10 +143,16 @@
 
     /**
      * Parse the legacy (unversioned) cmi.suspend_data, entries separated by ".\t":
-     *   {N}. "{title}"; {scoreLabel}: {S}%; {weightLabel}: {W}%
+     *   {N}. "{title}"; {scoreLabel}: {S}%; {weightLabel}: {W}%[; {label}: {n}]
      * The score/weight numbers accept a comma decimal separator (es_ES/fr_FR/de_DE
      * "60,5%"); it is normalised to a dot before parseFloat. The score percentage is
      * clamped to 0–100. Malformed lines are skipped.
+     *
+     * Trailing "; {label}: {n}" groups are accepted and ignored: a writer that appends
+     * a labelled per-iDevice field after the weight (exelearning #2322 adds
+     * "; Estado: <0|1|2>") must not make the record vanish from the gradebook. The
+     * group is not captured — nothing here reads it — and it has to be a labelled
+     * number, so a truncated or garbled line is still skipped.
      *
      * N is the PAGE-LOCAL DOM index of the iDevice, so it collides across pages and
      * the entry cannot name its own owner — hence no `objectid` on these entries.
@@ -156,7 +162,7 @@
      */
     function parseLegacySuspend(s) {
         var out = {};
-        var re = /^(\d+)\.\s"([^"]*)";\s[^:]+:\s([\d.,]+)%;\s[^:]+:\s([\d.,]+)%\.?$/;
+        var re = /^(\d+)\.\s"([^"]*)";\s[^:]+:\s([\d.,]+)%;\s[^:]+:\s([\d.,]+)%(?:;\s[^:;]+:\s[\d.,]+%?)*\.?$/;
         var parts = String(s).split(/\.\t/);
         for (var i = 0; i < parts.length; i++) {
             var line = parts[i].replace(/^\s+|\s+$/g, '');

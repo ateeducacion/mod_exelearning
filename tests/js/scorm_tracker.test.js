@@ -86,6 +86,25 @@ describe('parseSuspend', () => {
         expect(parseSuspend(null)).toEqual({});
         expect(parseSuspend(undefined)).toEqual({});
     });
+
+    it('tolerates a trailing "; <label>: <n>" group after the weight, with and without it', () => {
+        // A legacy writer that appends a labelled per-iDevice field (exelearning #2322
+        // adds "; Estado: <0|1|2>") must not make the record disappear from the
+        // gradebook: the suffix is accepted and ignored, the record parses as before.
+        const r = parseSuspend(
+            '1. "Quiz"; Puntuación: 60%; Peso: 30%; Estado: 2.\t'
+            + '2. "Plain"; Puntuación: 70%; Peso: 35%.\t'
+            + '3. "Last"; Puntuación: 80%; Peso: 35%; Estado: 1.'
+        );
+        expect(r[1]).toEqual({ title: 'Quiz', scorepct: 60, weighted: 30 });
+        expect(r[2]).toEqual({ title: 'Plain', scorepct: 70, weighted: 35 });
+        expect(r[3]).toEqual({ title: 'Last', scorepct: 80, weighted: 35 });
+    });
+
+    it('still rejects a suffix that is not a labelled number', () => {
+        expect(parseSuspend('1. "Quiz"; score: 60%; weighted: 30%; garbage.')).toEqual({});
+        expect(parseSuspend('1. "Quiz"; score: 60%; weighted: 30% trailing.')).toEqual({});
+    });
 });
 
 describe('resolveObjectMap', () => {
