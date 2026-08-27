@@ -14,4 +14,11 @@
     <version>1.1.20180906</version>
     <license>MIT</license>
   </library>
+  <library>
+    <location>assets/scorm/SCOFunctions.js</location>
+    <name>eXeLearning SCORM 1.2 runtime</name>
+    <description>eXeLearning project code, not a third-party library: the SCORM 1.2 runtime the editor assembles into every package it exports (the public/app/common/scorm/scorm12/ layers, built by buildScorm12RuntimeFiles() in https://github.com/exelearning/exelearning), vendored unmodified and installed into every package this plugin extracts. Declared here, like the editor under dist/static in the release ZIP, because it is not under this plugin's licence; the commit it was built from and the digests of both runtime files are pinned in assets/scorm/SOURCE. The version is the runtime stamp in the file header.</description>
+    <version>v0.0.0-alpha</version>
+    <license>AGPL-3.0-or-later</license>
+  </library>
 </libraries>

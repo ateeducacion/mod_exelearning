@@ -36,8 +36,12 @@ Provenance and licences
 - SCOFunctions.js — first-party eXeLearning code (AGPL-3.0-or-later, the same
   project and licence as the bundled editor): a runtime written from the
   SCORM 1.2 RTE specification, assembled from the exe-scorm12-* layers in the
-  upstream repository. It is not a third-party library and is therefore not
-  listed in thirdpartylibs.xml.
+  upstream repository. It is not a third-party library, but it is not code
+  under this plugin's licence either, so it is declared in thirdpartylibs.xml
+  the same way the release ZIP declares the editor under dist/static — that
+  file is where a reviewer looks for code the plugin ships under another
+  licence. Its entry names the runtime stamp as the version; the commit it
+  was built from and the digests of both files live in SOURCE.
 
 
 Modifications made in Moodle
@@ -60,7 +64,7 @@ This runtime always wins
 classes/local/package_manager.php installs both files into every extracted
 package, replacing whatever the package carried. That applies to a package
 uploaded as a SCORM export too: an activity in this plugin grades with the
-runtime the plugin ships and no other.
+runtime the plugin ships and no other (DEC-105-01).
 
 The pair is installed together or not at all. Half a runtime — the plugin's
 wrapper next to a package's SCOFunctions.js — pairs files written against
@@ -68,14 +72,40 @@ different wrapper versions, which nobody tests.
 
 This used to be conditional, installing the files only when the package lacked
 them, and the file above used to carry a four-layer subset built to keep
-window.exeScorm12.activities absent. Both are gone. Measured on 25 recorded
-scenarios and two package vintages, serving the complete runtime instead of the
-subset produces identical LMS traffic: a web export does not carry the
-exe-scorm body class, so it never calls loadPage(), the entry policy never
-runs, and common.js keeps using the legacy cmi.suspend_data writer whether the
-registry is installed or not. The subset was defending against something that
-cannot happen in this plugin's serving model, at the cost of a file that
-matched no eXeLearning release.
+window.exeScorm12.activities absent. Both are gone: the subset matched no
+eXeLearning release and had to be assembled by hand on every update.
+
+How the session gets opened is the other half of the model (DEC-105-02).
+classes/local/scorm/scorm_injector.php puts a bootstrap on every page that
+opens the session through the runtime's own host entry point,
+exeScorm12.session.open({ ownsLifecycle: false }): the runtime's client comes
+up, the entry policy runs and the write gate opens, while the page lifecycle
+— the SCO's pagehide/visibilitychange handling — is NOT installed, because
+every page of the package shares one session and a SCO lifecycle on page one
+would close it for page two. End-of-page flushing is the plugin's own: the
+tracker's synchronous beforeunload commit plus its 500 ms autocommit.
+
+With the complete runtime installed, a package exported by an eXeLearning
+that carries this runtime routes its scores through the activity registry:
+common.js branches on window.exeScorm12.activities and writes the versioned
+exe12/ cmi.suspend_data payload, which track.php and js/scorm_tracker.js
+decode by its header. A package exported before the rewrite has no registry
+consumer in its common.js and keeps writing the legacy lines, which the same
+parsers still read. (An earlier revision of this file said the entry policy
+never ran here and the legacy writer was kept whatever the registry. That
+was measured on packages exported before the rewrite and is wrong for newer
+ones: a post-rewrite package recorded nothing at all until the injector
+opened the session.)
+
+A SCORM 1.2 export uploaded as a package brings its own SCO entry —
+<body class="exe-export exe-scorm exe-scorm12" onload="loadPage()">, and
+exe_export.js calls loadPage() as well while the exe-scorm class is present.
+The injector removes that entry (the onload attribute and the two class
+tokens) before adding the bootstrap: the runtime hands the page lifecycle to
+the FIRST successful open, and racing the page's load events against the
+bootstrap is not a contract. The page is then what every other package this
+plugin serves already is, a web export without the exe-scorm switch
+(DEC-13-11).
 
 
 How to update
@@ -105,8 +135,9 @@ How to update
 
        head -3 assets/scorm/SCOFunctions.js
 
-4. If upstream bumped the pipwerks version, update its <version> in
-   thirdpartylibs.xml.
+4. Update thirdpartylibs.xml: the <version> of the SCOFunctions.js entry is
+   the stamp you just checked, and if upstream bumped the pipwerks version,
+   its <version> too.
 
 5. Re-run the tests that cover the runtime and the injection path:
 
