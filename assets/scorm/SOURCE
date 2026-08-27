@@ -1,0 +1,18 @@
+# Provenance of the vendored eXeLearning SCORM 1.2 runtime.
+#
+# Machine-readable on purpose: tests/local/scorm/scorm_runtime_test.php checks the two
+# files against the digests below, so any edit to them — including one that keeps every
+# banner and the version stamp intact — fails the suite. The version stamp alone cannot
+# do that job: it names a release, and a release is built many times.
+#
+# To update, follow "How to update" in readme_moodle.txt and regenerate this file with
+# the commit you exported from.
+
+core-repo: https://github.com/exelearning/exelearning
+core-ref: feature/refactor-scorm-library
+core-commit: 436d3f0b8b4b2662612f28717621d18d23c1b3c7
+runtime-version: v0.0.0-alpha
+generated-by: make export-scorm12 (src/cli/commands/elp-export.ts)
+
+SCORM_API_wrapper.js: sha256:f2a558ba284edbc6842edf51678df1f7e3e05cbf09ec00bc6dd5988b6caa2e78
+SCOFunctions.js: sha256:9eebf9d955adbe4518bd36b77a2feb06019bbe0d77376a356e578b53f520c06d

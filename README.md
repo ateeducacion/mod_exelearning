@@ -295,3 +295,37 @@ GNU General Public License for more details.
 
 You should receive a copy of the GNU General Public License
 along with this program.
+
+### Third-party code
+
+`thirdpartylibs.xml` declares every file the plugin ships that is not under
+the plugin's own licence, third-party or not; the folders involved carry a
+`readme_moodle.txt` documenting origin, modifications applied (none) and how
+to update. The plugin carries exactly **one third-party library**, the
+pipwerks wrapper; the other two entries are eXeLearning's own code.
+
+| Location | Component | Licence |
+|---|---|---|
+| `assets/scorm/SCORM_API_wrapper.js` | Unmodified upstream [pipwerks SCORM wrapper](https://github.com/pipwerks/scorm-api-wrapper) (v1.1.20180906), as vendored by eXeLearning inside exported packages | MIT |
+| `assets/scorm/SCOFunctions.js` | eXeLearning's own SCORM 1.2 runtime, written from the specification and assembled by the editor into every package it exports; vendored unmodified, with the commit it was built from and the digests of both runtime files pinned in `assets/scorm/SOURCE` | AGPL-3.0-or-later |
+| `dist/static/` (release ZIP only) | The eXeLearning v4 editor itself, built from [`exelearning/exelearning`](https://github.com/exelearning/exelearning); declared in the ZIP's copy of `thirdpartylibs.xml` with its exact version | AGPL-3.0-or-later |
+
+Everything else the plugin serves is its own code. `assets/scorm/SCOFunctions.js`
+and `dist/static/` are **first-party eXeLearning code**, the same project and
+licence as each other.
+
+**Why AGPL code ships inside a GPLv3 plugin.** The editor and the SCORM runtime
+are not third-party dependencies in the usual sense: they are the eXeLearning
+application itself, developed and maintained by the same team as this plugin
+(Cedec-INTEF and the collaborating regional administrations), with its own
+public repository, release cycle and licence. Each release bundles them
+unmodified, exactly as produced by the upstream build, so that editing works
+right after installation without downloading anything.
+
+Distributing the combination is explicitly permitted: section 13 of the GPLv3
+grants permission to combine a GPLv3 work with an AGPLv3 work, and section 13 of
+the AGPLv3 grants the mirror-image permission. Each part keeps its own licence —
+the plugin code remains GPL-3.0-or-later and the bundled eXeLearning code
+remains AGPL-3.0-or-later, the AGPL's network-interaction requirement included.
+The editor's own dependencies and their licences are listed in
+`dist/static/libs/LICENSES.md`.

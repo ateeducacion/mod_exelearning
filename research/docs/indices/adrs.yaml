@@ -60,6 +60,8 @@ items:
   - id: 'DEC-77-01', titulo: 'DEC-77-01-extraccion-no-destructiva', estado: None, fecha: None, ruta: 'decisiones/adr/DEC-77-01-extraccion-no-destructiva.md'
   - id: 'DEC-78-01', titulo: 'DEC-78-01-fijar-editor-tag-en-release', estado: None, fecha: None, ruta: 'decisiones/adr/DEC-78-01-fijar-editor-tag-en-release.md'
   - id: 'DEC-85-01', titulo: 'DEC-85-01-implementacion-ingesta-xapi', estado: None, fecha: None, ruta: 'decisiones/adr/DEC-85-01-implementacion-ingesta-xapi.md'
+  - id: 'DEC-105-01', titulo: 'DEC-105-01-el-runtime-del-plugin-siempre-gana', estado: None, fecha: None, ruta: 'decisiones/adr/DEC-105-01-el-runtime-del-plugin-siempre-gana.md'
+  - id: 'DEC-105-02', titulo: 'DEC-105-02-sesion-abierta-desde-el-host-sin-ciclo-de-vida', estado: None, fecha: None, ruta: 'decisiones/adr/DEC-105-02-sesion-abierta-desde-el-host-sin-ciclo-de-vida.md'
   - id: 'DEC-106-01', titulo: 'DEC-106-01-editor-empaquetado-solo-en-release', estado: None, fecha: None, ruta: 'decisiones/adr/DEC-106-01-editor-empaquetado-solo-en-release.md'
   - id: 'DEC-108-01', titulo: 'DEC-108-01-interruptor-global-editor-embebido', estado: None, fecha: None, ruta: 'decisiones/adr/DEC-108-01-interruptor-global-editor-embebido.md'
   - id: 'DEC-110-01', titulo: 'DEC-110-01-pagina-estilos-solo-endpoint', estado: None, fecha: None, ruta: 'decisiones/adr/DEC-110-01-pagina-estilos-solo-endpoint.md'

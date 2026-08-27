@@ -86,6 +86,25 @@ describe('parseSuspend', () => {
         expect(parseSuspend(null)).toEqual({});
         expect(parseSuspend(undefined)).toEqual({});
     });
+
+    it('tolerates a trailing "; <label>: <n>" group after the weight, with and without it', () => {
+        // A legacy writer that appends a labelled per-iDevice field (exelearning #2322
+        // adds "; Estado: <0|1|2>") must not make the record disappear from the
+        // gradebook: the suffix is accepted and ignored, the record parses as before.
+        const r = parseSuspend(
+            '1. "Quiz"; Puntuación: 60%; Peso: 30%; Estado: 2.\t'
+            + '2. "Plain"; Puntuación: 70%; Peso: 35%.\t'
+            + '3. "Last"; Puntuación: 80%; Peso: 35%; Estado: 1.'
+        );
+        expect(r[1]).toEqual({ title: 'Quiz', scorepct: 60, weighted: 30 });
+        expect(r[2]).toEqual({ title: 'Plain', scorepct: 70, weighted: 35 });
+        expect(r[3]).toEqual({ title: 'Last', scorepct: 80, weighted: 35 });
+    });
+
+    it('still rejects a suffix that is not a labelled number', () => {
+        expect(parseSuspend('1. "Quiz"; score: 60%; weighted: 30%; garbage.')).toEqual({});
+        expect(parseSuspend('1. "Quiz"; score: 60%; weighted: 30% trailing.')).toEqual({});
+    });
 });
 
 describe('resolveObjectMap', () => {
@@ -319,4 +338,75 @@ describe('createScormApi state machine', () => {
         expect(body.itemscores).toEqual({ 'ide-aaa': { scorepct: 60, weighted: 30, title: 'Quiz' } });
     });
 
+});
+
+describe('parseSuspend (versioned exe12 payload, core PR #2209)', () => {
+    // Captured verbatim from a package built by the new SCORM 1.2 runtime.
+    const REAL = 'exe12/1|ide-a;7;0;4;100;25;0;100';
+
+    it('parses a real captured record, keyed by the objectid it carries', () => {
+        expect(parseSuspend(REAL)).toEqual({
+            'ide-a': { title: '', scorepct: 100, weighted: 25, objectid: 'ide-a' },
+        });
+    });
+
+    it('reads the score from field [4], never from answered/total', () => {
+        // The real record above says answered=0 of total=4 while scoring 100: an
+        // iDevice may report a score without reporting question counters.
+        expect(parseSuspend(REAL)['ide-a'].scorepct).toBe(100);
+    });
+
+    it('normalises the score into 0-100 with the record own min/max window', () => {
+        const r = parseSuspend('exe12/1|q;1;2;4;5;75;0;10');
+        expect(r.q.scorepct).toBe(50);
+        expect(r.q.weighted).toBe(75);
+    });
+
+    it('clamps an out-of-window score and repairs a degenerate min/max range', () => {
+        expect(parseSuspend('exe12/1|q;1;0;0;250;1;0;100').q.scorepct).toBe(100);
+        expect(parseSuspend('exe12/1|q;1;0;0;-5;1;0;100').q.scorepct).toBe(0);
+        // max <= min cannot normalise anything; the producer falls back to a
+        // 100-wide window and so do we (score 30 in 0..100).
+        expect(parseSuspend('exe12/1|q;1;0;0;30;1;0;0').q.scorepct).toBe(30);
+    });
+
+    it('percent-decodes the activity id', () => {
+        expect(Object.keys(parseSuspend('exe12/1|ide%20a%7Cb;1;0;0;10;1;0;100'))).toEqual(['ide a|b']);
+    });
+
+    it('parses several records separated by "|"', () => {
+        const r = parseSuspend('exe12/1|a;1;0;0;10;1;0;100|b;1;0;0;20;2;0;100');
+        expect(Object.keys(r)).toEqual(['a', 'b']);
+        expect(r.b.scorepct).toBe(20);
+    });
+
+    it('skips records that must not reach a gradebook column', () => {
+        const r = parseSuspend(
+            'exe12/1|ok;1;0;0;40;1;0;100'          // evaluable, scored: kept
+            + '|noscore;1;0;0;;1;0;100'            // evaluable but no result yet
+            + '|notevaluable;6;0;0;80;1;0;100'     // completionRequired+completed, not evaluable
+            + '|3;40;1'                            // unclaimed migrated legacy pool record
+            + '|;1;0;0;50;1;0;100'                 // empty id
+            + '|short;1;0;0'                       // truncated record
+            + '|bad;x;0;0;50;1;0;100'              // unreadable flags
+            + '|ide%zz;1;0;0;50;1;0;100'           // malformed percent escape in the id
+        );
+        expect(Object.keys(r)).toEqual(['ok']);
+    });
+
+    it('accepts a header with no records at all', () => {
+        expect(parseSuspend('exe12/1')).toEqual({});
+    });
+
+    it('returns nothing for a version it does not understand, rather than misparsing', () => {
+        // A future revision may reorder or repurpose fields; publishing a wrong grade
+        // is worse than publishing none.
+        expect(parseSuspend('exe12/2|ide-a;7;0;4;100;25;0;100')).toEqual({});
+        expect(parseSuspend('exe12/x|ide-a;7;0;4;100;25;0;100')).toEqual({});
+        expect(parseSuspend('exe12/|ide-a;7;0;4;100;25;0;100')).toEqual({});
+    });
+
+    it('still parses the legacy format (the header is what selects the parser)', () => {
+        expect(parseSuspend('1. "Quiz"; score: 60%; weighted: 30%.')[1].title).toBe('Quiz');
+    });
 });

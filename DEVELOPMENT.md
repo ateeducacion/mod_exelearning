@@ -121,9 +121,11 @@ Path exclusions for the linters live in:
 - `.phpcs.xml.dist` &mdash; the `moodle` ruleset with `dist/`, `research/`,
   `node_modules/`, `vendor/`, `amd/build/` and `*.min.*` excluded.
 - `.eslintignore` / `.stylelintignore` &mdash; used by `grunt`.
-- `thirdpartylibs.xml` &mdash; declares `dist/static` (embedded editor) and the
-  pipwerks SCORM wrappers in `assets/scorm/` as third-party code so `validate`
-  does not flag them.
+- `thirdpartylibs.xml` &mdash; declares the SCORM 1.2 runtime pair in
+  `assets/scorm/` (the pipwerks wrapper, MIT, and eXeLearning's own
+  `SCOFunctions.js`, AGPL-3.0-or-later) as code not under the plugin's licence
+  so `validate` does not flag it; the release ZIP's copy also declares
+  `dist/static` (embedded editor).
 
 ## Docker
 
@@ -185,7 +187,7 @@ error and no partial ZIP — unless `dist/static/` holds a valid editor
 version. Run `make build-editor` first. The ZIP's `thirdpartylibs.xml` is then
 augmented with a `dist/static` declaration (version from `.editor-version`,
 licence AGPL-3.0-or-later); the committed copy is left untouched and still
-declares only the pipwerks SCORM wrappers. There is no runtime editor
+declares only the SCORM 1.2 runtime pair. There is no runtime editor
 installer: the ZIP is the only supported way the editor reaches a site.
 
 Exclusions are driven by `.distignore` (a path is excluded when its top
